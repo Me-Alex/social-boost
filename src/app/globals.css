@@ -870,3 +870,307 @@
     rgba(78, 56, 46, 0.95) 100%
   );
 }
+
+/* ============================================
+   ROUND 8: NEW ADVANCED NEON & GLOW EFFECTS
+   ============================================ */
+
+/* Neon text glow effect - Amber/Warm Theme */
+.neon-text {
+  text-shadow: 
+    0 0 7px #f59e0b, 
+    0 0 10px #f59e0b, 
+    0 0 21px #f59e0b, 
+    0 0 42px #d97706;
+}
+
+.neon-text-strong {
+  text-shadow: 
+    0 0 5px #f59e0b,
+    0 0 10px #f59e0b,
+    0 0 20px #f59e0b,
+    0 0 40px #d97706,
+    0 0 70px #b45309;
+}
+
+/* Neon border glow */
+.neon-border {
+  box-shadow: 
+    0 0 5px #f59e0b, 
+    0 0 10px #f59e0b, 
+    inset 0 0 5px rgba(245, 158, 11, 0.2);
+}
+
+.neon-border-strong {
+  box-shadow: 
+    0 0 8px #f59e0b,
+    0 0 16px #f59e0b,
+    0 0 32px #d97706,
+    inset 0 0 8px rgba(245, 158, 11, 0.15);
+  border-color: #f59e0b;
+}
+
+/* Animated gradient background */
+.animated-gradient-bg {
+  background-size: 200% 200%;
+  animation: gradientShift 8s ease infinite;
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Floating orbs decoration */
+.floating-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.5;
+  animation: floatOrb 15s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.floating-orb-1 {
+  width: 300px;
+  height: 300px;
+  background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+  top: 10%;
+  left: 5%;
+  animation-delay: 0s;
+}
+
+.floating-orb-2 {
+  width: 250px;
+  height: 250px;
+  background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%);
+  bottom: 20%;
+  right: 10%;
+  animation-delay: -5s;
+}
+
+.floating-orb-3 {
+  width: 200px;
+  height: 200px;
+  background: linear-gradient(135deg, #fbbf24 0%, #fde68a 100%);
+  top: 60%;
+  left: 40%;
+  animation-delay: -10s;
+}
+
+@keyframes floatOrb {
+  0%, 100% { 
+    transform: translate(0, 0) scale(1); 
+  }
+  25% { 
+    transform: translate(30px, -30px) scale(1.05); 
+  }
+  50% { 
+    transform: translate(-20px, 20px) scale(0.95); 
+  }
+  75% { 
+    transform: translate(20px, 30px) scale(1.02); 
+  }
+}
+
+/* Shine effect on buttons */
+.btn-shine {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-shine::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    transparent,
+    rgba(255, 255, 255, 0.25),
+    transparent
+  );
+  transform: rotate(45deg);
+  animation: shine 3s infinite;
+}
+
+@keyframes shine {
+  0% { transform: translateX(-100%) rotate(45deg); }
+  100% { transform: translateX(100%) rotate(45deg); }
+}
+
+/* Morphing blob shape for decorative elements */
+.morph-blob {
+  animation: morphBlob 12s ease-in-out infinite;
+}
+
+@keyframes morphBlob {
+  0%, 100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
+  25% { border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%; }
+  50% { border-radius: 50% 60% 30% 60% / 30% 60% 70% 40%; }
+  75% { border-radius: 60% 40% 60% 30% / 70% 30% 50% 60%; }
+}
+
+/* Cookie Consent Slide Animation */
+@keyframes slideUpCookie {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.slide-up-cookie {
+  animation: slideUpCookie 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes slideDownCookie {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+}
+
+.slide-down-cookie {
+  animation: slideDownCookie 0.3s cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+/* Skeleton Loading States */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    #f0f0f0 25%,
+    #e0e0e0 50%,
+    #f0f0f0 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+.dark .skeleton {
+  background: linear-gradient(
+    90deg,
+    #374151 25%,
+    #4b5563 50%,
+    #374151 75%
+  );
+  background-size: 200% 100%;
+}
+
+.skeleton-card {
+  @apply rounded-xl p-4 h-32;
+}
+
+.skeleton-text {
+  @apply rounded h-4 mb-2;
+}
+
+.skeleton-text-sm {
+  @apply rounded h-3 w-3/4;
+}
+
+.skeleton-avatar {
+  @apply rounded-full w-12 h-12;
+}
+
+.skeleton-button {
+  @apply rounded-lg h-10 w-24;
+}
+
+/* FAQ Search Highlight */
+.faq-highlight {
+  background-color: rgba(245, 158, 11, 0.25);
+  padding: 0 2px;
+  border-radius: 2px;
+}
+
+/* Calculator Value Animation */
+.calculator-value {
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.calculator-value-updating {
+  transform: scale(1.05);
+  color: #f59e0b;
+}
+
+/* Pricing Calculator Card Glow */
+.pricing-calc-glow {
+  position: relative;
+}
+
+.pricing-calc-glow::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  background: linear-gradient(
+    45deg,
+    #f59e0b,
+    #fbbf24,
+    #d97706,
+    #f59e0b
+  );
+  background-size: 400% 400%;
+  border-radius: inherit;
+  z-index: -1;
+  animation: calcGlowRotate 6s linear infinite;
+  filter: blur(8px);
+  opacity: 0.5;
+}
+
+@keyframes calcGlowRotate {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Social Icon Hover Effects */
+.social-icon-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.social-icon-hover:hover {
+  transform: translateY(-3px) scale(1.1);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+/* Footer Gradient Line */
+.footer-gradient-line {
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    #f59e0b 20%,
+    #fbbf24 50%,
+    #f59e0b 80%,
+    transparent
+  );
+  background-size: 200% 100%;
+  animation: footerLineMove 4s linear infinite;
+}
+
+@keyframes footerLineMove {
+  0% { background-position: 0% 0%; }
+  100% { background-position: 200% 0%; }
+}
+
+/* Category Pill Active State */
+.category-pill-active {
+  background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(217, 119, 6, 0.35);
+}
+
+/* Smooth Accordion Transitions */
+.smooth-accordion {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}

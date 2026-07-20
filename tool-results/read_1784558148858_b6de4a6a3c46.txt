@@ -1,0 +1,2002 @@
+     1→'use client'
+     2→
+     3→import React, { useState, useEffect, useRef, useCallback } from 'react'
+     4→import { Button } from '@/components/ui/button'
+     5→import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+     6→import { Input } from '@/components/ui/input'
+     7→import { Label } from '@/components/ui/label'
+     8→import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+     9→import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
+    10→import { Badge } from '@/components/ui/badge'
+    11→import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+    12→import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+    13→import { Separator } from '@/components/ui/separator'
+    14→import { Switch } from '@/components/ui/switch'
+    15→import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+    16→import { 
+    17→  AreaChart,
+    18→  Area,
+    19→  XAxis,
+    20→  YAxis,
+    21→  CartesianGrid,
+    22→  Tooltip,
+    23→  ResponsiveContainer,
+    24→  BarChart,
+    25→  Bar,
+    26→  PieChart,
+    27→  Pie,
+    28→  Cell,
+    29→  LineChart,
+    30→  Line,
+    31→  Legend
+    32→} from 'recharts'
+    33→import { 
+    34→  Play, 
+    35→  Users, 
+    36→  Heart, 
+    37→  MessageCircle, 
+    38→  Eye, 
+    39→  Instagram, 
+    40→  Youtube,
+    41→  Zap,
+    42→  Shield,
+    43→  Globe,
+    44→  TrendingUp,
+    45→  Clock,
+    46→  CheckCircle2,
+    47→  ArrowRight,
+    48→  Star,
+    49→  BarChart3,
+    50→  Target,
+    51→  Lock,
+    52→  Rocket,
+    53→  ChevronRight,
+    54→  ChevronLeft,
+    55→  Menu,
+    56→  X,
+    57→  Sparkles,
+    58→  Gift,
+    59→  Award,
+    60→  Headphones,
+    61→  Crown,
+    62→  Infinity,
+    63→  Check,
+    64→  Mail,
+    65→  ArrowDown,
+    66→  ArrowUp,
+    67→  Activity,
+    68→  Timer,
+    69→  Flame,
+    70→  Building2,
+    71→  Send,
+    72→  Loader2,
+    73→  LayoutDashboard,
+    74→  Plus,
+    75→  Settings,
+    76→  LogOut,
+    77→  Coins,
+    78→  Video,
+    79→  Image as ImageIcon,
+    80→  Pause,
+    81→  PlayCircle,
+    82→  MoreHorizontal,
+    83→  Filter,
+    84→  Download,
+    85→  RefreshCw,
+    86→  Calendar,
+    87→  DollarSign,
+    88→  Percent,
+    89→  ArrowUpRight,
+    90→  ArrowDownRight,
+    91→  ArrowDownLeft,
+    92→  User,
+    93→  Bell,
+    94→  Search,
+    95→  ChevronDown,
+    96→  ExternalLink,
+    97→  Copy,
+    98→  Trash2,
+    99→  Edit3,
+   100→  Sun,
+   101→  Moon,
+   102→  Share2,
+   103→  UserPlus,
+   104→  Footprints,
+   105→  ShieldCheck,
+   106→  BadgeCheck,
+   107→  Headphones as HeadphonesIcon
+   108→} from 'lucide-react'
+   109→import { toast } from 'sonner'
+   110→import { useTheme } from 'next-themes'
+   111→import { cn } from '@/lib/utils'
+   112→
+   113→// Types
+   114→interface Service {
+   115→  id: string
+   116→  name: string
+   117→  description: string
+   118→  icon: React.ReactNode
+   119→  platform: 'youtube' | 'instagram'
+   120→  price: number
+   121→  popular?: boolean
+   122→}
+   123→
+   124→interface FAQ {
+   125→  question: string
+   126→  answer: string
+   127→}
+   128→
+   129→interface PricingPlan {
+   130→  name: string
+   131→  price: number
+   132→  period: string
+   133→  description: string
+   134→  features: string[]
+   135→  cta: string
+   136→  popular?: boolean
+   137→  icon: React.ReactNode
+   138→}
+   139→
+   140→// Dashboard Types
+   141→interface Campaign {
+   142→  id: string
+   143→  name: string
+   144→  platform: 'youtube' | 'instagram'
+   145→  serviceType: string
+   146→  targetUrl: string
+   147→  quantity: number
+   148→  completedCount: number
+   149→  status: 'active' | 'paused' | 'completed' | 'pending'
+   150→  creditsSpent: number
+   151→  createdAt: string
+   152→  progress: number
+   153→}
+   154→
+   155→interface UserStats {
+   156→  totalCredits: number
+   157→  usedCredits: number
+   158→  activeCampaigns: number
+   159→  totalCampaigns: number
+   160→  totalViews: number
+   161→  totalFollowers: number
+   162→  engagementRate: number
+   163→}
+   164→
+   165→// Data
+   166→const youtubeServices: Service[] = [
+   167→  {
+   168→    id: 'views',
+   169→    name: 'Video Views',
+   170→    description: 'Boost your video watch count with real user views. Improve your video ranking and visibility.',
+   171→    icon: <Eye className="w-6 h-6" />,
+   172→    platform: 'youtube',
+   173→    price: 1,
+   174→    popular: true
+   175→  },
+   176→  {
+   177→    id: 'subscribers',
+   178→    name: 'Subscribers',
+   179→    description: 'Grow your channel with genuine subscribers who engage with your content.',
+   180→    icon: <Users className="w-6 h-6" />,
+   181→    platform: 'youtube',
+   182→    price: 5
+   183→  },
+   184→  {
+   185→    id: 'likes',
+   186→    name: 'Video Likes',
+   187→    description: 'Increase engagement signals with authentic likes from real users.',
+   188→    icon: <Heart className="w-6 h-6" />,
+   189→    platform: 'youtube',
+   190→    price: 2
+   191→  },
+   192→  {
+   193→    id: 'comments',
+   194→    name: 'Comments',
+   195→    description: 'Spark conversations and boost engagement with meaningful comments.',
+   196→    icon: <MessageCircle className="w-6 h-6" />,
+   197→    platform: 'youtube',
+   198→    price: 3
+   199→  }
+   200→]
+   201→
+   202→const instagramServices: Service[] = [
+   203→  {
+   204→    id: 'followers',
+   205→    name: 'Followers',
+   206→    description: 'Expand your Instagram presence with real, active followers.',
+   207→    icon: <Users className="w-6 h-6" />,
+   208→    platform: 'instagram',
+   209→    price: 5,
+   210→    popular: true
+   211→  },
+   212→  {
+   213→    id: 'likes',
+   214→    name: 'Post Likes',
+   215→    description: 'Increase your post engagement and reach more users.',
+   216→    icon: <Heart className="w-6 h-6" />,
+   217→    platform: 'instagram',
+   218→    price: 2
+   219→  },
+   220→  {
+   221→    id: 'comments',
+   222→    name: 'Comments',
+   223→    description: 'Drive authentic conversations on your posts.',
+   224→    icon: <MessageCircle className="w-6 h-6" />,
+   225→    platform: 'instagram',
+   226→    price: 3
+   227→  },
+   228→  {
+   229→    id: 'reels_views',
+   230→    name: 'Reels Views',
+   231→    description: 'Boost your Reels visibility and reach the Explore page.',
+   232→    icon: <Play className="w-6 h-6" />,
+   233→    platform: 'instagram',
+   234→    price: 1
+   235→  },
+   236→  {
+   237→    id: 'story_views',
+   238→    name: 'Story Views',
+   239→    description: 'Get more eyes on your Stories for better engagement.',
+   240→    icon: <Eye className="w-6 h-6" />,
+   241→    platform: 'instagram',
+   242→    price: 1
+   243→  }
+   244→]
+   245→
+   246→const faqs: FAQ[] = [
+   247→  {
+   248→    question: "How can I get free YouTube or Instagram growth?",
+   249→    answer: "Simply sign up for a free account and you'll receive complimentary credits to start promoting your content. You can earn more credits by engaging with other users' content through our exchange system."
+   250→  },
+   251→  {
+   252→    question: "Are the followers and engagement real?",
+   253→    answer: "Yes! All engagement comes from real, active users in our community. We use advanced verification systems to ensure authenticity and maintain high-quality interactions."
+   254→  },
+   255→  {
+   256→    question: "Is it safe to use this platform?",
+   257→    answer: "Absolutely. We use industry-standard security measures including anti-bot detection, traffic validation, and encrypted connections. Your account safety is our top priority."
+   258→  },
+   259→  {
+   260→    question: "Why does engagement improve visibility?",
+   261→    answer: "Social media algorithms prioritize content with high engagement. When your posts receive more likes, comments, and views, platforms recognize it as valuable content and show it to more people."
+   262→  },
+   263→  {
+   264→    question: "Do I need to pay to start?",
+   265→    answer: "No! Our platform is free to use. You get bonus credits upon signup and can earn more by participating in our community. Premium plans are available for faster results."
+   266→  },
+   267→  {
+   268→    question: "How fast can I see results?",
+   269→    answer: "Results begin within hours of starting a campaign. Delivery speed depends on your chosen settings and current network activity. Most campaigns show significant progress within 24-48 hours."
+   270→  },
+   271→  {
+   272→    question: "What targeting options are available?",
+   273→    answer: "We offer geo-targeting to specific countries, delivery speed controls (slow/normal/fast), daily limits, and quality filters to ensure you reach your ideal audience."
+   274→  },
+   275→  {
+   276→    question: "Can I run multiple campaigns at once?",
+   277→    answer: "Yes! You can run multiple campaigns across different platforms and services simultaneously. Your dashboard gives you full control over all active campaigns."
+   278→  }
+   279→]
+   280→
+   281→const features = [
+   282→  {
+   283→    icon: <Globe className="w-8 h-8 text-warm-600" />,
+   284→    title: "Geo-Targeted Traffic",
+   285→    description: "Reach audiences from specific regions based on your content strategy.",
+   286→    gradient: "from-blue-500 to-cyan-500"
+   287→  },
+   288→  {
+   289→    icon: <Shield className="w-8 h-8 text-warm-600" />,
+   290→    title: "Quality & Trust",
+   291→    description: "Multiple verification systems ensure authentic engagement.",
+   292→    gradient: "from-green-500 to-emerald-500"
+   293→  },
+   294→  {
+   295→    icon: <Zap className="w-8 h-8 text-warm-600" />,
+   296→    title: "Instant Start",
+   297→    description: "Campaigns begin processing immediately after creation.",
+   298→    gradient: "from-yellow-500 to-orange-500"
+   299→  },
+   300→  {
+   301→    icon: <Headphones className="w-8 h-8 text-warm-600" />,
+   302→    title: "24/7 Support",
+   303→    description: "Our team is always here to help you succeed.",
+   304→    gradient: "from-purple-500 to-pink-500"
+   305→  },
+   306→  {
+   307→    icon: <Gift className="w-8 h-8 text-warm-600" />,
+   308→    title: "Free Credits",
+   309→    description: "Start with bonus credits - no payment required.",
+   310→    gradient: "from-red-500 to-rose-500"
+   311→  },
+   312→  {
+   313→    icon: <TrendingUp className="w-8 h-8 text-warm-600" />,
+   314→    title: "Real Growth",
+   315→    description: "Organic-looking growth that algorithms love.",
+   316→    gradient: "from-indigo-500 to-violet-500"
+   317→  }
+   318→]
+   319→
+   320→const pricingPlans: PricingPlan[] = [
+   321→  {
+   322→    name: "Starter",
+   323→    price: 0,
+   324→    period: "forever",
+   325→    description: "Perfect for trying out our platform",
+   326→    features: [
+   327→      "500 free credits monthly",
+   328→      "Basic analytics",
+   329→      "Email support",
+   330→      "3 active campaigns",
+   331→      "Standard delivery speed"
+   332→    ],
+   333→    cta: "Get Started Free",
+   334→    icon: <Gift className="w-6 h-6" />
+   335→  },
+   336→  {
+   337→    name: "Pro",
+   338→    price: 29,
+   339→    period: "month",
+   340→    description: "For serious content creators",
+   341→    features: [
+   342→      "10,000 credits monthly",
+   343→      "Advanced analytics & insights",
+   344→      "Priority support",
+   345→      "Unlimited campaigns",
+   346→      "Fast delivery speed",
+   347→      "Geo-targeting included",
+   348→      "API access"
+   349→    ],
+   350→    cta: "Start Pro Trial",
+   351→    popular: true,
+   352→    icon: <Zap className="w-6 h-6" />
+   353→  },
+   354→  {
+   355→    name: "Enterprise",
+   356→    price: 99,
+   357→    period: "month",
+   358→    description: "For agencies and large creators",
+   359→    features: [
+   360→      "50,000 credits monthly",
+   361→      "White-label dashboard",
+   362→      "Dedicated account manager",
+   363→      "Unlimited everything",
+   364→      "Lightning-fast delivery",
+   365→      "Custom integrations",
+   366→      "SLA guarantee",
+   367→      "Team collaboration"
+   368→    ],
+   369→    cta: "Contact Sales",
+   370→    icon: <Building2 className="w-6 h-6" />
+   371→  }
+   372→]
+   373→
+   374→const stats = [
+   375→  { value: 50, suffix: 'M+', label: 'Views Delivered', icon: <Eye className="w-5 h-5" /> },
+   376→  { value: 5, suffix: 'M+', label: 'Followers Gained', icon: <Users className="w-5 h-5" /> },
+   377→  { value: 100, suffix: 'K+', label: 'Happy Creators', icon: <Star className="w-5 h-5" /> },
+   378→  { value: 99.9, suffix: '%', label: 'Uptime', icon: <Activity className="w-5 h-5" /> }
+   379→]
+   380→
+   381→// Dashboard Mock Data
+   382→const mockUserStats: UserStats = {
+   383→  totalCredits: 1250,
+   384→  usedCredits: 425,
+   385→  activeCampaigns: 3,
+   386→  totalCampaigns: 12,
+   387→  totalViews: 45230,
+   388→  totalFollowers: 3280,
+   389→  engagementRate: 8.7
+   390→}
+   391→
+   392→const mockCampaigns: Campaign[] = [
+   393→  {
+   394→    id: 'camp1',
+   395→    name: 'Product Review Video',
+   396→    platform: 'youtube',
+   397→    serviceType: 'views',
+   398→    targetUrl: 'https://youtube.com/watch?v=example1',
+   399→    quantity: 10000,
+   400→    completedCount: 7234,
+   401→    status: 'active',
+   402→    creditsSpent: 72,
+   403→    createdAt: '2024-01-15',
+   404→    progress: 72
+   405→  },
+   406→  {
+   407→    id: 'camp2',
+   408→    name: 'Summer Collection Post',
+   409→    platform: 'instagram',
+   410→    serviceType: 'followers',
+   411→    targetUrl: 'https://instagram.com/p/example2',
+   412→    quantity: 5000,
+   413→    completedCount: 5000,
+   414→    status: 'completed',
+   415→    creditsSpent: 250,
+   416→    createdAt: '2024-01-10',
+   417→    progress: 100
+   418→  },
+   419→  {
+   420→    id: 'camp3',
+   421→    name: 'Tutorial Series Ep.5',
+   422→    platform: 'youtube',
+   423→    serviceType: 'subscribers',
+   424→    targetUrl: 'https://youtube.com/watch?v=example3',
+   425→    quantity: 2000,
+   426→    completedCount: 1456,
+   427→    status: 'active',
+   428→    creditsSpent: 73,
+   429→    createdAt: '2024-01-18',
+   430→    progress: 73
+   431→  },
+   432→  {
+   433→    id: 'camp4',
+   434→    name: 'Behind the Scenes Reel',
+   435→    platform: 'instagram',
+   436→    serviceType: 'reels_views',
+   437→    targetUrl: 'https://instagram.com/reel/example4',
+   438→    quantity: 15000,
+   439→    completedCount: 8920,
+   440→    status: 'active',
+   441→    creditsSpent: 89,
+   442→    createdAt: '2024-01-20',
+   443→    progress: 59
+   444→  },
+   445→  {
+   446→    id: 'camp5',
+   447→    name: 'Q&A Live Stream',
+   448→    platform: 'youtube',
+   449→    serviceType: 'comments',
+   450→    targetUrl: 'https://youtube.com/watch?v=example5',
+   451→    quantity: 500,
+   452→    completedCount: 0,
+   453→    status: 'paused',
+   454→    creditsSpent: 15,
+   455→    createdAt: '2024-01-22',
+   456→    progress: 0
+   457→  }
+   458→]
+   459→
+   460→const chartDataViews = [
+   461→  { date: 'Mon', views: 4200, followers: 120 },
+   462→  { date: 'Tue', views: 5800, followers: 180 },
+   463→  { date: 'Wed', views: 4500, followers: 95 },
+   464→  { date: 'Thu', views: 7200, followers: 250 },
+   465→  { date: 'Fri', views: 6100, followers: 210 },
+   466→  { date: 'Sat', views: 8900, followers: 320 },
+   467→  { date: 'Sun', views: 7500, followers: 280 },
+   468→]
+   469→
+   470→const chartDataEngagement = [
+   471→  { name: 'Likes', value: 4500, color: '#ef4444' },
+   472→  { name: 'Comments', value: 850, color: '#f59e0b' },
+   473→  { name: 'Shares', value: 320, color: '#10b981' },
+   474→  { name: 'Saves', value: 180, color: '#8b5cf6' },
+   475→]
+   476→
+   477→const chartDataWeekly = [
+   478→  { name: 'Week 1', youtube: 4200, instagram: 3100 },
+   479→  { name: 'Week 2', youtube: 5800, instagram: 4200 },
+   480→  { name: 'Week 3', youtube: 6500, instagram: 4800 },
+   481→  { name: 'Week 4', youtube: 7800, instagram: 5200 },
+   482→]
+   483→
+   484→// Animated Counter Component
+   485→function AnimatedCounter({ value, suffix, duration = 2000 }: { value: number; suffix: string; duration?: number }) {
+   486→  const [count, setCount] = useState(0)
+   487→  const [isVisible, setIsVisible] = useState(false)
+   488→  const ref = useRef<HTMLDivElement>(null)
+   489→
+   490→  useEffect(() => {
+   491→    const observer = new IntersectionObserver(
+   492→      ([entry]) => {
+   493→        if (entry.isIntersecting && !isVisible) {
+   494→          setIsVisible(true)
+   495→        }
+   496→      },
+   497→      { threshold: 0.3 }
+   498→    )
+   499→
+   500→    if (ref.current) {
+   501→      observer.observe(ref.current)
+   502→    }
+   503→
+   504→    return () => observer.disconnect()
+   505→  }, [isVisible])
+   506→
+   507→  useEffect(() => {
+   508→    if (!isVisible) return
+   509→
+   510→    const startTime = Date.now()
+   511→    const endTime = startTime + duration
+   512→
+   513→    const animate = () => {
+   514→      const now = Date.now()
+   515→      const progress = Math.min((now - startTime) / duration, 1)
+   516→      
+   517→      // Easing function
+   518→      const easeOutQuart = 1 - Math.pow(1 - progress, 4)
+   519→      
+   520→      setCount(value * easeOutQuart)
+   521→
+   522→      if (now < endTime) {
+   523→        requestAnimationFrame(animate)
+   524→      }
+   525→    }
+   526→
+   527→    requestAnimationFrame(animate)
+   528→  }, [isVisible, value, duration])
+   529→
+   530→  return (
+   531→    <div ref={ref} className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white tabular-nums">
+   532→      {Number.isInteger(value) ? Math.floor(count) : count.toFixed(1)}{suffix}
+   533→    </div>
+   534→  )
+   535→}
+   536→
+   537→// Magic Number Card Component for Enhanced Stats Section
+   538→function MagicNumberCard({ 
+   539→  value, 
+   540→  suffix, 
+   541→  label, 
+   542→  icon: Icon, 
+   543→  description,
+   544→  delay = 0
+   545→}: { 
+   546→  value: number; 
+   547→  suffix: string; 
+   548→  label: string; 
+   549→  icon: React.ElementType; 
+   550→  description?: string;
+   551→  delay?: number;
+   552→}) {
+   553→  const [count, setCount] = useState(0)
+   554→  const [isVisible, setIsVisible] = useState(false)
+   555→  const ref = useRef<HTMLDivElement>(null)
+   556→
+   557→  useEffect(() => {
+   558→    const observer = new IntersectionObserver(
+   559→      ([entry]) => {
+   560→        if (entry.isIntersecting && !isVisible) {
+   561→          setIsVisible(true)
+   562→        }
+   563→      },
+   564→      { threshold: 0.3 }
+   565→    )
+   566→
+   567→    if (ref.current) {
+   568→      observer.observe(ref.current)
+   569→    }
+   570→
+   571→    return () => observer.disconnect()
+   572→  }, [isVisible])
+   573→
+   574→  useEffect(() => {
+   575→    if (!isVisible) return
+   576→
+   577→    const startTime = Date.now()
+   578→    const duration = 2500
+   579→    const endTime = startTime + duration
+   580→
+   581→    const animate = () => {
+   582→      const now = Date.now()
+   583→      const progress = Math.min((now - startTime) / duration, 1)
+   584→      const easeOutQuart = 1 - Math.pow(1 - progress, 4)
+   585→      
+   586→      setCount(value * easeOutQuart)
+   587→
+   588→      if (now < endTime) {
+   589→        requestAnimationFrame(animate)
+   590→      }
+   591→    }
+   592→
+   593→    setTimeout(() => {
+   594→      requestAnimationFrame(animate)
+   595→    }, delay)
+   596→  }, [isVisible, value, delay])
+   597→
+   598→  return (
+   599→    <div 
+   600→      ref={ref}
+   601→      className="glass-card rounded-2xl p-6 text-center group hover:-translate-y-2 transition-all duration-500 counter-glow"
+   602→      style={{ animationDelay: `${delay}ms` }}
+   603→    >
+   604→      {/* Icon */}
+   605→      <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-gradient-to-br from-warm-500/20 to-orange-500/20 mb-4 group-hover:scale-110 group-hover:bg-gradient-to-br group-hover:from-warm-500 group-hover:to-orange-500 transition-all duration-300">
+   606→        <Icon className="w-7 h-7 text-warm-500 group-hover:text-white transition-colors" />
+   607→      </div>
+   608→
+   609→      {/* Counter */}
+   610→      <div className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white tabular-nums mb-2">
+   611→        {Number.isInteger(value) ? Math.floor(count) : count.toFixed(1)}<span className="text-warm-400">{suffix}</span>
+   612→      </div>
+   613→
+   614→      {/* Label */}
+   615→      <h4 className="font-semibold text-white/90 mb-1">{label}</h4>
+   616→      
+   617→      {/* Description */}
+   618→      {description && (
+   619→        <p className="text-sm text-gray-500">{description}</p>
+   620→      )}
+   621→    </div>
+   622→  )
+   623→}
+   624→
+   625→// Live Activity Component
+   626→function LiveActivity() {
+   627→  const activities = [
+   628→    { user: 'Sarah M.', action: 'received 1,250 views', time: 'Just now' },
+   629→    { user: 'Mike T.', action: 'gained 89 followers', time: '2 min ago' },
+   630→    { user: 'Emily R.', action: 'got 342 likes', time: '4 min ago' },
+   631→    { user: 'Alex K.', action: 'earned 150 credits', time: '5 min ago' },
+   632→  ]
+   633→
+   634→  const [currentActivities, setCurrentActivities] = useState(activities.slice(0, 3))
+   635→
+   636→  useEffect(() => {
+   637→    const interval = setInterval(() => {
+   638→      setCurrentActivities(prev => {
+   639→        const next = [...prev.slice(1), activities[Math.floor(Math.random() * activities.length)]]
+   640→        return next
+   641→      })
+   642→    }, 4000)
+   643→
+   644→    return () => clearInterval(interval)
+   645→  }, [])
+   646→
+   647→  return (
+   648→    <div className="space-y-3">
+   649→      {currentActivities.map((activity, i) => (
+   650→        <div 
+   651→          key={`${activity.user}-${i}`}
+   652→          className="flex items-center gap-3 p-3 bg-white/80 rounded-lg backdrop-blur-sm animate-fadeIn"
+   653→          style={{ animationDelay: `${i * 100}ms` }}
+   654→        >
+   655→          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-warm-400 to-warm-600 flex items-center justify-center text-white text-xs font-bold">
+   656→            {activity.user[0]}
+   657→          </div>
+   658→          <div className="flex-1 min-w-0">
+   659→            <p className="text-sm font-medium truncate">
+   660→              <span className="text-warm-700">{activity.user}</span>{' '}
+   661→              <span className="text-gray-600">{activity.action}</span>
+   662→            </p>
+   663→            <p className="text-xs text-gray-400">{activity.time}</p>
+   664→          </div>
+   665→          <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
+   666→        </div>
+   667→      ))}
+   668→    </div>
+   669→  )
+   670→}
+   671→
+   672→// ==================== DASHBOARD COMPONENT ====================
+   673→interface DashboardProps {
+   674→  user: { name: string; email: string }
+   675→  onLogout: () => void
+   676→}
+   677→
+   678→function Dashboard({ user, onLogout }: DashboardProps) {
+   679→  const [sidebarOpen, setSidebarOpen] = useState(true)
+   680→  const [activeDashboardTab, setActiveDashboardTab] = useState('overview')
+   681→  const [campaigns, setCampaigns] = useState<Campaign[]>(mockCampaigns)
+   682→  const [isNewCampaignOpen, setIsNewCampaignOpen] = useState(false)
+   683→  const [selectedCampaigns, setSelectedCampaigns] = useState<string[]>([])
+   684→
+   685→  // New Campaign Form State
+   686→  const [newCampaign, setNewCampaign] = useState({
+   687→    name: '',
+   688→    platform: 'youtube' as 'youtube' | 'instagram',
+   689→    serviceType: 'views',
+   690→    targetUrl: '',
+   691→    quantity: 1000,
+   692→    speed: 'normal',
+   693→    geoTarget: 'all'
+   694→  })
+   695→
+   696→  // Stats calculations
+   697→  const availableCredits = mockUserStats.totalCredits - mockUserStats.usedCredits
+   698→  const creditsPercentage = Math.round((mockUserStats.usedCredits / mockUserStats.totalCredits) * 100)
+   699→
+   700→  const handleCreateCampaign = () => {
+   701→    if (!newCampaign.name || !newCampaign.targetUrl) {
+   702→      toast.error('Please fill in all required fields')
+   703→      return
+   704→    }
+   705→
+   706→    const creditsNeeded = Math.ceil(newCampaign.quantity / 100)
+   707→    if (creditsNeeded > availableCredits) {
+   708→      toast.error(`Insufficient credits. You need ${creditsNeeded} but have ${availableCredits}`)
+   709→      return
+   710→    }
+   711→
+   712→    const campaign: Campaign = {
+   713→      id: `camp${Date.now()}`,
+   714→      name: newCampaign.name,
+   715→      platform: newCampaign.platform,
+   716→      serviceType: newCampaign.serviceType,
+   717→      targetUrl: newCampaign.targetUrl,
+   718→      quantity: newCampaign.quantity,
+   719→      completedCount: 0,
+   720→      status: 'pending',
+   721→      creditsSpent: creditsNeeded,
+   722→      createdAt: new Date().toISOString().split('T')[0],
+   723→      progress: 0
+   724→    }
+   725→
+   726→    setCampaigns([campaign, ...campaigns])
+   727→    setIsNewCampaignOpen(false)
+   728→    toast.success('Campaign created successfully!', { description: `${newCampaign.name} is now processing` })
+   729→    
+   730→    // Reset form
+   731→    setNewCampaign({
+   732→      name: '',
+   733→      platform: 'youtube',
+   734→      serviceType: 'views',
+   735→      targetUrl: '',
+   736→      quantity: 1000,
+   737→      speed: 'normal',
+   738→      geoTarget: 'all'
+   739→    })
+   740→  }
+   741→
+   742→  const handleToggleCampaignStatus = (id: string) => {
+   743→    setCampaigns(campaigns.map(c => 
+   744→      c.id === id 
+   745→        ? { ...c, status: c.status === 'active' ? 'paused' : c.status === 'paused' ? 'active' : c.status }
+   746→        : c
+   747→    ))
+   748→  }
+   749→
+   750→  const handleDeleteCampaign = (id: string) => {
+   751→    setCampaigns(campaigns.filter(c => c.id !== id))
+   752→    toast.success('Campaign deleted')
+   753→  }
+   754→
+   755→  const getStatusBadge = (status: string) => {
+   756→    const styles: Record<string, string> = {
+   757→      active: 'bg-green-100 text-green-700 border-green-200',
+   758→      paused: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+   759→      completed: 'bg-blue-100 text-blue-700 border-blue-200',
+   760→      pending: 'bg-gray-100 text-gray-700 border-gray-200'
+   761→    }
+   762→    return styles[status] || styles.pending
+   763→  }
+   764→
+   765→  const getPlatformIcon = (platform: string) => {
+   766→    return platform === 'youtube' 
+   767→      ? <Youtube className="w-4 h-4 text-red-500" />
+   768→      : <Instagram className="w-4 h-4 text-pink-500" />
+   769→  }
+   770→
+   771→  return (
+   772→    <div className="min-h-screen flex bg-gray-50">
+   773→      {/* Sidebar */}
+   774→      <aside className={`${sidebarOpen ? 'w-64' : 'w-20'} bg-slate-900 text-white transition-all duration-300 flex flex-col fixed h-screen z-40`}>
+   775→        {/* Logo */}
+   776→        <div className="p-4 border-b border-slate-800 flex items-center gap-3">
+   777→          <div className="w-10 h-10 rounded-xl gradient-bg flex items-center justify-center flex-shrink-0">
+   778→            <Rocket className="w-6 h-6 text-white" />
+   779→          </div>
+   780→          {sidebarOpen && <span className="font-bold text-lg gradient-text">SocialBoost</span>}
+   781→        </div>
+   782→
+   783→        {/* Navigation */}
+   784→        <nav className="flex-1 p-4 space-y-2">
+   785→          {[
+   786→            { icon: <LayoutDashboard />, label: 'Overview', id: 'overview' },
+   787→            { icon: <Target />, label: 'Campaigns', id: 'campaigns' },
+   788→            { icon: <BarChart3 />, label: 'Analytics', id: 'analytics' },
+   789→            { icon: <Coins />, label: 'Credits', id: 'credits' },
+   790→            { icon: <Settings />, label: 'Settings', id: 'settings' },
+   791→          ].map((item) => (
+   792→            <button
+   793→              key={item.id}
+   794→              onClick={() => setActiveDashboardTab(item.id)}
+   795→              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${
+   796→                activeDashboardTab === item.id 
+   797→                  ? 'bg-warm-500/20 text-warm-400 font-medium' 
+   798→                  : 'hover:bg-slate-800 text-slate-400 hover:text-white'
+   799→              }`}
+   800→            >
+   801→              {item.icon}
+   802→              {sidebarOpen && <span>{item.label}</span>}
+   803→            </button>
+   804→          ))}
+   805→        </nav>
+   806→
+   807→        {/* User Section */}
+   808→        <div className="p-4 border-t border-slate-800">
+   809→          <div className={`flex items-center ${sidebarOpen ? 'gap-3' : 'justify-center'}`}>
+   810→            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-warm-400 to-warm-600 flex items-center justify-center text-white font-bold">
+   811→              {user.name.charAt(0)}
+   812→            </div>
+   813→            {sidebarOpen && (
+   814→              <div className="flex-1 min-w-0">
+   815→                <p className="font-medium truncate">{user.name}</p>
+   816→                <p className="text-xs text-slate-400 truncate">{user.email}</p>
+   817→              </div>
+   818→            )}
+   819→            <button onClick={onLogout} className="p-2 hover:bg-slate-800 rounded-lg transition-colors" title="Logout">
+   820→              <LogOut className="w-5 h-5 text-slate-400" />
+   821→            </button>
+   822→          </div>
+   823→        </div>
+   824→      </aside>
+   825→
+   826→      {/* Main Content */}
+   827→      <main className={`flex-1 ${sidebarOpen ? 'ml-64' : 'ml-20'} transition-all duration-300`}>
+   828→        {/* Top Header */}
+   829→        <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b px-6 py-4">
+   830→          <div className="flex items-center justify-between">
+   831→            <div className="flex items-center gap-4">
+   832→              <button 
+   833→                onClick={() => setSidebarOpen(!sidebarOpen)}
+   834→                className="p-2 hover:bg-gray-100 rounded-lg"
+   835→              >
+   836→                <Menu className="w-5 h-5" />
+   837→              </button>
+   838→              <h1 className="text-xl font-bold capitalize">{activeDashboardTab}</h1>
+   839→            </div>
+   840→            
+   841→            <div className="flex items-center gap-3">
+   842→              <Button variant="outline" size="sm" className="gap-2">
+   843→                <Bell className="w-4 h-4" />
+   844→                Notifications
+   845→              </Button>
+   846→              <Button 
+   847→                size="sm" 
+   848→                className="gradient-bg text-white border-0 gap-2"
+   849→                onClick={() => setIsNewCampaignOpen(true)}
+   850→              >
+   851→                <Plus className="w-4 h-4" />
+   852→                New Campaign
+   853→              </Button>
+   854→            </div>
+   855→          </div>
+   856→        </header>
+   857→
+   858→        {/* Dashboard Content */}
+   859→        <div className="p-6">
+   860→          {/* OVERVIEW TAB */}
+   861→          {activeDashboardTab === 'overview' && (
+   862→            <div className="space-y-6">
+   863→              {/* Stats Grid */}
+   864→              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+   865→                <Card className="border-0 shadow-sm overflow-hidden">
+   866→                  <CardContent className="p-6">
+   867→                    <div className="flex items-start justify-between">
+   868→                      <div>
+   869→                        <p className="text-sm text-muted-foreground">Available Credits</p>
+   870→                        <p className="text-3xl font-bold mt-1">{availableCredits.toLocaleString()}</p>
+   871→                        <p className="text-xs text-muted-foreground mt-1">{creditsPercentage}% used</p>
+   872→                      </div>
+   873→                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-warm-400 to-orange-500 flex items-center justify-center">
+   874→                        <Coins className="w-6 h-6 text-white" />
+   875→                      </div>
+   876→                    </div>
+   877→                    <div className="mt-3 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+   878→                      <div className="h-full gradient-bg rounded-full" style={{ width: `${creditsPercentage}%` }}></div>
+   879→                    </div>
+   880→                  </CardContent>
+   881→                </Card>
+   882→
+   883→                <Card className="border-0 shadow-sm">
+   884→                  <CardContent className="p-6">
+   885→                    <div className="flex items-start justify-between">
+   886→                      <div>
+   887→                        <p className="text-sm text-muted-foreground">Active Campaigns</p>
+   888→                        <p className="text-3xl font-bold mt-1">{mockUserStats.activeCampaigns}</p>
+   889→                        <p className="text-xs text-green-600 flex items-center gap-1 mt-1">
+   890→                          <ArrowUpRight className="w-3 h-3" /> +2 this week
+   891→                        </p>
+   892→                      </div>
+   893→                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-400 to-cyan-500 flex items-center justify-center">
+   894→                        <Target className="w-6 h-6 text-white" />
+   895→                      </div>
+   896→                    </div>
+   897→                  </CardContent>
+   898→                </Card>
+   899→
+   900→                <Card className="border-0 shadow-sm">
+   901→                  <CardContent className="p-6">
+   902→                    <div className="flex items-start justify-between">
+   903→                      <div>
+   904→                        <p className="text-sm text-muted-foreground">Total Views</p>
+   905→                        <p className="text-3xl font-bold mt-1">{(mockUserStats.totalViews / 1000).toFixed(1)}K</p>
+   906→                        <p className="text-xs text-green-600 flex items-center gap-1 mt-1">
+   907→                          <ArrowUpRight className="w-3 h-3" /> +18% vs last week
+   908→                        </p>
+   909→                      </div>
+   910→                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-400 to-violet-500 flex items-center justify-center">
+   911→                        <Eye className="w-6 h-6 text-white" />
+   912→                      </div>
+   913→                    </div>
+   914→                  </CardContent>
+   915→                </Card>
+   916→
+   917→                <Card className="border-0 shadow-sm">
+   918→                  <CardContent className="p-6">
+   919→                    <div className="flex items-start justify-between">
+   920→                      <div>
+   921→                        <p className="text-sm text-muted-foreground">Engagement Rate</p>
+   922→                        <p className="text-3xl font-bold mt-1">{mockUserStats.engagementRate}%</p>
+   923→                        <p className="text-xs text-green-600 flex items-center gap-1 mt-1">
+   924→                          <ArrowUpRight className="w-3 h-3" /> +2.3% improvement
+   925→                        </p>
+   926→                      </div>
+   927→                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center">
+   928→                        <TrendingUp className="w-6 h-6 text-white" />
+   929→                      </div>
+   930→                    </div>
+   931→                  </CardContent>
+   932→                </Card>
+   933→              </div>
+   934→
+   935→              {/* Charts Row */}
+   936→              <div className="grid lg:grid-cols-3 gap-6">
+   937→                {/* Views Chart */}
+   938→                <Card className="lg:col-span-2 border-0 shadow-sm">
+   939→                  <CardHeader className="pb-2">
+   940→                    <div className="flex items-center justify-between">
+   941→                      <CardTitle className="text-base">Views & Followers Trend</CardTitle>
+   942→                      <Select defaultValue="7d">
+   943→                        <SelectTrigger className="w-28 h-8 text-xs" />
+   944→                        <SelectContent>
+   945→                          <SelectItem value="7d">Last 7 days</SelectItem>
+   946→                          <SelectItem value="30d">Last 30 days</SelectItem>
+   947→                          <SelectItem value="90d">Last 90 days</SelectItem>
+   948→                        </SelectContent>
+   949→                      </Select>
+   950→                    </div>
+   951→                  </CardHeader>
+   952→                  <CardContent>
+   953→                    <ResponsiveContainer width="100%" height={280}>
+   954→                      <AreaChart data={chartDataViews}>
+   955→                        <defs>
+   956→                          <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
+   957→                            <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3}/>
+   958→                            <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/>
+   959→                          </linearGradient>
+   960→                          <linearGradient id="colorFollowers" x1="0" y1="0" x2="0" y2="1">
+   961→                            <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3}/>
+   962→                            <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
+   963→                          </linearGradient>
+   964→                        </defs>
+   965→                        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+   966→                        <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
+   967→                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
+   968→                        <Tooltip 
+   969→                          contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+   970→                        />
+   971→                        <Area type="monotone" dataKey="views" stroke="#f59e0b" strokeWidth={2} fillOpacity={1} fill="url(#colorViews)" />
+   972→                        <Area type="monotone" dataKey="followers" stroke="#8b5cf6" strokeWidth={2} fillOpacity={1} fill="url(#colorFollowers)" />
+   973→                      </AreaChart>
+   974→                    </ResponsiveContainer>
+   975→                  </CardContent>
+   976→                </Card>
+   977→
+   978→                {/* Engagement Pie Chart */}
+   979→                <Card className="border-0 shadow-sm">
+   980→                  <CardHeader className="pb-2">
+   981→                    <CardTitle className="text-base">Engagement Breakdown</CardTitle>
+   982→                  </CardHeader>
+   983→                  <CardContent>
+   984→                    <ResponsiveContainer width="100%" height={200}>
+   985→                      <PieChart>
+   986→                        <Pie
+   987→                          data={chartDataEngagement}
+   988→                          cx="50%"
+   989→                          cy="50%"
+   990→                          innerRadius={50}
+   991→                          outerRadius={80}
+   992→                          paddingAngle={5}
+   993→                          dataKey="value"
+   994→                        >
+   995→                          {chartDataEngagement.map((entry, index) => (
+   996→                            <Cell key={`cell-${index}`} fill={entry.color} />
+   997→                          ))}
+   998→                        </Pie>
+   999→                        <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
+  1000→                      </PieChart>
+  1001→                    </ResponsiveContainer>
+  1002→                    <div className="space-y-2 mt-4">
+  1003→                      {chartDataEngagement.map((item, i) => (
+  1004→                        <div key={i} className="flex items-center justify-between text-sm">
+  1005→                          <div className="flex items-center gap-2">
+  1006→                            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }}></div>
+  1007→                            <span>{item.name}</span>
+  1008→                          </div>
+  1009→                          <span className="font-medium">{item.value.toLocaleString()}</span>
+  1010→                        </div>
+  1011→                      ))}
+  1012→                    </div>
+  1013→                  </CardContent>
+  1014→                </Card>
+  1015→              </div>
+  1016→
+  1017→              {/* Recent Activity */}
+  1018→              <Card className="border-0 shadow-sm">
+  1019→                <CardHeader>
+  1020→                  <div className="flex items-center justify-between">
+  1021→                    <CardTitle className="text-base">Recent Campaign Activity</CardTitle>
+  1022→                    <Button variant="ghost" size="sm" className="text-warm-600">
+  1023→                      View All <ArrowRight className="w-4 h-4 ml-1" />
+  1024→                    </Button>
+  1025→                  </div>
+  1026→                </CardHeader>
+  1027→                <CardContent>
+  1028→                  <div className="overflow-x-auto">
+  1029→                    <table className="w-full">
+  1030→                      <thead>
+  1031→                        <tr className="text-left text-sm text-muted-foreground border-b">
+  1032→                          <th className="pb-3 font-medium">Campaign</th>
+  1033→                          <th className="pb-3 font-medium">Platform</th>
+  1034→                          <th className="pb-3 font-medium">Progress</th>
+  1035→                          <th className="pb-3 font-medium">Status</th>
+  1036→                          <th className="pb-3 font-medium">Actions</th>
+  1037→                        </tr>
+  1038→                      </thead>
+  1039→                      <tbody>
+  1040→                        {campaigns.slice(0, 5).map((campaign) => (
+  1041→                          <tr key={campaign.id} className="border-b last:border-0">
+  1042→                            <td className="py-3">
+  1043→                              <div>
+  1044→                                <p className="font-medium text-sm">{campaign.name}</p>
+  1045→                                <p className="text-xs text-muted-foreground">{campaign.createdAt}</p>
+  1046→                              </div>
+  1047→                            </td>
+  1048→                            <td className="py-3">
+  1049→                              <div className="flex items-center gap-1">
+  1050→                                {getPlatformIcon(campaign.platform)}
+  1051→                                <span className="text-sm capitalize">{campaign.serviceType}</span>
+  1052→                              </div>
+  1053→                            </td>
+  1054→                            <td className="py-3">
+  1055→                              <div className="flex items-center gap-2">
+  1056→                                <div className="w-20 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+  1057→                                  <div 
+  1058→                                    className="h-full gradient-bg rounded-full" 
+  1059→                                    style={{ width: `${campaign.progress}%` }}
+  1060→                                  ></div>
+  1061→                                </div>
+  1062→                                <span className="text-xs text-muted-foreground">{campaign.progress}%</span>
+  1063→                              </div>
+  1064→                            </td>
+  1065→                            <td className="py-3">
+  1066→                              <Badge variant="outline" className={getStatusBadge(campaign.status)}>
+  1067→                                {campaign.status}
+  1068→                              </Badge>
+  1069→                            </td>
+  1070→                            <td className="py-3">
+  1071→                              <div className="flex items-center gap-1">
+  1072→                                <button 
+  1073→                                  onClick={() => handleToggleCampaignStatus(campaign.id)}
+  1074→                                  className="p-1.5 hover:bg-gray-100 rounded-lg"
+  1075→                                >
+  1076→                                  {campaign.status === 'active' ? <Pause className="w-4 h-4" /> : <PlayCircle className="w-4 h-4" />}
+  1077→                                </button>
+  1078→                                <button className="p-1.5 hover:bg-gray-100 rounded-lg">
+  1079→                                  <MoreHorizontal className="w-4 h-4" />
+  1080→                                </button>
+  1081→                              </div>
+  1082→                            </td>
+  1083→                          </tr>
+  1084→                        ))}
+  1085→                      </tbody>
+  1086→                    </table>
+  1087→                  </div>
+  1088→                </CardContent>
+  1089→              </Card>
+  1090→            </div>
+  1091→          )}
+  1092→
+  1093→          {/* CAMPAIGNS TAB */}
+  1094→          {activeDashboardTab === 'campaigns' && (
+  1095→            <div className="space-y-6">
+  1096→              {/* Filters Bar */}
+  1097→              <Card className="border-0 shadow-sm">
+  1098→                <CardContent className="p-4">
+  1099→                  <div className="flex flex-wrap items-center gap-4">
+  1100→                    <div className="relative flex-1 min-w-[200px]">
+  1101→                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+  1102→                      <Input placeholder="Search campaigns..." className="pl-9" />
+  1103→                    </div>
+  1104→                    <Select defaultValue="all-platforms">
+  1105→                      <SelectTrigger className="w-40" />
+  1106→                      <SelectContent>
+  1107→                        <SelectItem value="all-platforms">All Platforms</SelectItem>
+  1108→                        <SelectItem value="youtube">YouTube</SelectItem>
+  1109→                        <SelectItem value="instagram">Instagram</SelectItem>
+  1110→                      </SelectContent>
+  1111→                    </Select>
+  1112→                    <Select defaultValue="all-statuses">
+  1113→                      <SelectTrigger className="w-36" />
+  1114→                      <SelectContent>
+  1115→                        <SelectItem value="all-statuses">All Status</SelectItem>
+  1116→                        <SelectItem value="active">Active</SelectItem>
+  1117→                        <SelectItem value="paused">Paused</SelectItem>
+  1118→                        <SelectItem value="completed">Completed</SelectItem>
+  1119→                        <SelectItem value="pending">Pending</SelectItem>
+  1120→                      </SelectContent>
+  1121→                    </Select>
+  1122→                    <Button variant="outline" size="sm" className="gap-2">
+  1123→                      <Filter className="w-4 h-4" /> More Filters
+  1124→                    </Button>
+  1125→                  </div>
+  1126→                </CardContent>
+  1127→              </Card>
+  1128→
+  1129→              {/* Campaigns Table */}
+  1130→              <Card className="border-0 shadow-sm">
+  1131→                <CardHeader>
+  1132→                  <div className="flex items-center justify-between">
+  1133→                    <div className="flex items-center gap-2">
+  1134→                      <CardTitle className="text-base">All Campaigns</CardTitle>
+  1135→                      <Badge variant="secondary">{campaigns.length} total</Badge>
+  1136→                    </div>
+  1137→                    <div className="flex items-center gap-2">
+  1138→                      <Button variant="outline" size="sm" className="gap-2">
+  1139→                        <Download className="w-4 h-4" /> Export
+  1140→                      </Button>
+  1141→                      <Button variant="outline" size="sm" className="gap-2">
+  1142→                        <RefreshCw className="w-4 h-4" /> Refresh
+  1143→                      </Button>
+  1144→                    </div>
+  1145→                  </div>
+  1146→                </CardHeader>
+  1147→                <CardContent>
+  1148→                  <div className="overflow-x-auto">
+  1149→                    <table className="w-full">
+  1150→                      <thead>
+  1151→                        <tr className="text-left text-sm text-muted-foreground border-b bg-gray-50">
+  1152→                          <th className="p-3 font-medium w-10">
+  1153→                            <input type="checkbox" className="rounded" />
+  1154→                          </th>
+  1155→                          <th className="p-3 font-medium">Campaign Name</th>
+  1156→                          <th className="p-3 font-medium">Platform</th>
+  1157→                          <th className="p-3 font-medium">Service Type</th>
+  1158→                          <th className="p-3 font-medium">Target URL</th>
+  1159→                          <th className="p-3 font-medium">Progress</th>
+  1160→                          <th className="p-3 font-medium">Credits</th>
+  1161→                          <th className="p-3 font-medium">Status</th>
+  1162→                          <th className="p-3 font-medium">Created</th>
+  1163→                          <th className="p-3 font-medium">Actions</th>
+  1164→                        </tr>
+  1165→                      </thead>
+  1166→                      <tbody>
+  1167→                        {campaigns.map((campaign) => (
+  1168→                          <tr key={campaign.id} className="border-b hover:bg-gray-50/50 transition-colors group">
+  1169→                            <td className="p-3">
+  1170→                              <input 
+  1171→                                type="checkbox" 
+  1172→                                checked={selectedCampaigns.includes(campaign.id)}
+  1173→                                onChange={(e) => {
+  1174→                                  if (e.target.checked) {
+  1175→                                    setSelectedCampaigns([...selectedCampaigns, campaign.id])
+  1176→                                  } else {
+  1177→                                    setSelectedCampaigns(selectedCampaigns.filter(id => id !== campaign.id))
+  1178→                                  }
+  1179→                                }}
+  1180→                                className="rounded"
+  1181→                              />
+  1182→                            </td>
+  1183→                            <td className="p-3">
+  1184→                              <p className="font-medium text-sm">{campaign.name}</p>
+  1185→                            </td>
+  1186→                            <td className="p-3">
+  1187→                              <div className="flex items-center gap-1.5">
+  1188→                                {getPlatformIcon(campaign.platform)}
+  1189→                                <span className="text-sm capitalize">{campaign.platform}</span>
+  1190→                              </div>
+  1191→                            </td>
+  1192→                            <td className="p-3">
+  1193→                              <span className="text-sm bg-gray-100 px-2 py-1 rounded capitalize">{campaign.serviceType.replace('_', ' ')}</span>
+  1194→                            </td>
+  1195→                            <td className="p-3 max-w-[200px]">
+  1196→                              <a href={campaign.targetUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-warm-600 hover:text-warm-700 flex items-center gap-1 truncate" title={campaign.targetUrl}>
+  1197→                                <span className="truncate">{campaign.targetUrl.replace(/^https?:\/\/(www\.)?/, '')}</span>
+  1198→                                <ExternalLink className="w-3 h-3 flex-shrink-0" />
+  1199→                              </a>
+  1200→                            </td>
+  1201→                            <td className="p-3">
+  1202→                              <div className="space-y-1">
+  1203→                                <div className="flex justify-between text-xs">
+  1204→                                  <span>{campaign.completedCount.toLocaleString()} / {campaign.quantity.toLocaleString()}</span>
+  1205→                                  <span>{campaign.progress}%</span>
+  1206→                                </div>
+  1207→                                <div className="w-24 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+  1208→                                  <div 
+  1209→                                    className={`h-full rounded-full ${
+  1210→                                      campaign.progress === 100 ? 'bg-green-500' : 'gradient-bg'
+  1211→                                    }`}
+  1212→                                    style={{ width: `${campaign.progress}%` }}
+  1213→                                  ></div>
+  1214→                                </div>
+  1215→                              </div>
+  1216→                            </td>
+  1217→                            <td className="p-3">
+  1218→                              <span className="text-sm font-medium">{campaign.creditsSpent}</span>
+  1219→                              <Coins className="w-3 h-3 inline ml-1 text-warm-500" />
+  1220→                            </td>
+  1221→                            <td className="p-3">
+  1222→                              <Badge variant="outline" className={getStatusBadge(campaign.status)}>
+  1223→                                {campaign.status}
+  1224→                              </Badge>
+  1225→                            </td>
+  1226→                            <td className="p-3 text-sm text-muted-foreground">
+  1227→                              {campaign.createdAt}
+  1228→                            </td>
+  1229→                            <td className="p-3">
+  1230→                              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+  1231→                                <button 
+  1232→                                  onClick={() => handleToggleCampaignStatus(campaign.id)}
+  1233→                                  className="p-1.5 hover:bg-gray-100 rounded-lg"
+  1234→                                  title={campaign.status === 'active' ? 'Pause' : 'Resume'}
+  1235→                                >
+  1236→                                  {campaign.status === 'active' ? <Pause className="w-4 h-4" /> : campaign.status === 'paused' ? <PlayCircle className="w-4 h-4" /> : null}
+  1237→                                </button>
+  1238→                                <button className="p-1.5 hover:bg-gray-100 rounded-lg" title="Edit">
+  1239→                                  <Edit3 className="w-4 h-4" />
+  1240→                                </button>
+  1241→                                <button 
+  1242→                                  onClick={() => handleDeleteCampaign(campaign.id)}
+  1243→                                  className="p-1.5 hover:bg-red-100 text-red-500 rounded-lg"
+  1244→                                  title="Delete"
+  1245→                                >
+  1246→                                  <Trash2 className="w-4 h-4" />
+  1247→                                </button>
+  1248→                              </div>
+  1249→                            </td>
+  1250→                          </tr>
+  1251→                        ))}
+  1252→                      </tbody>
+  1253→                    </table>
+  1254→                  </div>
+  1255→                  
+  1256→                  {campaigns.length === 0 && (
+  1257→                    <div className="text-center py-12">
+  1258→                      <Target className="w-12 h-12 mx-auto text-gray-300 mb-4" />
+  1259→                      <p className="text-muted-foreground mb-4">No campaigns yet</p>
+  1260→                      <Button onClick={() => setIsNewCampaignOpen(true)} className="gradient-bg text-white border-0">
+  1261→                        Create Your First Campaign
+  1262→                      </Button>
+  1263→                    </div>
+  1264→                  )}
+  1265→                </CardContent>
+  1266→              </Card>
+  1267→            </div>
+  1268→          )}
+  1269→
+  1270→          {/* ANALYTICS TAB */}
+  1271→          {activeDashboardTab === 'analytics' && (
+  1272→            <div className="space-y-6">
+  1273→              <div className="grid lg:grid-cols-2 gap-6">
+  1274→                {/* Weekly Performance Chart */}
+  1275→                <Card className="border-0 shadow-sm">
+  1276→                  <CardHeader>
+  1277→                    <CardTitle className="text-base">Weekly Performance by Platform</CardTitle>
+  1278→                    <CardDescription>Compare YouTube and Instagram growth</CardDescription>
+  1279→                  </CardHeader>
+  1280→                  <CardContent>
+  1281→                    <ResponsiveContainer width="100%" height={300}>
+  1282→                      <BarChart data={chartDataWeekly}>
+  1283→                        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+  1284→                        <XAxis dataKey="name" axisLine={false} tickLine={false} />
+  1285→                        <YAxis axisLine={false} tickLine={false} />
+  1286→                        <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
+  1287→                        <Legend />
+  1288→                        <Bar dataKey="youtube" name="YouTube" fill="#ef4444" radius={[4, 4, 0, 0]} />
+  1289→                        <Bar dataKey="instagram" name="Instagram" fill="#ec4899" radius={[4, 4, 0, 0]} />
+  1290→                      </BarChart>
+  1291→                    </ResponsiveContainer>
+  1292→                  </CardContent>
+  1293→                </Card>
+  1294→
+  1295→                {/* Growth Metrics */}
+  1296→                <Card className="border-0 shadow-sm">
+  1297→                  <CardHeader>
+  1298→                    <CardTitle className="text-base">Growth Metrics</CardTitle>
+  1299→                    <CardDescription>Your account performance overview</CardDescription>
+  1300→                  </CardHeader>
+  1301→                  <CardContent className="space-y-4">
+  1302→                    {[
+  1303→                      { label: 'Total Views Delivered', value: '45,230', change: '+23%', positive: true },
+  1304→                      { label: 'Followers Gained', value: '3,280', change: '+15%', positive: true },
+  1305→                      { label: 'Avg. Engagement Rate', value: '8.7%', change: '+2.3%', positive: true },
+  1306→                      { label: 'Credits Used', value: '425 / 1250', change: '-34%', positive: false },
+  1307→                    ].map((metric, i) => (
+  1308→                      <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
+  1309→                        <div>
+  1310→                          <p className="text-sm text-muted-foreground">{metric.label}</p>
+  1311→                          <p className="text-lg font-semibold">{metric.value}</p>
+  1312→                        </div>
+  1313→                        <div className={`flex items-center gap-1 text-sm ${metric.positive ? 'text-green-600' : 'text-red-500'}`}>
+  1314→                          {metric.positive ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
+  1315→                          {metric.change}
+  1316→                        </div>
+  1317→                      </div>
+  1318→                    ))}
+  1319→                  </CardContent>
+  1320→                </Card>
+  1321→              </div>
+  1322→
+  1323→              {/* Engagement Timeline */}
+  1324→              <Card className="border-0 shadow-sm">
+  1325→                <CardHeader>
+  1326→                  <CardTitle className="text-base">Engagement Over Time</CardTitle>
+  1327→                </CardHeader>
+  1328→                <CardContent>
+  1329→                  <ResponsiveContainer width="100%" height={250}>
+  1330→                    <LineChart data={chartDataViews}>
+  1331→                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+  1332→                      <XAxis dataKey="date" axisLine={false} tickLine={false} />
+  1333→                      <YAxis axisLine={false} tickLine={false} />
+  1334→                      <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
+  1335→                      <Line type="monotone" dataKey="followers" stroke="#8b5cf6" strokeWidth={3} dot={{ fill: '#8b5cf6', r: 4 }} />
+  1336→                    </LineChart>
+  1337→                  </ResponsiveContainer>
+  1338→                </CardContent>
+  1339→              </Card>
+  1340→            </div>
+  1341→          )}
+  1342→
+  1343→          {/* CREDITS TAB */}
+  1344→          {activeDashboardTab === 'credits' && (
+  1345→            <div className="space-y-6">
+  1346→              <div className="grid md:grid-cols-2 gap-6">
+  1347→                <Card className="border-0 shadow-sm">
+  1348→                  <CardHeader>
+  1349→                    <CardTitle className="text-base">Credit Balance</CardTitle>
+  1350→                  </CardHeader>
+  1351→                  <CardContent className="space-y-6">
+  1352→                    <div className="text-center py-6">
+  1353→                      <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-br from-warm-100 to-orange-100 mb-4">
+  1354→                        <Coins className="w-12 h-12 text-warm-600" />
+  1355→                      </div>
+  1356→                      <p className="text-5xl font-black gradient-text">{availableCredits.toLocaleString()}</p>
+  1357→                      <p className="text-muted-foreground mt-2">credits available</p>
+  1358→                    </div>
+  1359→
+  1360→                    <Separator />
+  1361→
+  1362→                    <div className="space-y-3">
+  1363→                      <div className="flex justify-between text-sm">
+  1364→                        <span className="text-muted-foreground">Starting Balance</span>
+  1365→                        <span className="font-medium">{mockUserStats.totalCredits.toLocaleString()}</span>
+  1366→                      </div>
+  1367→                      <div className="flex justify-between text-sm">
+  1368→                        <span className="text-muted-foreground">Used</span>
+  1369→                        <span className="font-medium text-red-500">-{mockUserStats.usedCredits.toLocaleString()}</span>
+  1370→                      </div>
+  1371→                      <div className="flex justify-between text-sm font-semibold pt-2 border-t">
+  1372→                        <span>Remaining</span>
+  1373→                        <span className="text-warm-600">{availableCredits.toLocaleString()}</span>
+  1374→                      </div>
+  1375→                    </div>
+  1376→                  </CardContent>
+  1377→                </Card>
+  1378→
+  1379→                <Card className="border-0 shadow-sm">
+  1380→                  <CardHeader>
+  1381→                    <CardTitle className="text-base">Get More Credits</CardTitle>
+  1382→                    <CardDescription>Choose a package to continue growing</CardDescription>
+  1383→                  </CardHeader>
+  1384→                  <CardContent className="space-y-3">
+  1385→                    {[
+  1386→                      { credits: 1000, price: '$9.99', popular: false, savings: '' },
+  1387→                      { credits: 5000, price: '$39.99', popular: true, savings: 'Save 20%' },
+  1388→                      { credits: 15000, price: '$99.99', popular: false, savings: 'Save 33%' },
+  1389→                      { credits: 50000, price: '$299.99', popular: false, savings: 'Save 40%' },
+  1390→                    ].map((pkg, i) => (
+  1391→                      <div 
+  1392→                        key={i} 
+  1393→                        className={`relative p-4 rounded-xl border-2 cursor-pointer transition-all ${
+  1394→                          pkg.popular 
+  1395→                            ? 'border-warm-500 bg-warm-50/50' 
+  1396→                            : 'border-gray-200 hover:border-warm-300'
+  1397→                        }`}
+  1398→                      >
+  1399→                        {pkg.popular && (
+  1400→                          <Badge className="absolute -top-2 right-2 gradient-bg text-white border-0">Best Value</Badge>
+  1401→                        )}
+  1402→                        <div className="flex items-center justify-between">
+  1403→                          <div>
+  1404→                            <p className="text-2xl font-bold">{pkg.credits.toLocaleString()}</p>
+  1405→                            <p className="text-sm text-muted-foreground">credits</p>
+  1406→                          </div>
+  1407→                          <div className="text-right">
+  1408→                            <p className="text-xl font-bold text-warm-600">{pkg.price}</p>
+  1409→                            {pkg.savings && <p className="text-xs text-green-600">{pkg.savings}</p>}
+  1410→                          </div>
+  1411→                        </div>
+  1412→                      </div>
+  1413→                    ))}
+  1414→                    
+  1415→                    <Button className="w-full gradient-bg text-white border-0" onClick={() => toast.info('Payment integration coming soon!')}>
+  1416→                      Purchase Credits
+  1417→                    </Button>
+  1418→                  </CardContent>
+  1419→                </Card>
+  1420→              </div>
+  1421→
+  1422→              {/* Credit History */}
+  1423→              <Card className="border-0 shadow-sm">
+  1424→                <CardHeader>
+  1425→                  <CardTitle className="text-base">Recent Transactions</CardTitle>
+  1426→                </CardHeader>
+  1427→                <CardContent>
+  1428→                  <div className="space-y-4">
+  1429→                    {[
+  1430→                      { type: 'Spent', amount: -72, desc: 'Product Review Video views campaign', date: 'Today' },
+  1431→                      { type: 'Earned', amount: 150, desc: 'Daily engagement bonus', date: 'Today' },
+  1432→                      { type: 'Spent', amount: -89, desc: 'Behind the Scenes Reel views campaign', date: 'Yesterday' },
+  1433→                      { type: 'Earned', amount: 500, desc: 'Welcome bonus', date: 'Jan 22' },
+  1434→                      { type: 'Spent', amount: -250, desc: 'Summer Collection followers campaign', date: 'Jan 18' },
+  1435→                    ].map((tx, i) => (
+  1436→                      <div key={i} className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50">
+  1437→                        <div className="flex items-center gap-3">
+  1438→                          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+  1439→                            tx.amount > 0 ? 'bg-green-100' : 'bg-red-100'
+  1440→                          }`}>
+  1441→                            {tx.amount > 0 
+  1442→                              ? <ArrowDownLeft className="w-5 h-5 text-green-600" />
+  1443→                              : <ArrowUpRight className="w-5 h-5 text-red-500" />
+  1444→                            }
+  1445→                          </div>
+  1446→                          <div>
+  1447→                            <p className="font-medium text-sm">{tx.desc}</p>
+  1448→                            <p className="text-xs text-muted-foreground">{tx.date}</p>
+  1449→                          </div>
+  1450→                        </div>
+  1451→                        <span className={`font-semibold ${tx.amount > 0 ? 'text-green-600' : 'text-red-500'}`}>
+  1452→                          {tx.amount > 0 ? '+' : ''}{tx.amount}
+  1453→                        </span>
+  1454→                      </div>
+  1455→                    ))}
+  1456→                  </div>
+  1457→                </CardContent>
+  1458→              </Card>
+  1459→            </div>
+  1460→          )}
+  1461→
+  1462→          {/* SETTINGS TAB */}
+  1463→          {activeDashboardTab === 'settings' && (
+  1464→            <div className="space-y-6 max-w-2xl">
+  1465→              <Card className="border-0 shadow-sm">
+  1466→                <CardHeader>
+  1467→                  <CardTitle className="text-base">Profile Settings</CardTitle>
+  1468→                  <CardDescription>Manage your account information</CardDescription>
+  1469→                </CardHeader>
+  1470→                <CardContent className="space-y-4">
+  1471→                  <div className="flex items-center gap-4">
+  1472→                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-warm-400 to-warm-600 flex items-center justify-center text-white text-2xl font-bold">
+  1473→                      {user.name.charAt(0)}
+  1474→                    </div>
+  1475→                    <div>
+  1476→                      <Button variant="outline" size="sm">Change Avatar</Button>
+  1477→                      <p className="text-xs text-muted-foreground mt-1">JPG, PNG or GIF. Max 2MB.</p>
+  1478→                    </div>
+  1479→                  </div>
+  1480→                  <Separator />
+  1481→                  <div className="grid md:grid-cols-2 gap-4">
+  1482→                    <div className="space-y-2">
+  1483→                      <Label>Full Name</Label>
+  1484→                      <Input defaultValue={user.name} />
+  1485→                    </div>
+  1486→                    <div className="space-y-2">
+  1487→                      <Label>Email Address</Label>
+  1488→                      <Input defaultValue={user.email} type="email" />
+  1489→                    </div>
+  1490→                  </div>
+  1491→                  <Button className="gradient-bg text-white border-0" onClick={() => toast.success('Profile updated!')}>Save Changes</Button>
+  1492→                </CardContent>
+  1493→              </Card>
+  1494→
+  1495→              <Card className="border-0 shadow-sm">
+  1496→                <CardHeader>
+  1497→                  <CardTitle className="text-base">Notification Preferences</CardTitle>
+  1498→                </CardHeader>
+  1499→                <CardContent className="space-y-4">
+  1500→                  {[
+  1501→                    { label: 'Email notifications for campaign updates', defaultChecked: true },
+  1502→                    { label: 'Push notifications for new features', defaultChecked: true },
+  1503→                    { label: 'Weekly performance reports', defaultChecked: false },
+  1504→                    { label: 'Marketing emails and offers', defaultChecked: false },
+  1505→                  ].map((pref, i) => (
+  1506→                    <div key={i} className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50">
+  1507→                      <span className="text-sm">{pref.label}</span>
+  1508→                      <Switch defaultChecked={pref.defaultChecked} />
+  1509→                    </div>
+  1510→                  ))}
+  1511→                </CardContent>
+  1512→              </Card>
+  1513→
+  1514→              <Card className="border-0 shadow-sm border-destructive/20">
+  1515→                <CardHeader>
+  1516→                  <CardTitle className="text-base text-destructive">Danger Zone</CardTitle>
+  1517→                </CardHeader>
+  1518→                <CardContent>
+  1519→                  <p className="text-sm text-muted-foreground mb-4">Once you delete your account, there is no going back. Please be certain.</p>
+  1520→                  <Button variant="destructive" onClick={() => onLogout()}>Delete Account</Button>
+  1521→                </CardContent>
+  1522→              </Card>
+  1523→            </div>
+  1524→          )}
+  1525→        </div>
+  1526→      </main>
+  1527→
+  1528→      {/* New Campaign Dialog */}
+  1529→      <Dialog open={isNewCampaignOpen} onOpenChange={setIsNewCampaignOpen}>
+  1530→        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+  1531→          <DialogHeader>
+  1532→            <DialogTitle className="flex items-center gap-2">
+  1533→              <Plus className="w-5 h-5 text-warm-600" />
+  1534→              Create New Campaign
+  1535→            </DialogTitle>
+  1536→            <DialogDescription>Set up your campaign to start gaining engagement</DialogDescription>
+  1537→          </DialogHeader>
+  1538→          
+  1539→          <div className="space-y-6 pt-4">
+  1540→            {/* Campaign Name */}
+  1541→            <div className="space-y-2">
+  1542→              <Label>Campaign Name *</Label>
+  1543→              <Input 
+  1544→                placeholder="e.g., Summer Product Launch Video"
+  1545→                value={newCampaign.name}
+  1546→                onChange={(e) => setNewCampaign({...newCampaign, name: e.target.value})}
+  1547→              />
+  1548→            </div>
+  1549→
+  1550→            {/* Platform & Service Type */}
+  1551→            <div className="grid grid-cols-2 gap-4">
+  1552→              <div className="space-y-2">
+  1553→                <Label>Platform *</Label>
+  1554→                <Select 
+  1555→                  value={newCampaign.platform} 
+  1556→                  onValueChange={(v) => setNewCampaign({...newCampaign, platform: v as 'youtube' | 'instagram'})}
+  1557→                >
+  1558→                  <SelectTrigger />
+  1559→                  <SelectContent>
+  1560→                    <SelectItem value="youtube">
+  1561→                      <div className="flex items-center gap-2"><Youtube className="w-4 h-4 text-red-500" /> YouTube</div>
+  1562→                    </SelectItem>
+  1563→                    <SelectItem value="instagram">
+  1564→                      <div className="flex items-center gap-2"><Instagram className="w-4 h-4 text-pink-500" /> Instagram</div>
+  1565→                    </SelectItem>
+  1566→                  </SelectContent>
+  1567→                </Select>
+  1568→              </div>
+  1569→              
+  1570→              <div className="space-y-2">
+  1571→                <Label>Service Type *</Label>
+  1572→                <Select 
+  1573→                  value={newCampaign.serviceType} 
+  1574→                  onValueChange={(v) => setNewCampaign({...newCampaign, serviceType: v})}
+  1575→                >
+  1576→                  <SelectTrigger />
+  1577→                  <SelectContent>
+  1578→                    {(newCampaign.platform === 'youtube' ? [
+  1579→                      { value: 'views', label: 'Video Views' },
+  1580→                      { value: 'subscribers', label: 'Subscribers' },
+  1581→                      { value: 'likes', label: 'Video Likes' },
+  1582→                      { value: 'comments', label: 'Comments' },
+  1583→                    ] : [
+  1584→                      { value: 'followers', label: 'Followers' },
+  1585→                      { value: 'likes', label: 'Post Likes' },
+  1586→                      { value: 'comments', label: 'Comments' },
+  1587→                      { value: 'reels_views', label: 'Reels Views' },
+  1588→                      { value: 'story_views', label: 'Story Views' },
+  1589→                    ]).map(opt => (
+  1590→                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+  1591→                    ))}
+  1592→                  </SelectContent>
+  1593→                </Select>
+  1594→              </div>
+  1595→            </div>
+  1596→
+  1597→            {/* Target URL */}
+  1598→            <div className="space-y-2">
+  1599→              <Label>Target URL *</Label>
+  1600→              <Input 
+  1601→                placeholder={newCampaign.platform === 'youtube' ? "https://youtube.com/watch?v=..." : "https://instagram.com/p/..."}
+  1602→                value={newCampaign.targetUrl}
+  1603→                onChange={(e) => setNewCampaign({...newCampaign, targetUrl: e.target.value})}
+  1604→              />
+  1605→            </div>
+  1606→
+  1607→            {/* Quantity & Speed */}
+  1608→            <div className="grid grid-cols-2 gap-4">
+  1609→              <div className="space-y-2">
+  1610→                <Label>Quantity * ({Math.ceil(newCampaign.quantity / 100)} credits)</Label>
+  1611→                <Input 
+  1612→                  type="number"
+  1613→                  min={100}
+  1614→                  step={100}
+  1615→                  value={newCampaign.quantity}
+  1616→                  onChange={(e) => setNewCampaign({...newCampaign, quantity: parseInt(e.target.value) || 0})}
+  1617→                />
+  1618→              </div>
+  1619→              
+  1620→              <div className="space-y-2">
+  1621→                <Label>Delivery Speed</Label>
+  1622→                <Select 
+  1623→                  value={newCampaign.speed} 
+  1624→                  onValueChange={(v) => setNewCampaign({...newCampaign, speed: v})}
+  1625→                >
+  1626→                  <SelectTrigger />
+  1627→                  <SelectContent>
+  1628→                    <SelectItem value="slow">Slow (Natural look)</SelectItem>
+  1629→                    <SelectItem value="normal">Normal (Recommended)</SelectItem>
+  1630→                    <SelectItem value="fast">Fast (Quick results)</SelectItem>
+  1631→                  </SelectContent>
+  1632→                </Select>
+  1633→              </div>
+  1634→            </div>
+  1635→
+  1636→            {/* Geo Targeting */}
+  1637→            <div className="space-y-2">
+  1638→              <Label>Geo Targeting</Label>
+  1639→              <Select 
+  1640→                value={newCampaign.geoTarget} 
+  1641→                onValueChange={(v) => setNewCampaign({...newCampaign, geoTarget: v})}
+  1642→              >
+  1643→                <SelectTrigger />
+  1644→                <SelectContent>
+  1645→                  <SelectItem value="all">Worldwide</SelectItem>
+  1646→                  <SelectItem value="us">United States</SelectItem>
+  1647→                  <SelectItem value="uk">United Kingdom</SelectItem>
+  1648→                  <SelectItem value="eu">Europe</SelectItem>
+  1649→                  <SelectItem value="asia">Asia Pacific</SelectItem>
+  1650→                </SelectContent>
+  1651→              </Select>
+  1652→            </div>
+  1653→
+  1654→            {/* Summary */}
+  1655→            <div className="p-4 rounded-xl bg-muted/50">
+  1656→              <h4 className="font-medium mb-3">Campaign Summary</h4>
+  1657→              <div className="space-y-2 text-sm">
+  1658→                <div className="flex justify-between">
+  1659→                  <span className="text-muted-foreground">Service</span>
+  1660→                  <span className="capitalize">{newCampaign.platform} {newCampaign.serviceType.replace('_', ' ')}</span>
+  1661→                </div>
+  1662→                <div className="flex justify-between">
+  1663→                  <span className="text-muted-foreground">Quantity</span>
+  1664→                  <span>{newCampaign.quantity.toLocaleString()}</span>
+  1665→                </div>
+  1666→                <div className="flex justify-between">
+  1667→                  <span className="text-muted-foreground">Speed</span>
+  1668→                  <span className="capitalize">{newCampaign.speed}</span>
+  1669→                </div>
+  1670→                <Separator />
+  1671→                <div className="flex justify-between font-semibold">
+  1672→                  <span>Total Credits Required</span>
+  1673→                  <span className="text-warm-600">{Math.ceil(newCampaign.quantity / 100)}</span>
+  1674→                </div>
+  1675→              </div>
+  1676→            </div>
+  1677→
+  1678→            {/* Actions */}
+  1679→            <div className="flex gap-3">
+  1680→              <Button variant="outline" className="flex-1" onClick={() => setIsNewCampaignOpen(false)}>
+  1681→                Cancel
+  1682→              </Button>
+  1683→              <Button 
+  1684→                className="flex-1 gradient-bg text-white border-0" 
+  1685→                onClick={handleCreateCampaign}
+  1686→              >
+  1687→                Create Campaign
+  1688→              </Button>
+  1689→            </div>
+  1690→          </div>
+  1691→        </DialogContent>
+  1692→      </Dialog>
+  1693→    </div>
+  1694→  )
+  1695→}
+  1696→
+  1697→// ==================== END DASHBOARD COMPONENT ====================
+  1698→
+  1699→// Theme Toggle Component
+  1700→function ThemeToggle() {
+  1701→  const { theme, setTheme } = useTheme()
+  1702→  const [mounted, setMounted] = useState(false)
+  1703→
+  1704→  // Set mounted state after first render (not in effect)
+  1705→  if (!mounted && typeof window !== 'undefined') {
+  1706→    setTimeout(() => setMounted(true), 0)
+  1707→  }
+  1708→
+  1709→  return (
+  1710→    <button
+  1711→      onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+  1712→      className={cn(
+  1713→        "relative w-9 h-9 rounded-lg border transition-all duration-300",
+  1714→        "border-border hover:border-warm-400 hover:bg-muted flex items-center justify-center"
+  1715→      )}
+  1716→      aria-label="Toggle theme"
+  1717→    >
+  1718→      {theme === 'dark' ? (
+  1719→        <Sun className="w-4 h-4 text-yellow-500" />
+  1720→      ) : (
+  1721→        <Moon className="w-4 h-4 text-slate-500" />
+  1722→      )}
+  1723→      <span className="sr-only">Toggle theme</span>
+  1724→    </button>
+  1725→  )
+  1726→}
+  1727→
+  1728→// Demo Dashboard Preview Button
+  1729→function DemoDashboardButton() {
+  1730→  const [showDashboard, setShowDashboard] = useState(false)
+  1731→
+  1732→  return (
+  1733→    <>
+  1734→      <Button 
+  1735→        variant="outline" 
+  1736→        size="sm" 
+  1737→        className="gap-2 text-warm-600 border-warm-200 hover:bg-warm-50"
+  1738→        onClick={() => setShowDashboard(true)}
+  1739→      >
+  1740→        <LayoutDashboard className="w-4 h-4" />
+  1741→        Preview Dashboard
+  1742→      </Button>
+  1743→      
+  1744→      <Dialog open={showDashboard} onOpenChange={setShowDashboard}>
+  1745→        <DialogContent className="max-w-6xl w-[95vw] max-h-[90vh] overflow-y-auto">
+  1746→          <DialogHeader>
+  1747→            <div className="flex items-center justify-between">
+  1748→              <DialogTitle className="flex items-center gap-2">
+  1749→                <LayoutDashboard className="w-5 h-5 text-warm-600" />
+  1750→                SocialBoost Dashboard - Preview
+  1751→              </DialogTitle>
+  1752→              <Badge variant="secondary" className="bg-warm-100 text-warm-700">
+  1753→                Demo Mode
+  1754→              </Badge>
+  1755→            </div>
+  1756→            <DialogDescription>
+  1757→              This is a preview of what your dashboard looks like after signing up.
+  1758→              All data shown is for demonstration purposes.
+  1759→            </DialogDescription>
+  1760→          </DialogHeader>
+  1761→          
+  1762→          {/* Mini Dashboard Preview */}
+  1763→          <Dashboard 
+  1764→            user={{ name: 'Demo User', email: 'demo@socialboost.app' }} 
+  1765→            onLogout={() => setShowDashboard(false)} 
+  1766→          />
+  1767→        </DialogContent>
+  1768→      </Dialog>
+  1769→    </>
+  1770→  )
+  1771→}
+  1772→
+  1773→// ==================== NEW UI COMPONENTS (Defined before Home for proper hoisting) ====================
+  1774→
+  1775→// Scroll Progress Indicator Component
+  1776→function ScrollProgress() {
+  1777→  const [scrollProgress, setScrollProgress] = useState(0)
+  1778→
+  1779→  useEffect(() => {
+  1780→    const handleScroll = () => {
+  1781→      const totalHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight
+  1782→      const progress = (window.scrollY / totalHeight) * 100
+  1783→      setScrollProgress(progress)
+  1784→    }
+  1785→
+  1786→    window.addEventListener('scroll', handleScroll, { passive: true })
+  1787→    return () => window.removeEventListener('scroll', handleScroll)
+  1788→  }, [])
+  1789→
+  1790→  return (
+  1791→    <div className="fixed top-0 left-0 right-0 h-1 z-[100] bg-transparent">
+  1792→      <div 
+  1793→        className="h-full bg-gradient-to-r from-warm-500 via-warm-400 to-yellow-400 shadow-sm scroll-progress"
+  1794→        style={{ transform: `scaleX(${scrollProgress / 100})` }}
+  1795→      />
+  1796→    </div>
+  1797→  )
+  1798→}
+  1799→
+  1800→// Notification Bell Dropdown Component
+  1801→function NotificationBellDropdown() {
+  1802→  const [notifications, setNotifications] = useState([
+  1803→    { id: 1, icon: CheckCircle2, title: 'Campaign completed', desc: 'Your YouTube views campaign finished', time: '2 min ago', read: false, color: 'text-green-500' },
+  1804→    { id: 2, icon: UserPlus, title: 'New referral joined', desc: 'John D. signed up with your link', time: '15 min ago', read: false, color: 'text-blue-500' },
+  1805→    { id: 3, icon: Coins, title: 'Credits earned!', desc: '+250 credits from referral bonus', time: '1 hour ago', read: false, color: 'text-warm-500' },
+  1806→    { id: 4, icon: TrendingUp, title: 'Growth milestone reached', desc: 'Your channel gained 10K views', time: '3 hours ago', read: true, color: 'text-purple-500' },
+  1807→    { id: 5, icon: Gift, title: 'Daily reward available', desc: 'Claim your free daily credits', time: '5 hours ago', read: true, color: 'text-pink-500' },
+  1808→  ])
+  1809→
+  1810→  const unreadCount = notifications.filter(n => !n.read).length
+  1811→
+  1812→  const markAllAsRead = () => {
+  1813→    setNotifications(prev => prev.map(n => ({ ...n, read: true })))
+  1814→  }
+  1815→
+  1816→  return (
+  1817→    <Popover>
+  1818→      <PopoverTrigger asChild>
+  1819→        <Button variant="ghost" size="icon" className="relative hover:bg-muted">
+  1820→          <Bell className="w-5 h-5" />
+  1821→          {unreadCount > 0 && (
+  1822→            <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center badge-pulse">
+  1823→              {unreadCount}
+  1824→            </span>
+  1825→          )}
+  1826→        </Button>
+  1827→      </PopoverTrigger>
+  1828→      <PopoverContent align="end" className="w-80 p-0">
+  1829→        <div className="flex items-center justify-between px-4 py-3 border-b">
+  1830→          <h4 className="font-semibold text-sm">Notifications</h4>
+  1831→          {unreadCount > 0 && (
+  1832→            <Button 
+  1833→              variant="ghost" 
+  1834→              size="sm" 
+  1835→              onClick={markAllAsRead}
+  1836→              className="h-auto p-0 text-xs text-warm-600 hover:text-warm-700"
+  1837→            >
+  1838→              Mark all as read
+  1839→            </Button>
+  1840→          )}
+  1841→        </div>
+  1842→        <div className="max-h-[300px] overflow-y-auto">
+  1843→          {notifications.map((notification) => (
+  1844→            <div 
+  1845→              key={notification.id}
+  1846→              className={`flex items-start gap-3 px-4 py-3 hover:bg-muted/50 transition-colors cursor-pointer border-b last:border-b-0 ${
+  1847→                !notification.read ? 'bg-warm-50/50 dark:bg-warm-900/10' : ''
+  1848→              }`}
+  1849→            >
+  1850→              <div className={`w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0 ${notification.color}`}>
+  1851→                <notification.icon className="w-4 h-4" />
+  1852→              </div>
+  1853→              <div className="flex-1 min-w-0">
+  1854→                <p className="text-sm font-medium truncate">{notification.title}</p>
+  1855→                <p className="text-xs text-muted-foreground truncate">{notification.desc}</p>
+  1856→                <p className="text-xs text-muted-foreground mt-1">{notification.time}</p>
+  1857→              </div>
+  1858→              {!notification.read && (
+  1859→                <div className="w-2 h-2 rounded-full bg-warm-500 flex-shrink-0 mt-2" />
+  1860→              )}
+  1861→            </div>
+  1862→          ))}
+  1863→        </div>
+  1864→        <div className="px-4 py-3 border-t">
+  1865→          <Button variant="ghost" size="sm" className="w-full text-warm-600 hover:text-warm-700 hover:bg-warm-50">
+  1866→            View all notifications
+  1867→            <ChevronRight className="w-4 h-4 ml-1" />
+  1868→          </Button>
+  1869→        </div>
+  1870→      </PopoverContent>
+  1871→    </Popover>
+  1872→  )
+  1873→}
+  1874→
+  1875→// Live Activity Ticker Component
+  1876→function LiveActivityTicker() {
+  1877→  const activities = [
+  1878→    { emoji: '🎉', user: 'John D.', action: 'gained', value: '1,000 YouTube views', color: 'text-red-500' },
+  1879→    { emoji: '📈', user: 'Sarah M.', action: 'earned', value: '250 credits', color: 'text-warm-500' },
+  1880→    { emoji: '⭐', user: 'Mike T.', action: 'received', value: '89 new followers', color: 'text-pink-500' },
+  1881→    { emoji: '🚀', user: 'Emily R.', action: 'boosted', value: 'Instagram post to 5K likes', color: 'text-purple-500' },
+  1882→    { emoji: '💰', user: 'Alex K.', action: 'claimed', value: 'referral bonus +150 credits', color: 'text-green-500' },
+  1883→    { emoji: '🎯', user: 'Lisa P.', action: 'completed', value: 'campaign milestone', color: 'text-blue-500' },
+  1884→    { emoji: '✨', user: 'David L.', action: 'unlocked', value: 'Premium features', color: 'text-indigo-500' },
+  1885→    { emoji: '🌟', user: 'Amy W.', action: 'reached', value: '10K subscribers!', color: 'text-orange-500' },
+  1886→  ]
+  1887→
+  1888→  return (
+  1889→    <div className="bg-gradient-to-r from-warm-500 via-warm-600 to-orange-500 py-3 overflow-hidden">
+  1890→      <div className="relative">
+  1891→        {/* Gradient fade edges */}
+  1892→        <div className="absolute left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-warm-500 to-transparent z-10 pointer-events-none" />
+  1893→        <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-orange-500 to-transparent z-10 pointer-events-none" />
+  1894→        
+  1895→        <div className="animate-marquee flex whitespace-nowrap">
+  1896→          {[...activities, ...activities].map((activity, i) => (
+  1897→            <div 
+  1898→              key={i} 
+  1899→              className="inline-flex items-center gap-3 mx-4 text-white"
+  1900→            >
+  1901→              <span className="text-lg">{activity.emoji}</span>
+  1902→              <span className="font-medium">{activity.user}</span>
+  1903→              <span className="opacity-75">{activity.action}</span>
+  1904→              <span className={`font-bold ${activity.color}`}>{activity.value}</span>
+  1905→              <span className="w-1 h-1 rounded-full bg-white/40" />
+  1906→            </div>
+  1907→          ))}
+  1908→        </div>
+  1909→      </div>
+  1910→    </div>
+  1911→  )
+  1912→}
+  1913→
+  1914→// Testimonials Carousel Component
+  1915→function TestimonialsCarousel() {
+  1916→  const [currentIndex, setCurrentIndex] = useState(0)
+  1917→  const [isPaused, setIsPaused] = useState(false)
+  1918→  
+  1919→  const testimonials = [
+  1920→    {
+  1921→      name: 'Sarah M.',
+  1922→      role: 'YouTuber • 250K subscribers',
+  1923→      content: 'SocialBoost helped me grow my channel from 10K to 250K subscribers in just 6 months. The engagement is real and the support is amazing!',
+  1924→      rating: 5,
+  1925→      avatar: 'S',
+  1926→      gradient: 'from-pink-500 to-rose-500'
+  1927→    },
+  1928→    {
+  1929→      name: 'Mike T.',
+  1930→      role: 'Instagram Influencer • 1M followers',
+  1931→      content: 'I was skeptical at first, but this platform delivers real results. My engagement rates have never been higher. Highly recommend!',
+  1932→      rating: 5,
+  1933→      avatar: 'M',
+  1934→      gradient: 'from-blue-500 to-cyan-500'
+  1935→    },
+  1936→    {
+  1937→      name: 'Emily R.',
+  1938→      role: 'Content Creator • Multi-platform',
+  1939→      content: 'The best investment for my social media growth. Easy to use, great results, and excellent customer service. 10/10 would recommend!',
+  1940→      rating: 5,
+  1941→      avatar: 'E',
+  1942→      gradient: 'from-purple-500 to-violet-500'
+  1943→    },
+  1944→    {
+  1945→      name: 'Alex K.',
+  1946→      role: 'Small Business Owner',
+  1947→      content: 'SocialBoost transformed our online presence. We went from zero to hero in just a few months. The ROI is incredible!',
+  1948→      rating: 5,
+  1949→      avatar: 'A',
+  1950→      gradient: 'from-green-500 to-emerald-500'
+  1951→    },
+  1952→    {
+  1953→      name: 'Jessica L.',
+  1954→      role: 'Fitness Coach • TikTok Star',
+  1955→      content: 'As a fitness coach, visibility is everything. SocialBoost helped me reach thousands of potential clients. Game changer!',
+  1956→      rating: 5,
+  1957→      avatar: 'J',
+  1958→      gradient: 'from-orange-500 to-amber-500'
+  1959→    }
+  1960→  ]
+  1961→
+  1962→  // Auto-play functionality
+  1963→  useEffect(() => {
+  1964→    if (isPaused) return
+  1965→    
+  1966→    const timer = setInterval(() => {
+  1967→      setCurrentIndex(prev => (prev + 1) % Math.ceil(testimonials.length / 3))
+  1968→    }, 5000)
+  1969→
+  1970→    return () => clearInterval(timer)
+  1971→  }, [isPaused, testimonials.length])
+  1972→
+  1973→  const goToSlide = (index: number) => {
+  1974→    setCurrentIndex(index)
+  1975→  }
+  1976→
+  1977→  const goToPrev = () => {
+  1978→    setCurrentIndex(prev => (prev === 0 ? Math.ceil(testimonials.length / 3) - 1 : prev - 1))
+  1979→  }
+  1980→
+  1981→  const goToNext = () => {
+  1982→    setCurrentIndex(prev => (prev + 1) % Math.ceil(testimonials.length / 3))
+  1983→  }
+  1984→
+  1985→  // Calculate which testimonials to show
+  1986→  const getVisibleTestimonials = () => {
+  1987→    const startIdx = currentIndex * 3
+  1988→    return testimonials.slice(startIdx, startIdx + 3)
+  1989→  }
+  1990→
+  1991→  const totalPages = Math.ceil(testimonials.length / 3)
+  1992→
+  1993→  return (
+  1994→    <div 
+  1995→      className="relative max-w-5xl mx-auto"
+  1996→      onMouseEnter={() => setIsPaused(true)}
+  1997→      onMouseLeave={() => setIsPaused(false)}
+  1998→    >
+  1999→      {/* Navigation Arrows */}
+  2000→      <button
+
+[showing lines 1-2000 of 4074; use offset=2001 with limit to continue reading]

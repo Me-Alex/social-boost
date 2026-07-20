@@ -104,7 +104,22 @@ import {
   Footprints,
   ShieldCheck,
   BadgeCheck,
-  Headphones as HeadphonesIcon
+  Headphones as HeadphonesIcon,
+  // Round 8 New Icons
+  Calculator,
+  Cookie,
+  MapPin,
+  FastForward,
+  GitBranch,
+  FileText,
+  BookOpen,
+  Code,
+  CreditCard,
+  Twitter,
+  Facebook,
+  MessageSquare,
+  Rss,
+  AlertCircle
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useTheme } from 'next-themes'
@@ -124,6 +139,7 @@ interface Service {
 interface FAQ {
   question: string
   answer: string
+  category: 'all' | 'getting-started' | 'pricing' | 'security' | 'technical'
 }
 
 interface PricingPlan {
@@ -246,35 +262,64 @@ const instagramServices: Service[] = [
 const faqs: FAQ[] = [
   {
     question: "How can I get free YouTube or Instagram growth?",
-    answer: "Simply sign up for a free account and you'll receive complimentary credits to start promoting your content. You can earn more credits by engaging with other users' content through our exchange system."
+    answer: "Simply sign up for a free account and you'll receive complimentary credits to start promoting your content. You can earn more credits by engaging with other users' content through our exchange system.",
+    category: 'getting-started'
   },
   {
     question: "Are the followers and engagement real?",
-    answer: "Yes! All engagement comes from real, active users in our community. We use advanced verification systems to ensure authenticity and maintain high-quality interactions."
+    answer: "Yes! All engagement comes from real, active users in our community. We use advanced verification systems to ensure authenticity and maintain high-quality interactions.",
+    category: 'security'
   },
   {
     question: "Is it safe to use this platform?",
-    answer: "Absolutely. We use industry-standard security measures including anti-bot detection, traffic validation, and encrypted connections. Your account safety is our top priority."
+    answer: "Absolutely. We use industry-standard security measures including anti-bot detection, traffic validation, and encrypted connections. Your account safety is our top priority.",
+    category: 'security'
   },
   {
     question: "Why does engagement improve visibility?",
-    answer: "Social media algorithms prioritize content with high engagement. When your posts receive more likes, comments, and views, platforms recognize it as valuable content and show it to more people."
+    answer: "Social media algorithms prioritize content with high engagement. When your posts receive more likes, comments, and views, platforms recognize it as valuable content and show it to more people.",
+    category: 'getting-started'
   },
   {
     question: "Do I need to pay to start?",
-    answer: "No! Our platform is free to use. You get bonus credits upon signup and can earn more by participating in our community. Premium plans are available for faster results."
+    answer: "No! Our platform is free to use. You get bonus credits upon signup and can earn more by participating in our community. Premium plans are available for faster results.",
+    category: 'pricing'
   },
   {
     question: "How fast can I see results?",
-    answer: "Results begin within hours of starting a campaign. Delivery speed depends on your chosen settings and current network activity. Most campaigns show significant progress within 24-48 hours."
+    answer: "Results begin within hours of starting a campaign. Delivery speed depends on your chosen settings and current network activity. Most campaigns show significant progress within 24-48 hours.",
+    category: 'technical'
   },
   {
     question: "What targeting options are available?",
-    answer: "We offer geo-targeting to specific countries, delivery speed controls (slow/normal/fast), daily limits, and quality filters to ensure you reach your ideal audience."
+    answer: "We offer geo-targeting to specific countries, delivery speed controls (slow/normal/fast), daily limits, and quality filters to ensure you reach your ideal audience.",
+    category: 'technical'
   },
   {
     question: "Can I run multiple campaigns at once?",
-    answer: "Yes! You can run multiple campaigns across different platforms and services simultaneously. Your dashboard gives you full control over all active campaigns."
+    answer: "Yes! You can run multiple campaigns across different platforms and services simultaneously. Your dashboard gives you full control over all active campaigns.",
+    category: 'technical'
+  },
+  // Round 8 - New Technical FAQs
+  {
+    question: "What's the difference between Fast and Slow delivery?",
+    answer: "Fast delivery completes your order within 24 hours but may cost additional credits due to priority processing. Slow delivery takes up to 7 days but costs less and appears more natural to algorithms. Normal delivery (3 days) offers a balanced approach with standard pricing.",
+    category: 'technical'
+  },
+  {
+    question: "Can I pause or cancel my campaign?",
+    answer: "Yes! You have full control over your campaigns at any time. Paused campaigns retain their progress and can be resumed later without losing any completed engagements. Cancelled campaigns will refund unused credits based on the remaining quantity not yet delivered.",
+    category: 'technical'
+  },
+  {
+    question: "Do you offer refunds?",
+    answer: "We offer a satisfaction guarantee with partial refunds for undelivered orders. If we fail to complete your campaign within the estimated timeframe, you'll automatically receive credit back. For other refund requests, contact our support team within 48 hours of purchase.",
+    category: 'pricing'
+  },
+  {
+    question: "How does geo-targeting work?",
+    answer: "Geo-targeting allows you to specify which countries or regions your engagement comes from. We maintain a global user pool and route traffic from users in your selected locations. Premium geo-targeted options are available for specific high-value markets like USA, UK, Germany, and Japan with an additional 20% credit cost.",
+    category: 'technical'
   }
 ]
 
@@ -665,6 +710,705 @@ function LiveActivity() {
           <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
         </div>
       ))}
+    </div>
+  )
+}
+
+// ============================================
+// ROUND 8: INTERACTIVE PRICING CALCULATOR
+// ============================================
+interface PricingCalculatorProps {
+  onSignUp: () => void
+}
+
+function PricingCalculator({ onSignUp }: PricingCalculatorProps) {
+  const [platform, setPlatform] = useState<'youtube' | 'instagram'>('youtube')
+  const [serviceType, setServiceType] = useState('views')
+  const [quantity, setQuantity] = useState(1000)
+  const [deliverySpeed, setDeliverySpeed] = useState<'slow' | 'normal' | 'fast'>('normal')
+  const [geoTargeting, setGeoTargeting] = useState(false)
+
+  // Service pricing per unit
+  const servicePrices: Record<string, number> = {
+    // YouTube
+    views: 1,
+    subscribers: 5,
+    likes: 2,
+    comments: 3,
+    // Instagram
+    followers: 5,
+    likes_instagram: 2,
+    comments_instagram: 3,
+    reels_views: 1,
+    story_views: 1
+  }
+
+  // Speed multipliers
+  const speedMultipliers = {
+    slow: 0.8,
+    normal: 1,
+    fast: 1.5
+  }
+
+  // Delivery times in hours
+  const deliveryTimes = {
+    slow: { youtube: 168, instagram: 168 }, // 7 days
+    normal: { youtube: 72, instagram: 72 }, // 3 days
+    fast: { youtube: 24, instagram: 24 } // 24 hours
+  }
+
+  // Geo-targeting fee (20% extra)
+  const geoFee = 0.2
+
+  const getServiceOptions = () => {
+    if (platform === 'youtube') {
+      return [
+        { value: 'views', label: 'Video Views', icon: <Eye className="w-4 h-4" /> },
+        { value: 'subscribers', label: 'Subscribers', icon: <Users className="w-4 h-4" /> },
+        { value: 'likes', label: 'Video Likes', icon: <Heart className="w-4 h-4" /> },
+        { value: 'comments', label: 'Comments', icon: <MessageCircle className="w-4 h-4" /> }
+      ]
+    }
+    return [
+      { value: 'followers', label: 'Followers', icon: <Users className="w-4 h-4" /> },
+      { value: 'likes_instagram', label: 'Post Likes', icon: <Heart className="w-4 h-4" /> },
+      { value: 'comments_instagram', label: 'Comments', icon: <MessageCircle className="w-4 h-4" /> },
+      { value: 'reels_views', label: 'Reels Views', icon: <Play className="w-4 h-4" /> },
+      { value: 'story_views', label: 'Story Views', icon: <Eye className="w-4 h-4" /> }
+    ]
+  }
+
+  // Compute default service type based on platform (derived value, not state in effect)
+  const getDefaultServiceType = (p: typeof platform) => p === 'youtube' ? 'views' : 'followers'
+  
+  // Use a key that changes when platform changes - this forces Select to reset
+  const selectKey = `${platform}-${serviceType}`
+
+  // Animation state management using ref for timing
+  const [isAnimating, setIsAnimating] = useState(false)
+  const prevValuesRef = useRef({ quantity, serviceType, deliverySpeed, geoTargeting })
+  
+  // Check if values changed and trigger animation
+  useEffect(() => {
+    const prev = prevValuesRef.current
+    const valuesChanged = 
+      prev.quantity !== quantity || 
+      prev.serviceType !== serviceType || 
+      prev.deliverySpeed !== deliverySpeed || 
+      prev.geoTargeting !== geoTargeting
+    
+    if (valuesChanged) {
+      // Use requestAnimationFrame to avoid synchronous setState
+      const rafId = requestAnimationFrame(() => {
+        setIsAnimating(true)
+        setTimeout(() => setIsAnimating(false), 300)
+      })
+      return () => cancelAnimationFrame(rafId)
+    }
+    
+    prevValuesRef.current = { quantity, serviceType, deliverySpeed, geoTargeting }
+  }, [quantity, serviceType, deliverySpeed, geoTargeting])
+
+  // Calculate costs
+  const baseCost = Math.ceil((quantity / 100) * (servicePrices[serviceType] || 1))
+  const speedCost = Math.round(baseCost * (speedMultipliers[deliverySpeed] - 1))
+  const geoCost = geoTargeting ? Math.round(baseCost * geoFee) : 0
+  const totalCredits = baseCost + speedCost + geoCost
+  const estimatedDelivery = deliveryTimes[deliverySpeed][platform]
+
+  const formatDeliveryTime = (hours: number) => {
+    if (hours <= 24) return `${hours} hours`
+    if (hours <= 48) return `${Math.round(hours / 24)} days`
+    return `${Math.round(hours / 24)} days`
+  }
+
+  return (
+    <section id="pricing-calculator" className="py-20 lg:py-28 bg-muted/30 relative overflow-hidden">
+      {/* Decorative floating orbs */}
+      <div className="floating-orb floating-orb-1"></div>
+      <div className="floating-orb floating-orb-2"></div>
+      
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        {/* Section header */}
+        <div className="text-center max-w-3xl mx-auto mb-12">
+          <Badge variant="secondary" className="mb-4 bg-gradient-to-r from-warm-100 to-orange-100 text-warm-800 border-0">
+            <Calculator className="w-3 h-3 mr-1" />
+            Smart Calculator
+          </Badge>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
+            Calculate Your <span className="gradient-text">Growth Package</span>
+          </h2>
+          <p className="text-lg text-muted-foreground">
+            Get instant price estimates for your growth needs
+          </p>
+        </div>
+
+        {/* Calculator Card */}
+        <div className="max-w-5xl mx-auto">
+          <Card className="border-0 shadow-2xl overflow-hidden glass-card">
+            <CardContent className="p-6 md:p-10">
+              <div className="grid lg:grid-cols-2 gap-10">
+                {/* Left Side - Inputs */}
+                <div className="space-y-6">
+                  <h3 className="text-xl font-semibold flex items-center gap-2 mb-6">
+                    <Settings className="w-5 h-5 text-warm-500" />
+                    Configure Your Campaign
+                  </h3>
+
+                  {/* Platform Selector */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Select Platform</Label>
+                    <Tabs 
+                      value={platform} 
+                      onValueChange={(v) => setPlatform(v as 'youtube' | 'instagram')}
+                      className="w-full"
+                    >
+                      <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="youtube" className="gap-2 data-[state=active]:bg-red-500 data-[state=active]:text-white">
+                          <Youtube className="w-4 h-4" />
+                          YouTube
+                        </TabsTrigger>
+                        <TabsTrigger value="instagram" className="gap-2 data-[state=active]:bg-pink-500 data-[state=active]:text-white">
+                          <Instagram className="w-4 h-4" />
+                          Instagram
+                        </TabsTrigger>
+                      </TabsList>
+                    </Tabs>
+                  </div>
+
+                  {/* Service Type Selector */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Service Type</Label>
+                    <Select 
+                      key={platform}
+                      value={serviceType} 
+                      onValueChange={(val) => {
+                        // Only set if value is valid for current platform
+                        const validOptions = getServiceOptions().map(o => o.value)
+                        if (validOptions.includes(val)) {
+                          setServiceType(val)
+                        } else {
+                          // Reset to default if invalid
+                          setServiceType(getDefaultServiceType(platform))
+                        }
+                      }}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select service" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {getServiceOptions().map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            <span className="flex items-center gap-2">
+                              {option.icon}
+                              {option.label}
+                            </span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Quantity Input */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">
+                      Quantity ({quantity.toLocaleString()})
+                    </Label>
+                    <div className="flex items-center gap-3">
+                      <Input
+                        type="number"
+                        min={1}
+                        max={1000000}
+                        value={quantity}
+                        onChange={(e) => setQuantity(Math.min(1000000, Math.max(1, Number(e.target.value))))}
+                        className="flex-1"
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setQuantity(prev => Math.max(1, Math.round(prev / 2)))}
+                      >
+                        Halve
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setQuantity(prev => Math.min(1000000, prev * 2))}
+                      >
+                        Double
+                      </Button>
+                    </div>
+                    <input
+                      type="range"
+                      min={100}
+                      max={100000}
+                      value={quantity}
+                      onChange={(e) => setQuantity(Number(e.target.value))}
+                      className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-warm-500"
+                    />
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>100</span>
+                      <span>100K+</span>
+                    </div>
+                  </div>
+
+                  {/* Delivery Speed Selector */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Delivery Speed</Label>
+                    <Tabs 
+                      value={deliverySpeed} 
+                      onValueChange={(v) => setDeliverySpeed(v as 'slow' | 'normal' | 'fast')}
+                      className="w-full"
+                    >
+                      <TabsList className="grid w-full grid-cols-3 h-auto">
+                        <TabsTrigger value="slow" className="gap-1 py-2 data-[state=active]:bg-green-500 data-[state=active]:text-white">
+                          <Clock className="w-3 h-3" />
+                          <span className="text-xs">Slow<br/>7 days</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="normal" className="gap-1 py-2 data-[state=active]:bg-warm-500 data-[state=active]:text-white">
+                          <Timer className="w-3 h-3" />
+                          <span className="text-xs">Normal<br/>3 days</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="fast" className="gap-1 py-2 data-[state=active]:bg-red-500 data-[state=active]:text-white">
+                          <FastForward className="w-3 h-3" />
+                          <span className="text-xs">Fast<br/>24 hrs</span>
+                        </TabsTrigger>
+                      </TabsList>
+                    </Tabs>
+                  </div>
+
+                  {/* Geo-targeting Toggle */}
+                  <div className="flex items-center justify-between p-4 rounded-xl bg-muted/50 border border-border">
+                    <div className="flex items-center gap-3">
+                      <MapPin className="w-5 h-5 text-warm-500" />
+                      <div>
+                        <p className="font-medium text-sm">Geo-Targeting</p>
+                        <p className="text-xs text-muted-foreground">Target specific regions (+20% cost)</p>
+                      </div>
+                    </div>
+                    <Switch checked={geoTargeting} onCheckedChange={setGeoTargeting} />
+                  </div>
+                </div>
+
+                {/* Right Side - Results */}
+                <div className="space-y-6">
+                  <h3 className="text-xl font-semibold flex items-center gap-2 mb-6">
+                    <CreditCard className="w-5 h-5 text-warm-500" />
+                    Price Breakdown
+                  </h3>
+
+                  {/* Visual Breakdown Card */}
+                  <Card className={`border-2 transition-all duration-300 ${isAnimating ? 'neon-border-strong scale-[1.02]' : 'border-warm-200'} bg-gradient-to-br from-warm-50/50 to-orange-50/50`}>
+                    <CardContent className="p-6 space-y-4">
+                      {/* Base Cost */}
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
+                            <Target className="w-4 h-4 text-blue-600" />
+                          </div>
+                          Base Cost
+                        </span>
+                        <span className={`font-semibold calculator-value ${isAnimating ? 'calculator-value-updating' : ''}`}>
+                          {baseCost} credits
+                        </span>
+                      </div>
+
+                      {/* Speed Adjustment */}
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground flex items-center gap-2">
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                            deliverySpeed === 'fast' ? 'bg-red-100' :
+                            deliverySpeed === 'normal' ? 'bg-yellow-100' : 'bg-green-100'
+                          }`}>
+                            {deliverySpeed === 'fast' ? <FastForward className="w-4 h-4 text-red-600" /> :
+                             deliverySpeed === 'normal' ? <Timer className="w-4 h-4 text-yellow-600" /> :
+                             <Clock className="w-4 h-4 text-green-600" />}
+                          </div>
+                          Speed Multiplier
+                          <Badge variant="outline" className="text-xs ml-1">
+                            x{speedMultipliers[deliverySpeed]}
+                          </Badge>
+                        </span>
+                        <span className={`font-semibold ${speedCost > 0 ? 'text-orange-600' : speedCost < 0 ? 'text-green-600' : ''} calculator-value ${isAnimating ? 'calculator-value-updating' : ''}`}>
+                          {speedCost > 0 ? '+' : ''}{speedCost} credits
+                        </span>
+                      </div>
+
+                      {/* Geo Targeting Fee */}
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
+                            <MapPin className="w-4 h-4 text-purple-600" />
+                          </div>
+                          Geo-Targeting Fee
+                        </span>
+                        <span className={`font-semibold ${geoTargeting ? 'text-purple-600' : 'text-muted-foreground'} calculator-value ${isAnimating ? 'calculator-value-updating' : ''}`}>
+                          {geoTargeting ? `+${geoCost}` : '0'} credits
+                        </span>
+                      </div>
+
+                      <Separator />
+
+                      {/* Total */}
+                      <div className="flex items-center justify-between pt-2">
+                        <span className="font-bold text-base flex items-center gap-2">
+                          <Coins className="w-5 h-5 text-warm-500" />
+                          Total Credits Required
+                        </span>
+                        <span className={`text-2xl font-black gradient-text calculator-value ${isAnimating ? 'calculator-value-updating' : ''}`}>
+                          {totalCredits.toLocaleString()}
+                        </span>
+                      </div>
+
+                      {/* Estimated Delivery */}
+                      <div className="mt-4 p-3 rounded-lg bg-background border border-border">
+                        <p className="text-sm text-muted-foreground flex items-center gap-2">
+                          <Clock className="w-4 h-4" />
+                          Estimated Delivery:
+                          <span className="font-semibold text-foreground ml-auto">
+                            {formatDeliveryTime(estimatedDelivery)}
+                          </span>
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* CTA Button */}
+                  <Button 
+                    className="w-full h-14 text-base font-semibold btn-shine gradient-bg text-white border-0 hover:opacity-90 shadow-lg"
+                    onClick={() => {
+                      toast.success('Campaign configured!', {
+                        description: `${quantity.toLocaleString()} ${getServiceOptions().find(s => s.value === serviceType)?.label} for ${platform} - ${totalCredits} credits`
+                      })
+                      onSignUp()
+                    }}
+                  >
+                    <Rocket className="w-5 h-5 mr-2" />
+                    Start This Campaign
+                  </Button>
+
+                  {/* Quick Info */}
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="text-center p-3 rounded-lg bg-muted/50">
+                      <ShieldCheck className="w-5 h-5 mx-auto mb-1 text-green-500" />
+                      <p className="text-xs font-medium">Safe & Secure</p>
+                    </div>
+                    <div className="text-center p-3 rounded-lg bg-muted/50">
+                      <RefreshCw className="w-5 h-5 mx-auto mb-1 text-blue-500" />
+                      <p className="text-xs font-medium">Real-time Updates</p>
+                    </div>
+                    <div className="text-center p-3 rounded-lg bg-muted/50">
+                      <HeadphonesIcon className="w-5 h-5 mx-auto mb-1 text-warm-500" />
+                      <p className="text-xs font-medium">24/7 Support</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ============================================
+// ROUND 8: COOKIE CONSENT BANNER
+// ============================================
+function CookieConsentBanner() {
+  const [isVisible, setIsVisible] = useState(false)
+  const [isClosing, setIsClosing] = useState(false)
+
+  useEffect(() => {
+    // Check if user has already consented
+    const consent = localStorage.getItem('cookie-consent')
+    if (!consent) {
+      // Show after a short delay for better UX
+      const timer = setTimeout(() => setIsVisible(true), 1500)
+      return () => clearTimeout(timer)
+    }
+  }, [])
+
+  const handleAcceptAll = () => {
+    localStorage.setItem('cookie-consent', 'all')
+    handleClose()
+  }
+
+  const handleNecessaryOnly = () => {
+    localStorage.setItem('cookie-consent', 'necessary')
+    handleClose()
+  }
+
+  const handleCustomize = () => {
+    toast.info('Cookie preferences panel coming soon!')
+    handleAcceptAll() // For now, just accept all
+  }
+
+  const handleClose = () => {
+    setIsClosing(true)
+    setTimeout(() => setIsVisible(false), 300)
+  }
+
+  if (!isVisible) return null
+
+  return (
+    <div className={`fixed bottom-0 left-0 right-0 z-50 px-4 pb-4 ${isClosing ? 'slide-down-cookie' : 'slide-up-cookie'}`}>
+      <div className="max-w-4xl mx-auto">
+        <div className="glass rounded-2xl shadow-2xl border border-white/20 p-4 md:p-6">
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
+            {/* Icon and Content */}
+            <div className="flex items-start gap-3 flex-1">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-warm-400 to-orange-500 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <Cookie className="w-5 h-5 text-white" />
+              </div>
+              <div className="flex-1">
+                <h4 className="font-semibold text-sm mb-1">We value your privacy 🍪</h4>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  We use cookies to enhance your browsing experience, serve personalized content, and analyze our traffic. 
+                  By clicking "Accept All", you consent to our use of cookies.
+                </p>
+              </div>
+            </div>
+
+            {/* Buttons */}
+            <div className="flex items-center gap-2 flex-shrink-0 w-full md:w-auto">
+              <Button 
+                size="sm" 
+                onClick={handleNecessaryOnly}
+                variant="outline"
+                className="text-xs whitespace-nowrap"
+              >
+                Necessary Only
+              </Button>
+              <Button 
+                size="sm" 
+                onClick={handleCustomize}
+                variant="ghost"
+                className="text-xs whitespace-nowrap hidden sm:flex"
+              >
+                Customize
+              </Button>
+              <Button 
+                size="sm" 
+                onClick={handleAcceptAll}
+                className="gradient-bg text-white border-0 text-xs whitespace-nowrap btn-shine"
+              >
+                Accept All
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ============================================
+// ROUND 8: SKELETON LOADING COMPONENTS
+// ============================================
+interface SkeletonProps {
+  className?: string
+}
+
+function SkeletonCard({ className }: SkeletonProps) {
+  return (
+    <div className={`skeleton skeleton-card ${className || ''}`}>
+      <div className="space-y-3 pt-2">
+        <div className="skeleton skeleton-text w-3/4"></div>
+        <div className="skeleton skeleton-text-sm w-full"></div>
+        <div className="skeleton skeleton-text-sm w-5/6"></div>
+      </div>
+    </div>
+  )
+}
+
+function SkeletonText({ lines = 3, className }: { lines?: number; className?: string }) {
+  return (
+    <div className={`space-y-2 ${className || ''}`}>
+      {[...Array(lines)].map((_, i) => (
+        <div 
+          key={i} 
+          className={`skeleton ${i === lines - 1 ? 'skeleton-text-sm' : 'skeleton-text'}`}
+          style={{ width: i === lines - 1 ? '75%' : '100%' }}
+        ></div>
+      ))}
+    </div>
+  )
+}
+
+function SkeletonAvatar({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
+  const sizeClasses = {
+    sm: 'w-8 h-8',
+    md: 'w-12 h-12',
+    lg: 'w-16 h-16'
+  }
+  
+  return (
+    <div className={`skeleton ${sizeClasses[size]} rounded-full`}></div>
+  )
+}
+
+function SkeletonButton({ width = 'w-24' }: { width?: string }) {
+  return <div className={`skeleton skeleton-button ${width}`}></div>
+}
+
+// Export a combined Skeleton component with variants
+function Skeleton({ variant = 'text', ...props }: SkeletonProps & { variant?: 'card' | 'text' | 'avatar' | 'button' }) {
+  switch (variant) {
+    case 'card':
+      return <SkeletonCard {...props} />
+    case 'avatar':
+      return <SkeletonAvatar {...props} />
+    case 'button':
+      return <SkeletonButton {...props} />
+    default:
+      return <SkeletonText {...props} />
+  }
+}
+
+// ============================================
+// ROUND 8: ENHANCED FAQ WITH SEARCH & CATEGORIES
+// ============================================
+function EnhancedFAQ() {
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState<string>('all')
+  
+  const categories = [
+    { id: 'all', label: 'All', icon: <Filter className="w-3 h-3" /> },
+    { id: 'getting-started', label: 'Getting Started', icon: <Rocket className="w-3 h-3" /> },
+    { id: 'pricing', label: 'Pricing', icon: <DollarSign className="w-3 h-3" /> },
+    { id: 'security', label: 'Security', icon: <Shield className="w-3 h-3" /> },
+    { id: 'technical', label: 'Technical', icon: <Code className="w-3 h-3" /> }
+  ]
+
+  // Filter FAQs based on search query and category
+  const filteredFaqs = faqs.filter(faq => {
+    const matchesSearch = searchQuery === '' || 
+      faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      faq.answer.toLowerCase().includes(searchQuery.toLowerCase())
+    
+    const matchesCategory = selectedCategory === 'all' || faq.category === selectedCategory
+    
+    return matchesSearch && matchesCategory
+  })
+
+  // Highlight matching text in question
+  const highlightText = (text: string, query: string) => {
+    if (!query) return text
+    const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi')
+    const parts = text.split(regex)
+    return parts.map((part, i) => 
+      regex.test(part) ? <span key={i} className="faq-highlight">{part}</span> : part
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Search Box */}
+      <div className="relative">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+        <Input
+          type="text"
+          placeholder="Search questions..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-12 pr-4 py-6 text-base rounded-xl border-2 focus-visible:border-warm-500 transition-colors"
+        />
+        {searchQuery && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="absolute right-2 top-1/2 -translate-y-1/2"
+            onClick={() => setSearchQuery('')}
+          >
+            <X className="w-4 h-4" />
+          </Button>
+        )}
+      </div>
+
+      {/* Category Pills */}
+      <div className="flex flex-wrap gap-2">
+        {categories.map((category) => (
+          <button
+            key={category.id}
+            onClick={() => setSelectedCategory(category.id)}
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 flex items-center gap-1.5 ${
+              selectedCategory === category.id
+                ? 'category-pill-active'
+                : 'bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground border border-transparent hover:border-border'
+            }`}
+          >
+            {category.icon}
+            {category.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Results Count */}
+      <p className="text-sm text-muted-foreground">
+        Showing{' '}
+        <span className="font-semibold text-foreground">{filteredFaqs.length}</span>
+        {' '}of{' '}
+        <span className="font-semibold text-foreground">{faqs.length}</span>
+        {' '}questions
+        {(searchQuery || selectedCategory !== 'all') && (
+          <>
+            {' '}for "
+            <span className="text-warm-600 font-medium">
+              {searchQuery || categories.find(c => c.id === selectedCategory)?.label}
+            </span>
+            "
+          </>
+        )}
+      </p>
+
+      {/* FAQ Accordion */}
+      {filteredFaqs.length > 0 ? (
+        <Accordion type="single" collapsible className="space-y-4 smooth-accordion">
+          {filteredFaqs.map((faq, index) => {
+            // Find original index for stable accordion values
+            const originalIndex = faqs.indexOf(faq)
+            return (
+              <AccordionItem 
+                key={`${faq.category}-${index}`}
+                value={`faq-${originalIndex}`}
+                className="bg-card rounded-2xl px-6 shadow-sm border-0 hover:shadow-md transition-all data-[state=open]:shadow-lg data-[state=open]:scale-[1.01]"
+              >
+                <AccordionTrigger className="text-left font-semibold hover:no-underline text-base py-5">
+                  {highlightText(faq.question, searchQuery)}
+                  {/* Category Badge */}
+                  <Badge variant="outline" className="ml-2 text-xs shrink-0 hidden sm:inline-flex">
+                    {categories.find(c => c.id === faq.category)?.icon}
+                    <span className="ml-1 capitalize">
+                      {categories.find(c => c.id === faq.category)?.label}
+                    </span>
+                  </Badge>
+                </AccordionTrigger>
+                <AccordionContent className="text-muted-foreground pb-5 leading-relaxed">
+                  {highlightText(faq.answer, searchQuery)}
+                </AccordionContent>
+              </AccordionItem>
+            )
+          })}
+        </Accordion>
+      ) : (
+        /* No Results State */
+        <Card className="border-dashed border-2 border-muted-foreground/20 p-12 text-center">
+          <AlertCircle className="w-12 h-12 mx-auto mb-4 text-muted-foreground/50" />
+          <h3 className="font-semibold text-lg mb-2">No results found</h3>
+          <p className="text-muted-foreground text-sm max-w-md mx-auto">
+            We couldn't find any questions matching "{searchQuery}". Try adjusting your search or selecting a different category.
+          </p>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="mt-4"
+            onClick={() => { setSearchQuery(''); setSelectedCategory('all') }}
+          >
+            Clear filters
+          </Button>
+        </Card>
+      )}
     </div>
   )
 }
@@ -2918,6 +3662,11 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ============================================
+          ROUND 8: INTERACTIVE PRICING CALCULATOR
+          ============================================ */}
+      <PricingCalculator onSignUp={() => setIsSignUpOpen(true)} />
+
       {/* Features + Live Demo Section */}
       <section id="features" className="py-20 lg:py-28 bg-muted/50">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -3284,12 +4033,12 @@ export default function Home() {
         </div>
       </section>
 
-      {/* FAQ Section */}
+      {/* FAQ Section - Enhanced with Search & Categories */}
       <section id="faq" className="py-20 lg:py-28">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl mx-auto">
             {/* Section header */}
-            <div className="text-center mb-16">
+            <div className="text-center mb-10">
               <Badge variant="secondary" className="mb-4 bg-warm-100 text-warm-800">
                 Got Questions?
               </Badge>
@@ -3301,23 +4050,8 @@ export default function Home() {
               </p>
             </div>
 
-            {/* FAQ Accordion */}
-            <Accordion type="single" collapsible className="space-y-4">
-              {faqs.map((faq, index) => (
-                <AccordionItem 
-                  key={index} 
-                  value={`faq-${index}`}
-                  className="bg-card rounded-2xl px-6 shadow-sm border-0 hover:shadow-md transition-shadow data-[state=open]:shadow-lg"
-                >
-                  <AccordionTrigger className="text-left font-semibold hover:no-underline text-base py-5">
-                    {faq.question}
-                  </AccordionTrigger>
-                  <AccordionContent className="text-muted-foreground pb-5 leading-relaxed">
-                    {faq.answer}
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
+            {/* Search Box */}
+            <EnhancedFAQ />
           </div>
         </div>
       </section>
@@ -3794,14 +4528,18 @@ export default function Home() {
         </Button>
       </div>
 
-      {/* Footer */}
-      <footer className="bg-foreground text-background py-16 mt-auto">
+      {/* Footer - Enhanced for Round 8 */}
+      <footer className="bg-foreground text-background py-16 mt-auto relative">
+        {/* Decorative Gradient Line at Top */}
+        <div className="footer-gradient-line absolute top-0 left-0 right-0"></div>
+        
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 mb-12">
-            {/* Brand */}
-            <div className="col-span-2 md:col-span-4 lg:col-span-1">
+          {/* Main Footer Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 mb-12">
+            {/* Brand Column */}
+            <div className="col-span-2 md:col-span-3 lg:col-span-1">
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-warm-500 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-warm-500 flex items-center justify-center neon-border">
                   <Rocket className="w-6 h-6 text-white" />
                 </div>
                 <span className="text-xl font-bold text-background">SocialBoost</span>
@@ -3809,15 +4547,25 @@ export default function Home() {
               <p className="text-gray-400 text-sm mb-4 leading-relaxed">
                 The #1 platform for organic social media growth with real user engagement.
               </p>
-              <div className="flex gap-4">
-                <a href="#" className="w-10 h-10 rounded-lg bg-gray-800 hover:bg-warm-500 flex items-center justify-center transition-colors group">
-                  <Youtube className="w-5 h-5 group-hover:text-white text-gray-400 transition-colors" />
+              {/* Enhanced Social Links Row */}
+              <div className="flex flex-wrap gap-3 mb-4">
+                <a href="#" className="social-icon-hover w-9 h-9 rounded-lg bg-gray-800 hover:bg-red-500 flex items-center justify-center group" title="YouTube">
+                  <Youtube className="w-4 h-4 group-hover:text-white text-gray-400 transition-colors" />
                 </a>
-                <a href="#" className="w-10 h-10 rounded-lg bg-gray-800 hover:bg-pink-500 flex items-center justify-center transition-colors group">
-                  <Instagram className="w-5 h-5 group-hover:text-white text-gray-400 transition-colors" />
+                <a href="#" className="social-icon-hover w-9 h-9 rounded-lg bg-gray-800 hover:bg-pink-500 flex items-center justify-center group" title="Instagram">
+                  <Instagram className="w-4 h-4 group-hover:text-white text-gray-400 transition-colors" />
                 </a>
-                <a href="#" className="w-10 h-10 rounded-lg bg-gray-800 hover:bg-blue-500 flex items-center justify-center transition-colors group">
-                  <TwitterIcon className="w-5 h-5 group-hover:text-white text-gray-400 transition-colors" />
+                <a href="#" className="social-icon-hover w-9 h-9 rounded-lg bg-gray-800 hover:bg-blue-400 flex items-center justify-center group" title="Twitter/X">
+                  <TwitterIcon className="w-4 h-4 group-hover:text-white text-gray-400 transition-colors" />
+                </a>
+                <a href="#" className="social-icon-hover w-9 h-9 rounded-lg bg-gray-800 hover:bg-blue-600 flex items-center justify-center group" title="Facebook">
+                  <Facebook className="w-4 h-4 group-hover:text-white text-gray-400 transition-colors" />
+                </a>
+                <a href="#" className="social-icon-hover w-9 h-9 rounded-lg bg-gray-800 hover:bg-indigo-500 flex items-center justify-center group" title="Discord">
+                  <MessageSquare className="w-4 h-4 group-hover:text-white text-gray-400 transition-colors" />
+                </a>
+                <a href="#" className="social-icon-hover w-9 h-9 rounded-lg bg-gray-800 hover:bg-black dark:hover:bg-white flex items-center justify-center group" title="TikTok">
+                  <Rss className="w-4 h-4 group-hover:text-inherit text-gray-400 transition-colors rotate-[270deg]" />
                 </a>
               </div>
             </div>
@@ -3847,7 +4595,7 @@ export default function Home() {
                 Instagram
               </h4>
               <ul className="space-y-2.5 text-sm text-gray-400">
-                {['Followers', 'Post Likes', 'Comments', 'Reels Views'].map((item) => (
+                {['Followers', 'Post Likes', 'Comments', 'Reels Views', 'Story Views'].map((item) => (
                   <li key={item}>
                     <a href="#" className="hover:text-warm-400 transition-colors flex items-center gap-1 group">
                       <ArrowRight className="w-3 h-3 opacity-0 -ml-4 group-hover:opacity-100 group-hover:ml-0 transition-all" />
@@ -3889,11 +4637,53 @@ export default function Home() {
             </div>
           </div>
 
+          {/* Quick Links Grid - Round 8 New Feature */}
+          <Card className="bg-gradient-to-r from-warm-900/40 to-orange-900/30 border border-warm-800/30 p-6 mb-8 rounded-xl">
+            <h4 className="font-semibold mb-4 text-center text-background/90 flex items-center justify-center gap-2">
+              <Zap className="w-4 h-4 text-warm-400" />
+              Quick Links
+            </h4>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+              {[
+                { label: 'Start Free Trial', icon: <Gift className="w-4 h-4" />, onClick: () => setIsSignUpOpen(true) },
+                { label: 'View Pricing', icon: <DollarSign className="w-4 h-4" />, href: '#pricing' },
+                { label: 'Documentation', icon: <BookOpen className="w-4 h-4" />, href: '#' },
+                { label: 'Contact Support', icon: <HeadphonesIcon className="w-4 h-4" />, href: '#' },
+                { label: 'API Docs', icon: <Code className="w-4 h-4" />, href: '#' },
+                { label: 'Status Page', icon: <Activity className="w-4 h-4" />, href: '#' }
+              ].map((link, idx) => {
+                if (link.onClick) {
+                  return (
+                    <button 
+                      key={idx} 
+                      onClick={link.onClick}
+                      className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-white/5 hover:bg-warm-500/20 border border-white/10 hover:border-warm-500/50 text-sm text-background/80 hover:text-white transition-all duration-300 group"
+                    >
+                      {link.icon}
+                      <span>{link.label}</span>
+                    </button>
+                  )
+                }
+                return (
+                  <a 
+                    key={idx} 
+                    href={link.href}
+                    className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-white/5 hover:bg-warm-500/20 border border-white/10 hover:border-warm-500/50 text-sm text-background/80 hover:text-white transition-all duration-300 group"
+                  >
+                    {link.icon}
+                    <span>{link.label}</span>
+                    <ArrowUpRight className="w-3 h-3 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </a>
+                )
+              })}
+            </div>
+          </Card>
+
           <Separator className="bg-gray-800 mb-8" />
 
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-gray-400">
-            <p>© 2024 SocialBoost. All rights reserved.</p>
-            <div className="flex items-center gap-6">
+          <div className="flex flex-col lg:flex-row justify-between items-center gap-4 text-sm text-gray-400">
+            <p>© {new Date().getFullYear()} SocialBoost. All rights reserved.</p>
+            <div className="flex flex-wrap items-center gap-6">
               <div className="flex items-center gap-2">
                 <Globe className="w-4 h-4" />
                 <select className="bg-transparent border-none outline-none cursor-pointer hover:text-white transition-colors">
@@ -3905,28 +4695,35 @@ export default function Home() {
               </div>
               <div className="flex items-center gap-1">
                 <span>Made with</span>
-                <Heart className="w-4 h-4 text-red-500 fill-red-500" />
+                <Heart className="w-4 h-4 text-red-500 fill-red-500 animate-pulse" />
                 <span>for creators</span>
               </div>
             </div>
+          </div>
 
-            {/* Live Stats Banner */}
-            <div className="mt-6 pt-6 border-t border-gray-800">
-              <div className="flex flex-wrap items-center justify-center gap-8 text-sm">
-                <LiveUserCounter />
-                <div className="text-center">
-                  <p className="font-bold text-lg text-white">12.8K+</p>
-                  <p className="text-xs opacity-60">Active Users</p>
-                </div>
-                <div className="text-center hidden sm:block">
-                  <p className="font-bold text-lg text-white">50M+</p>
-                  <p className="text-xs opacity-60">Delivered</p>
-                </div>
+          {/* Live Stats Banner */}
+          <div className="mt-8 pt-6 border-t border-gray-800">
+            <div className="flex flex-wrap items-center justify-center gap-8 text-sm">
+              <LiveUserCounter />
+              <div className="text-center px-4 py-2 rounded-lg bg-white/5">
+                <p className="font-bold text-lg text-white neon-text">12.8K+</p>
+                <p className="text-xs opacity-60">Active Users</p>
+              </div>
+              <div className="text-center px-4 py-2 rounded-lg bg-white/5 hidden sm:block">
+                <p className="font-bold text-lg text-white neon-text">50M+</p>
+                <p className="text-xs opacity-60">Delivered</p>
+              </div>
+              <div className="text-center px-4 py-2 rounded-lg bg-white/5 hidden md:block">
+                <p className="font-bold text-lg text-white neon-text">99.9%</p>
+                <p className="text-xs opacity-60">Uptime</p>
               </div>
             </div>
           </div>
         </div>
       </footer>
+
+      {/* Cookie Consent Banner - Round 8 */}
+      <CookieConsentBanner />
 
       {/* Back to Top Button */}
       <BackToTopButton />
