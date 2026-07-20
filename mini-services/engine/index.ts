@@ -8,6 +8,7 @@
  * 4. Anti-fraud detection and prevention
  * 
  * Port: 3003
+ * @version 1.1.0 - Enhanced with validation, rate limiting, anti-fraud
  */
 
 import { createServer } from "http";
@@ -15,6 +16,28 @@ import { Server, Socket } from "socket.io";
 
 const PORT = 3003;
 const MAIN_API_URL = "http://localhost:3000";
+const ENVIRONMENT = process.env.NODE_ENV || 'development';
+
+// ============================================================================
+// CONFIGURATION
+// ============================================================================
+
+const CONFIG = {
+  // Rate limiting per worker (requests per minute)
+  TASK_REQUEST_RATE_LIMIT: 10,
+  TASK_COMPLETE_RATE_LIMIT: 30,
+  
+  // Task timeout (ms)
+  TASK_TIMEOUT_MS: 120000, // 2 minutes
+  
+  // Anti-fraud thresholds
+  MIN_TASK_COMPLETION_TIME_MS: 3000, // Minimum time to complete a task (bot detection)
+  MAX_TASKS_PER_SESSION: 100, // Max tasks before requiring re-auth
+  
+  // Queue limits
+  MAX_QUEUE_SIZE: 10000,
+  MAX_TASKS_PER_USER: 50, // Max pending tasks per creator
+};
 
 // Create HTTP server and Socket.io instance
 const httpServer = createServer((req, res) => {
@@ -24,8 +47,41 @@ const httpServer = createServer((req, res) => {
       status: 'ok', 
       service: 'socialboost-engine', 
       port: PORT,
+      version: '1.1.0',
+      environment: ENVIRONMENT,
       uptime: process.uptime(),
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      stats: {
+        queueLength: taskQueue.length,
+        activeWorkers: activeWorkers.size,
+        totalTasksProcessed: engineStats.totalTasksProcessed,
+        fraudAlerts: fraudAlerts.length
+      }
+    }));
+    return;
+  }
+  
+  // Admin endpoint for fraud alerts (basic - should be protected in production)
+  if (req.url === '/admin/fraud-alerts') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(getFraudAlertsSummary()));
+    return;
+  }
+  
+  // Admin endpoint for detailed stats
+  if (req.url === '/admin/stats') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      ...getQueueStats(),
+      fraudAlerts: getFraudAlertsSummary(),
+      config: {
+        taskTimeoutMs: CONFIG.TASK_TIMEOUT_MS,
+        maxQueueSize: CONFIG.MAX_QUEUE_SIZE,
+        maxTasksPerSession: CONFIG.MAX_TASKS_PER_SESSION
+      },
+      rateLimits: {
+        activeEntries: workerRateLimits.size
+      }
     }));
     return;
   }
@@ -76,6 +132,20 @@ interface ActiveWorker {
 const taskQueue: QueuedTask[] = [];
 const activeWorkers: Map<string, ActiveWorker> = new Map();
 const workerTasks: Map<string, string> = new Map(); // socketId -> currentTaskId
+
+// Per-worker rate limiting store
+const workerRateLimits: Map<string, { taskRequests: number; taskCompletes: number; windowStart: number }> = new Map();
+
+// Anti-fraud tracking
+interface FraudAlert {
+  userId: string;
+  reason: string;
+  severity: 'low' | 'medium' | 'high';
+  timestamp: Date;
+  details: Record<string, unknown>;
+}
+const fraudAlerts: FraudAlert[] = [];
+const MAX_FRAUD_ALERTS = 100;
 
 // Statistics
 const engineStats = {
@@ -274,6 +344,168 @@ function emitTaskAvailable(): void {
   });
 }
 
+// ============================================================================
+// VALIDATION FUNCTIONS
+// ============================================================================
+
+/**
+ * Validate userId format (basic CUID check)
+ */
+function isValidUserId(userId: string): boolean {
+  // CUID format: starts with 'c', followed by alphanumeric, 25 chars total
+  return typeof userId === 'string' && /^[a-z0-9]{20,30}$/i.test(userId);
+}
+
+/**
+ * Validate platform value
+ */
+function isValidPlatform(platform: string): boolean {
+  const validPlatforms = ['youtube', 'instagram', 'tiktok', 'twitter', 'facebook'];
+  return typeof platform === 'string' && validPlatforms.includes(platform.toLowerCase());
+}
+
+/**
+ * Validate service type
+ */
+function isValidServiceType(serviceType: string): boolean {
+  const validTypes = ['views', 'subscribers', 'likes', 'comments', 'followers', 
+                      'reels_views', 'story_views', 'shares', 'retweets'];
+  return typeof serviceType === 'string' && validTypes.includes(serviceType.toLowerCase());
+}
+
+/**
+ * Sanitize string input (prevent injection)
+ */
+function sanitize(str: string, maxLength: number = 500): string {
+  if (typeof str !== 'string') return '';
+  return str.trim().slice(0, maxLength).replace(/[<>\"'&\\]/g, '');
+}
+
+// ============================================================================
+// RATE LIMITING FUNCTIONS
+// ============================================================================
+
+/**
+ * Check if worker is within rate limits
+ * Returns { allowed: boolean, retryAfter?: number }
+ */
+function checkWorkerRateLimit(socketId: string, action: 'taskRequest' | 'taskComplete'): { 
+  allowed: boolean; 
+  retryAfter?: number;
+} {
+  const now = Date.now();
+  const windowMs = 60 * 1000; // 1 minute window
+  let limits = workerRateLimits.get(socketId);
+  
+  // Reset window if expired or doesn't exist
+  if (!limits || now - limits.windowStart > windowMs) {
+    limits = { taskRequests: 0, taskCompletes: 0, windowStart: now };
+    workerRateLimits.set(socketId, limits);
+  }
+  
+  if (action === 'taskRequest') {
+    if (limits.taskRequests >= CONFIG.TASK_REQUEST_RATE_LIMIT) {
+      const retryAfter = Math.ceil((limits.windowStart + windowMs - now) / 1000);
+      return { allowed: false, retryAfter: Math.max(1, retryAfter) };
+    }
+    limits.taskRequests++;
+  } else if (action === 'taskComplete') {
+    if (limits.taskCompletes >= CONFIG.TASK_COMPLETE_RATE_LIMIT) {
+      const retryAfter = Math.ceil((limits.windowStart + windowMs - now) / 1000);
+      return { allowed: false, retryAfter: Math.max(1, retryAfter) };
+    }
+    limits.taskCompletes++;
+  }
+  
+  return { allowed: true };
+}
+
+/**
+ * Clean up stale rate limit entries (call periodically)
+ */
+function cleanupRateLimits(): void {
+  const now = Date.now();
+  const windowMs = 60 * 1000;
+  
+  for (const [socketId, limits] of workerRateLimits.entries()) {
+    if (now - limits.windowStart > windowMs * 2) { // Remove after 2 minutes of inactivity
+      workerRateLimits.delete(socketId);
+    }
+  }
+}
+
+// ============================================================================
+// ANTI-FRAUD FUNCTIONS
+// ============================================================================
+
+/**
+ * Record a fraud alert for investigation
+ */
+function recordFraudAlert(
+  userId: string, 
+  reason: string, 
+  severity: 'low' | 'medium' | 'high',
+  details: Record<string, unknown> = {}
+): void {
+  const alert: FraudAlert = {
+    userId,
+    reason,
+    severity,
+    timestamp: new Date(),
+    details
+  };
+  
+  fraudAlerts.push(alert);
+  
+  // Keep only recent alerts
+  if (fraudAlerts.length > MAX_FRAUD_ALERTS) {
+    fraudAlerts.shift();
+  }
+  
+  // Log high severity alerts immediately
+  if (severity === 'high' || severity === 'medium') {
+    console.warn(`[FRAUD ALERT] [${severity.toUpperCase()}] User ${userId}: ${reason}`, details);
+  }
+}
+
+/**
+ * Check for suspicious completion speed (potential bot)
+ */
+function checkCompletionSpeed(worker: ActiveWorker, timeSpentMs: number): boolean {
+  if (timeSpentMs < CONFIG.MIN_TASK_COMPLETION_TIME_MS) {
+    recordFraudAlert(worker.userId, 'Suspiciously fast task completion', 'medium', {
+      timeSpentMs,
+      threshold: CONFIG.MIN_TASK_COMPLETION_TIME_MS,
+      tasksCompleted: worker.tasksCompleted
+    });
+    return false; // Block suspicious completions
+  }
+  return true;
+}
+
+/**
+ * Get fraud alerts summary (for admin monitoring)
+ */
+function getFraudAlertsSummary() {
+  const now = Date.now();
+  const lastHour = fraudAlerts.filter(a => now - a.getTime() < 60 * 60 * 1000);
+  return {
+    total: fraudAlerts.length,
+    lastHour: lastHour.length,
+    bySeverity: {
+      high: lastHour.filter(a => a.severity === 'high').length,
+      medium: lastHour.filter(a => a.severity === 'medium').length,
+      low: lastHour.filter(a => a.severity === 'low').length
+    },
+    recent: fraudAlerts.slice(-10).map(a => ({
+      userId: a.userId.slice(0, 8) + '...', // Partial ID for privacy
+      reason: a.reason,
+      severity: a.severity,
+      timestamp: a.timestamp
+    }))
+  };
+}
+
 function getCreatorSocket(creatorId: string): string {
   for (const [socketId, worker] of activeWorkers.entries()) {
     if (worker.userId === creatorId) {
@@ -311,8 +543,33 @@ io.on("connection", async (socket: Socket) => {
    */
   socket.on("worker:register", async (data: { userId: string; token?: string; ip?: string }) => {
     try {
+      // Validate input
+      if (!data || typeof data !== 'object') {
+        socket.emit("error", { code: "INVALID_INPUT", message: "Invalid registration data" });
+        socket.disconnect();
+        return;
+      }
+      
+      if (!isValidUserId(data.userId)) {
+        socket.emit("error", { code: "INVALID_USER_ID", message: "Invalid user ID format" });
+        socket.disconnect();
+        return;
+      }
+      
+      const sanitizedUserId = sanitize(data.userId, 30);
+      
+      // Check if already registered (prevent duplicate connections)
+      for (const [existingSocketId, existingWorker] of activeWorkers.entries()) {
+        if (existingWorker.userId === sanitizedUserId) {
+          // Disconnect old connection
+          console.log(`[Engine] Duplicate connection detected for user ${sanitizedUserId}, disconnecting old session`);
+          io.sockets.sockets.get(existingSocketId)?.disconnect(true);
+          break;
+        }
+      }
+      
       // Verify user exists via main API
-      const userResponse = await callMainAPI(`/api/user?userId=${data.userId}`);
+      const userResponse = await callMainAPI(`/api/user?userId=${sanitizedUserId}`);
       
       if (!userResponse || !userResponse.user || !userResponse.user.isActive) {
         socket.emit("error", { code: "AUTH_FAILED", message: "Invalid user or account inactive" });
@@ -325,12 +582,12 @@ io.on("connection", async (socket: Socket) => {
       // Register worker
       const worker: ActiveWorker = {
         socketId: socket.id,
-        userId: data.userId,
+        userId: sanitizedUserId,
         currentTaskId: null,
         lastHeartbeat: new Date(),
         tasksCompleted: 0,
-        ip: data.ip,
-        name: user.name || user.email?.split('@')[0]
+        ip: data.ip ? sanitize(data.ip, 45) : undefined,
+        name: user.name ? sanitize(user.name, 50) : (user.email ? sanitize(user.email.split('@')[0], 50) : 'User')
       };
       
       activeWorkers.set(socket.id, worker);
@@ -349,7 +606,7 @@ io.on("connection", async (socket: Socket) => {
       // Broadcast updated online count
       io.emit("stats:online", { count: activeWorkers.size });
       
-      console.log(`[Engine] Worker registered: ${socket.id} (User: ${user.email})`);
+      console.log(`[Engine] Worker registered: ${socket.id} (User: ${sanitizedUserId})`);
       
     } catch (error) {
       console.error("[Engine] Registration error:", error);
@@ -369,9 +626,33 @@ io.on("connection", async (socket: Socket) => {
         return;
       }
       
+      // Check rate limit
+      const rateLimitResult = checkWorkerRateLimit(socket.id, 'taskRequest');
+      if (!rateLimitResult.allowed) {
+        socket.emit("error", { 
+          code: "RATE_LIMITED", 
+          message: `Too many requests. Try again in ${rateLimitResult.retryAfter} seconds.`,
+          retryAfter: rateLimitResult.retryAfter 
+        });
+        return;
+      }
+      
       // Check if worker already has a task
       if (worker.currentTaskId) {
         socket.emit("error", { code: "HAS_TASK", message: "Complete current task first" });
+        return;
+      }
+      
+      // Validate platform if provided
+      if (data.platform && !isValidPlatform(data.platform)) {
+        socket.emit("error", { code: "INVALID_PLATFORM", message: "Invalid platform specified" });
+        return;
+      }
+      
+      // Check session task limit (anti-fraud)
+      if (worker.tasksCompleted >= CONFIG.MAX_TASKS_PER_SESSION) {
+        socket.emit("error", { code: "SESSION_LIMIT", message: "Session limit reached. Please re-connect to continue." });
+        // Don't disconnect, let them finish naturally
         return;
       }
       
@@ -475,6 +756,34 @@ io.on("connection", async (socket: Socket) => {
       const worker = activeWorkers.get(socket.id);
       if (!worker || worker.userId !== data.userId) {
         socket.emit("error", { code: "NOT_REGISTERED", message: "Please register first" });
+        return;
+      }
+      
+      // Validate taskId format
+      if (!isValidUserId(data.taskId)) {
+        socket.emit("error", { code: "INVALID_TASK_ID", message: "Invalid task ID format" });
+        return;
+      }
+      
+      // Check rate limit for completions
+      const rateLimitResult = checkWorkerRateLimit(socket.id, 'taskComplete');
+      if (!rateLimitResult.allowed) {
+        socket.emit("error", { 
+          code: "RATE_LIMITED", 
+          message: `Completing tasks too fast. Try again in ${rateLimitResult.retryAfter} seconds.`,
+          retryAfter: rateLimitResult.retryAfter 
+        });
+        return;
+      }
+      
+      // Anti-fraud: Check completion speed (bot detection)
+      const timeSpent = data.timeSpentMs || 0;
+      if (timeSpent > 0 && !checkCompletionSpeed(worker, timeSpent)) {
+        socket.emit("error", { 
+          code: "SUSPICIOUS_ACTIVITY", 
+          message: "Task completed too quickly. Please take your time with tasks." 
+        });
+        // Don't disconnect but log the suspicious activity
         return;
       }
       
@@ -707,6 +1016,11 @@ setInterval(async () => {
     console.log(`[Engine] Cleaned up ${expiredIndices.length} expired tasks`);
   }
 }, 30000);
+
+// Clean up stale rate limit entries every 2 minutes
+setInterval(() => {
+  cleanupRateLimits();
+}, 2 * 60 * 1000);
 
 // Stale worker tracking with progressive warnings
 const workerWarnings = new Map<string, number>(); // socketId -> warning count

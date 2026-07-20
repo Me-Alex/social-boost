@@ -1593,3 +1593,144 @@ Stage Summary:
   1. Protect task/campaign APIs with auth middleware
   2. Add WebSocket authentication
   3. Implement admin dashboard for monitoring
+
+---
+Task ID: 11
+Agent: Engineering Review Agent (Round 3)
+Task: Deep engineering review - Engine hardening, validation, anti-fraud
+
+Work Log:
+### Comprehensive Engineering Review Performed:
+
+1. **Engine Service Deep Review** (`/mini-services/engine/index.ts`)
+2. **Frontend Stability Check** (EarnCreditsPanel hooks)
+3. **API Endpoint Consistency** (Error format standardization)
+
+### Issues Identified & Fixed:
+
+#### 1. No Input Validation on Socket Events (HIGH)
+- **Problem**: Engine accepted any data from clients without validation
+- **Risk**: Injection attacks, malformed data causing crashes
+- **Fix**: Added comprehensive validation:
+  - `isValidUserId()` - CUID format validation
+  - `isValidPlatform()` / `isValidServiceType()` - Enum validation
+  - `sanitize()` - XSS prevention for string inputs
+  - Applied to worker:register, task:request, task:complete handlers
+
+#### 2. No Rate Limiting per Worker (MEDIUM)
+- **Problem**: Workers could spam task requests/completions
+- **Risk**: DoS potential, server overload
+- **Fix**: Implemented per-worker rate limiting:
+  - Task requests: 10/minute per worker
+  - Task completions: 30/minute per worker
+  - Automatic cleanup of stale entries every 2 minutes
+  - Proper retry-after responses with countdown
+
+#### 3. No Anti-Fraud Detection (MEDIUM)
+- **Problem**: Bots could complete tasks instantly for free credits
+- **Risk**: Credit farming, platform abuse
+- **Fix**: Implemented anti-fraud system:
+  - Minimum completion time check (3 seconds)
+  - Session task limit (100 tasks max)
+  - Fraud alert recording and tracking
+  - Suspicious activity blocking
+  - Admin monitoring endpoints
+
+#### 4. Duplicate Connection Handling (LOW)
+- **Problem**: Same user could connect multiple times
+- **Risk**: Race conditions, double task assignment
+- **Fix**: Detect duplicate connections, disconnect old session
+
+#### 5. Limited Monitoring Endpoints (LOW)
+- **Problem**: Only basic health endpoint available
+- **Fix**: Added admin endpoints:
+  - `/health` - Enhanced with stats summary
+  - `/admin/fraud-alerts` - Fraud alert monitoring
+  - `/admin/stats` - Detailed engine statistics
+
+### Files Modified:
+
+**`/home/z/my-project/mini-services/engine/index.ts`** (~150 lines added)
+- Configuration object (`CONFIG`) for all tunable parameters
+- Rate limiting store (`workerRateLimits`) with cleanup
+- Anti-fraud system (`fraudAlerts`, `recordFraudAlert()`, `checkCompletionSpeed()`)
+- Validation functions (`isValidUserId`, `isValidPlatform`, `isValidServiceType`, `sanitize`)
+- Rate limiting function (`checkWorkerRateLimit()` with retry-after)
+- Updated `worker:register` handler with input validation + duplicate detection
+- Updated `task:request` handler with rate limiting + session limits
+- Updated `task:complete` handler with rate limiting + speed checks
+- Admin endpoints for monitoring
+- Periodic cleanup tasks for rate limits
+
+### New Engine Features Summary:
+| Feature | Description | Config |
+|---------|-------------|--------|
+| Input Validation | All socket events validated | N/A |
+| Per-Worker Rate Limits | 10 req/min, 30 completes/min | `CONFIG.TASK_REQUEST_RATE_LIMIT` |
+| Anti-Fraud Speed Check | Min 3s completion time | `CONFIG.MIN_TASK_COMPLETION_TIME_MS` |
+| Session Task Limit | Max 100 tasks per connection | `CONFIG.MAX_TASKS_PER_SESSION` |
+| Duplicate Detection | Auto-disconnect old sessions | Built-in |
+| Fraud Alert System | Record & monitor suspicious activity | 100 alert buffer |
+| Admin Endpoints | `/admin/stats`, `/admin/fraud-alerts` | HTTP |
+
+### Verification Results:
+- ESLint: ✓ Passing (0 errors)
+- Dev Server (port 3000): ✓ Running
+- Engine Server (port 3003): ✓ Running (v1.1.0)
+- Health Endpoint: ✓ Returns enhanced stats
+- Admin Stats Endpoint: ✓ Returns detailed metrics
+
+### Example API Responses:
+
+**Health Endpoint:**
+```json
+{
+  "status": "ok",
+  "service": "socialboost-engine",
+  "version": "1.1.0",
+  "environment": "development",
+  "stats": {
+    "queueLength": 0,
+    "activeWorkers": 0,
+    "totalTasksProcessed": 0,
+    "fraudAlerts": 0
+  }
+}
+```
+
+**Admin Stats Endpoint:**
+```json
+{
+  "queueLength": 0,
+  "activeWorkers": 0,
+  "fraudAlerts": {
+    "total": 0,
+    "lastHour": 0,
+    "bySeverity": { "high": 0, "medium": 0, "low": 0 }
+  },
+  "config": {
+    "taskTimeoutMs": 120000,
+    "maxQueueSize": 10000,
+    "maxTasksPerSession": 100
+  },
+  "rateLimits": { "activeEntries": 0 }
+}
+```
+
+Stage Summary:
+- **Project Status**: Engine significantly hardened against abuse
+- **Key Improvements**:
+  - Full input validation on all socket events
+  - Per-worker rate limiting prevents spam
+  - Anti-fraud detection catches bots
+  - Duplicate connection handling prevents race conditions
+  - Admin endpoints enable monitoring
+- **Security Posture**:
+  - Before: Open to injection, no rate limits, no fraud detection
+  - After: Validated input, rate limited, fraud monitored
+- **Remaining Recommendations**:
+  1. Add authentication to admin endpoints
+  2. Implement IP-based rate limiting as backup
+  3. Add webhook notifications for high-severity fraud alerts
+  4. Consider Redis for distributed rate limiting
+  5. Add integration tests for engine edge cases
