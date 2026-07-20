@@ -4494,6 +4494,178 @@ function EarnCreditsPanel({ user, onCreditsUpdate }: EarnCreditsProps) {
   // Engine stats
   const [engineOnline, setEngineOnline] = useState(0)
   const [tasksInQueue, setTasksInQueue] = useState(0)
+  
+  // Reconnection state
+  const [reconnectAttempt, setReconnectAttempt] = useState(0)
+  const [isReconnecting, setIsReconnecting] = useState(false)
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const maxReconnectAttempts = 5
+  const baseReconnectDelay = 1000 // 1 second
+
+  /**
+   * Calculate exponential backoff delay
+   */
+  const getReconnectDelay = (attempt: number): number => {
+    // Exponential backoff: 1s, 2s, 4s, 8s, 16s (max)
+    const delay = Math.min(baseReconnectDelay * Math.pow(2, attempt), 16000)
+    // Add jitter (±25%)
+    return delay + Math.random() * delay * 0.5
+  }
+
+  /**
+   * Attempt to reconnect with exponential backoff
+   */
+  const attemptReconnect = useCallback(() => {
+    if (reconnectAttempt >= maxReconnectAttempts) {
+      console.log('[EarnCredits] Max reconnect attempts reached')
+      setIsReconnecting(false)
+      toast.error('Connection failed. Please refresh the page to retry.', {
+        duration: 5000
+      })
+      return
+    }
+
+    const delay = getReconnectDelay(reconnectAttempt)
+    console.log(`[EarnCredits] Reconnecting in ${Math.round(delay)}ms (attempt ${reconnectAttempt + 1}/${maxReconnectAttempts})`)
+    setIsReconnecting(true)
+    
+    reconnectTimeoutRef.current = setTimeout(() => {
+      if (!user.id) return
+      
+      import('socket.io-client').then((module) => {
+        const io = module.io
+        
+        const newSocket = io('/', {
+          query: { XTransformPort: '3003' },
+          transports: ['websocket', 'polling'],
+          reconnection: false // We handle reconnection manually
+        })
+
+        newSocket.on('connect', () => {
+          console.log('[EarnCredits] Reconnected successfully!')
+          setIsConnected(true)
+          setIsReconnecting(false)
+          setReconnectAttempt(0)
+          
+          // Re-register as worker
+          newSocket.emit('worker:register', { userId: user.id })
+          
+          toast.success('Reconnected to task engine!', {
+            description: 'You can continue earning credits'
+          })
+          
+          socketRef.current = newSocket
+          setupSocketHandlers(newSocket)
+        })
+
+        newSocket.on('connect_error', (error: any) => {
+          console.error('[EarnCredits] Reconnect error:', error.message)
+          setReconnectAttempt(prev => prev + 1)
+          attemptReconnect()
+        })
+
+        newSocket.on('disconnect', () => {
+          console.log('[EarnCredits] Disconnected after reconnect')
+          setIsConnected(false)
+        })
+        
+        socketRef.current = newSocket
+      })
+    }, delay)
+  }, [reconnectAttempt, user.id])
+
+  /**
+   * Setup all socket event handlers (unified for initial connect and reconnect)
+   */
+  const setupSocketHandlers = useCallback((socket: any) => {
+    // Handle registration success
+    socket.on('worker:registered', (data: any) => {
+      if (data.success) {
+        setQueueStats(data.stats)
+      }
+    })
+
+    // Handle task assignment
+    socket.on('task:assigned', (task: any) => {
+      console.log('[EarnCredits] Task assigned:', task)
+      setCurrentTask(task)
+      setIsWorking(true)
+      setTaskStartTime(new Date())
+      setElapsedTime(0)
+      setVerificationCode(task.verificationCode || '')
+      toast.info('New task assigned!', {
+        description: `${task.platform}/${task.serviceType} - +${task.rewardCredits} credits`
+      })
+    })
+
+    // Handle task completion
+    socket.on('task:completed', (data: any) => {
+      console.log('[EarnCredits] Task completed:', data)
+      setIsWorking(false)
+      setCurrentTask(null)
+      setTaskStartTime(null)
+      setElapsedTime(0)
+      setTasksCompleted(prev => prev + 1)
+      setTotalEarned(prev => prev + (data.creditsEarned || 1))
+      onCreditsUpdate(user.credits + (data.creditsEarned || 1))
+      
+      // Add to recent activity
+      setRecentActivity(prev => [{
+        type: 'completed',
+        credits: data.creditsEarned || 1,
+        timestamp: new Date(),
+        message: data.message || 'Task completed!'
+      }, ...prev.slice(0, 9)])
+      
+      toast.success(data.message || 'Task completed! Credits earned!')
+    })
+
+    // Handle empty queue
+    socket.on('task:empty', (data: any) => {
+      toast.info(data.message || 'No tasks available right now')
+    })
+
+    // Handle errors
+    socket.on('error', (error: any) => {
+      console.error('[EarnCredits] Error:', error)
+      toast.error(error.message || 'An error occurred')
+    })
+    
+    // Handle warnings from engine (stale connection etc.)
+    socket.on('warning', (warning: any) => {
+      console.warn('[EarnCredits] Warning:', warning)
+      toast.warning(warning.message || 'Connection warning', {
+        duration: 4000
+      })
+    })
+
+    // Handle queue updates
+    socket.on('stats:online', (data: any) => {
+      setEngineOnline(data.count)
+    })
+
+    socket.on('stats:update', (data: any) => {
+      setTasksInQueue(data.queueLength || 0)
+    })
+
+    socket.on('task:available', (data: any) => {
+      setTasksInQueue(data.queueLength || 0)
+    })
+    
+    // Handle disconnect
+    socket.on('disconnect', (reason: string) => {
+      console.log('[EarnCredits] Disconnected from engine:', reason)
+      setIsConnected(false)
+      setIsWorking(false)
+      setCurrentTask(null)
+      
+      // Only auto-reconnect if not intentional
+      if (reason === 'io server disconnect' || reason === 'transport close') {
+        setReconnectAttempt(prev => prev + 1)
+        attemptReconnect()
+      }
+    })
+  }, [user.credits, onCreditsUpdate, attemptReconnect])
 
   // Initialize Socket.io connection (dynamically import to avoid SSR issues)
   useEffect(() => {
@@ -4505,97 +4677,40 @@ function EarnCreditsPanel({ user, onCreditsUpdate }: EarnCreditsProps) {
       
       const newSocket = io('/', {
         query: { XTransformPort: '3003' },
-        transports: ['websocket', 'polling']
+        transports: ['websocket', 'polling'],
+        reconnection: false, // We handle reconnection manually for better control
+        timeout: 10000 // 10s connection timeout
       })
 
       newSocket.on('connect', () => {
         console.log('[EarnCredits] Connected to engine')
         setIsConnected(true)
+        setReconnectAttempt(0)
+        setIsReconnecting(false)
         
         // Register as worker
         newSocket.emit('worker:register', { userId: user.id })
       })
 
-      newSocket.on('disconnect', () => {
-        console.log('[EarnCredits] Disconnected from engine')
+      newSocket.on('connect_error', (error: any) => {
+        console.error('[EarnCredits] Connection error:', error.message)
         setIsConnected(false)
-        setIsWorking(false)
-        setCurrentTask(null)
-      })
-
-      // Handle registration success
-      newSocket.on('worker:registered', (data: any) => {
-        if (data.success) {
-          toast.success('Connected to task engine!', {
-            description: `Queue: ${data.stats?.queueLength || 0} tasks available`
-          })
-          setQueueStats(data.stats)
-        }
-      })
-
-      // Handle task assignment
-      newSocket.on('task:assigned', (task: any) => {
-        console.log('[EarnCredits] Task assigned:', task)
-        setCurrentTask(task)
-        setIsWorking(true)
-        setTaskStartTime(new Date())
-        setElapsedTime(0)
-        setVerificationCode(task.verificationCode || '')
-        toast.info('New task assigned!', {
-          description: `${task.platform}/${task.serviceType} - +${task.rewardCredits} credits`
-        })
-      })
-
-      // Handle task completion
-      newSocket.on('task:completed', (data: any) => {
-        console.log('[EarnCredits] Task completed:', data)
-        setIsWorking(false)
-        setCurrentTask(null)
-        setTaskStartTime(null)
-        setElapsedTime(0)
-        setTasksCompleted(prev => prev + 1)
-        setTotalEarned(prev => prev + (data.creditsEarned || 1))
-        onCreditsUpdate(user.credits + (data.creditsEarned || 1))
         
-        // Add to recent activity
-        setRecentActivity(prev => [{
-          type: 'completed',
-          credits: data.creditsEarned || 1,
-          timestamp: new Date(),
-          message: data.message || 'Task completed!'
-        }, ...prev.slice(0, 9)])
-        
-        toast.success(data.message || 'Task completed! Credits earned!')
+        // Start reconnect attempts
+        setReconnectAttempt(prev => prev + 1)
+        attemptReconnect()
       })
 
-      // Handle empty queue
-      newSocket.on('task:empty', (data: any) => {
-        toast.info(data.message || 'No tasks available right now')
-      })
-
-      // Handle errors
-      newSocket.on('error', (error: any) => {
-        console.error('[EarnCredits] Error:', error)
-        toast.error(error.message || 'An error occurred')
-      })
-
-      // Handle queue updates
-      newSocket.on('stats:online', (data: any) => {
-        setEngineOnline(data.count)
-      })
-
-      newSocket.on('stats:update', (data: any) => {
-        setTasksInQueue(data.queueLength || 0)
-      })
-
-      newSocket.on('task:available', (data: any) => {
-        setTasksInQueue(data.queueLength || 0)
-      })
+      // Setup all other handlers
+      setupSocketHandlers(newSocket)
 
       socketRef.current = newSocket
 
       // Store cleanup function reference
       return () => {
+        if (reconnectTimeoutRef.current) {
+          clearTimeout(reconnectTimeoutRef.current)
+        }
         newSocket.disconnect()
         socketRef.current = null
       }
@@ -4605,6 +4720,9 @@ function EarnCreditsPanel({ user, onCreditsUpdate }: EarnCreditsProps) {
     
     // Cleanup on unmount
     return () => {
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current)
+      }
       if (socketRef.current) {
         socketRef.current.disconnect()
         socketRef.current = null
@@ -4715,12 +4833,16 @@ function EarnCreditsPanel({ user, onCreditsUpdate }: EarnCreditsProps) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Engine Status</p>
-                <p className={`text-lg font-bold ${isConnected ? 'text-green-600' : 'text-red-500'}`}>
-                  {isConnected ? 'Connected' : 'Disconnected'}
+                <p className={`text-lg font-bold ${isConnected ? 'text-green-600' : isReconnecting ? 'text-amber-500' : 'text-red-500'}`}>
+                  {isConnected ? 'Connected' : isReconnecting ? `Reconnecting... (${reconnectAttempt}/${maxReconnectAttempts})` : 'Disconnected'}
                 </p>
               </div>
-              <div className={`p-3 rounded-full ${isConnected ? 'bg-green-100' : 'bg-red-100'}`}>
-                <Wifi className={`w-6 h-6 ${isConnected ? 'text-green-600' : 'text-red-500'}`} />
+              <div className={`p-3 rounded-full ${isConnected ? 'bg-green-100' : isReconnecting ? 'bg-amber-100 animate-pulse' : 'bg-red-100'}`}>
+                {isReconnecting ? (
+                  <Loader2 className="w-6 h-6 text-amber-600 animate-spin" />
+                ) : (
+                  <Wifi className={`w-6 h-6 ${isConnected ? 'text-green-600' : 'text-red-500'}`} />
+                )}
               </div>
             </div>
           </CardContent>

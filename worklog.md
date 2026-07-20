@@ -1326,3 +1326,123 @@ Stage Summary:
 2. Add integration tests for API routes
 3. Set up CI/CD pipeline
 4. Configure production monitoring (Sentry, etc.)
+
+---
+Task ID: 9
+Agent: Code Review & Engineering Improvement Agent
+Task: Review codebase, troubleshoot issues, and improve engineering details
+
+Work Log:
+### Code Review Performed:
+1. **ESLint Check**: Passed with no errors ✓
+2. **Engine Service Review** (`/home/z/my-project/mini-services/engine/index.ts`):
+   - Reviewed all Socket.io event handlers
+   - Analyzed task queue management logic
+   - Checked race condition potential in task claiming
+   - Identified duplicate code patterns (re-queue logic)
+3. **API Routes Review** (`/home/z/my-project/src/app/api/tasks/`):
+   - Reviewed input validation with Zod schemas
+   - Checked rate limiting implementation
+   - Analyzed transaction handling for credit operations
+4. **Frontend Review** (`EarnCreditsPanel` component):
+   - Reviewed WebSocket connection handling
+   - Checked state management for reconnection scenarios
+
+### Issues Identified & Fixed:
+
+#### 1. Race Condition in Task Claiming (HIGH)
+- **Problem**: `getNextTask()` returned a task but didn't remove it from queue, allowing double-assignment
+- **Fix**: Created `getNextTaskAndRemove()` that atomically finds AND removes task from queue
+- **Additional Fix**: Added retry logic (MAX_RETRIES=2) when API claim fails due to status conflicts
+
+#### 2. Duplicate Re-queue Code (MEDIUM)
+- **Problem**: Same ~30 lines of re-queue logic repeated in 3 places (disconnect, abandon, task:abandon)
+- **Fix**: Extracted unified helper functions:
+  - `reQueueTask(taskId)` - Fetches task from API and re-adds to queue if pending
+  - `clearWorkerTask(worker, socketId, shouldReQueue)` - Handles full cleanup workflow
+
+#### 3. Stale Worker Detection Too Aggressive (MEDIUM)
+- **Problem**: Workers disconnected after exactly 2 minutes of no heartbeat
+- **Fix**: Implemented progressive warning system:
+  - Warning 1 at 2 minutes (with socket notification)
+  - Warning 2 at 3 minutes
+  - Disconnect at 4 minutes
+  - Uses `workerWarnings` Map to track per-worker state
+
+#### 4. Missing Graceful Shutdown (LOW)
+- **Problem**: Engine had no SIGTERM/SIGINT handling, could lose in-memory queue data
+- **Fix**: Added comprehensive shutdown handler:
+  - Properly closes Socket.io connections
+  - Closes HTTP server
+  - Logs final statistics
+  - 10-second forced shutdown timeout
+  - Handlers for uncaughtException and unhandledRejection
+
+#### 5. Insufficient URL Validation (MEDIUM)
+- **Problem**: Only checked basic URL format, no platform-specific validation
+- **Fix**: Added platform-specific URL pattern validation:
+  - YouTube: youtube.com, youtu.be
+  - Instagram: instagram.com, instagr.am
+  - TikTok: tiktok.com
+  - Twitter: twitter.com, x.com
+  - Facebook: facebook.com, fb.com
+- **Additional**: Added URL sanitization to remove tracking params (utm_*, fbclid, gclid)
+
+#### 6. No WebSocket Reconnection Logic (MEDIUM)
+- **Problem**: Frontend disconnected silently with no auto-reconnect
+- **Fix**: Implemented exponential backoff reconnection:
+  - Base delay: 1s, max: 16s
+  - Jitter: ±25% random variation
+  - Max attempts: 5
+  - Visual feedback: spinning loader, attempt counter
+  - Toast notifications on reconnect success/failure
+  - New `setupSocketHandlers()` unified handler function
+
+### Files Modified:
+1. `/home/z/my-project/mini-services/engine/index.ts`
+   - Added `reQueueTask()` helper function (~30 lines)
+   - Added `clearWorkerTask()` helper function (~25 lines)
+   - Refactored `getNextTask()` → `getNextTaskAndRemove()` with atomic removal
+   - Enhanced `task:request` handler with retry logic (~40 lines new)
+   - Refactored `task:abandon` to use helpers
+   - Refactored `disconnect` handler to use helpers
+   - Enhanced stale worker detection with progressive warnings
+   - Added graceful shutdown handling (~50 lines)
+
+2. `/home/z/my-project/src/app/api/tasks/route.ts`
+   - Added platform-specific URL validation patterns (~20 lines)
+   - Added `validatePlatformUrl()` function
+   - Added `sanitizeUrl()` function (removes tracking params)
+   - Added `sanitizeString()` function (XSS prevention)
+   - Updated POST handler to validate/sanitize URLs before creating tasks
+
+3. `/home/z/my-project/src/app/page.tsx`
+   - Added reconnection state variables (reconnectAttempt, isReconnecting)
+   - Added `getReconnectDelay()` with exponential backoff + jitter
+   - Added `attemptReconnect()` recursive reconnection function
+   - Added `setupSocketHandlers()` unified event handler setup
+   - Updated connection status card to show reconnection state
+   - Added warning event handler for engine stale connection warnings
+
+### Verification Results:
+- ESLint: ✓ Passing (0 errors)
+- Dev Server (port 3000): ✓ Running
+- Engine Server (port 3003): ✓ Running
+- Health Check: ✓ {"status":"ok","service":"socialboost-engine"}
+
+Stage Summary:
+- **Project Status**: Engineering improvements complete, production readiness improved
+- **Key Improvements**:
+  - Race condition protection for task assignment
+  - Code deduplication (removed ~60 lines of duplicate code)
+  - Resilient WebSocket connection with automatic reconnection
+  - Platform-specific URL validation and sanitization
+  - Graceful server shutdown with statistics logging
+- **Remaining Risks**:
+  - In-memory queue lost on engine restart (acceptable for MVP, Redis needed for production)
+  - Browser dependencies not installed for agent-browser QA testing
+- **Recommendations for Next Phase**:
+  1. Implement proper authentication (NextAuth.js) for session persistence
+  2. Add unit tests for critical paths (task claiming, credit transactions)
+  3. Consider adding request logging/audit trail for security
+  4. Add admin dashboard for monitoring engine health

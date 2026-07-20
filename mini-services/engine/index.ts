@@ -117,22 +117,39 @@ function addTaskToQueue(task: QueuedTask): void {
 
 /**
  * Get next available task for a worker
+ * Includes race condition protection - removes task from queue atomically
  */
-function getNextTask(workerUserId: string, preferredPlatform?: string): QueuedTask | null {
+function getNextTaskAndRemove(workerUserId: string, preferredPlatform?: string): QueuedTask | null {
   // Filter out own tasks and expired tasks
   const now = new Date();
-  const availableTasks = taskQueue.filter(task => 
-    task.creatorId !== workerUserId && 
-    (!task.expiresAt || task.expiresAt > now)
-  );
+  let taskIndex = -1;
+  let selectedTask: QueuedTask | null = null;
   
-  // Prefer requested platform if specified
-  if (preferredPlatform) {
-    const platformTask = availableTasks.find(t => t.platform === preferredPlatform);
-    if (platformTask) return platformTask;
+  // Find best task (prefer platform if specified)
+  for (let i = 0; i < taskQueue.length; i++) {
+    const task = taskQueue[i];
+    if (task.creatorId !== workerUserId && (!task.expiresAt || task.expiresAt > now)) {
+      if (preferredPlatform) {
+        if (task.platform === preferredPlatform) {
+          taskIndex = i;
+          selectedTask = task;
+          break; // Found preferred platform task
+        }
+      } else {
+        taskIndex = i;
+        selectedTask = task;
+        break; // Found first available task
+      }
+    }
   }
   
-  return availableTasks[0] || null;
+  // Atomically remove from queue to prevent double-assignment
+  if (taskIndex !== -1 && selectedTask) {
+    taskQueue.splice(taskIndex, 1);
+    return selectedTask;
+  }
+  
+  return null;
 }
 
 /**
@@ -179,6 +196,67 @@ function getQueueStats() {
 // ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================
+
+/**
+ * Re-queue a task back to the queue (unified helper to avoid code duplication)
+ */
+async function reQueueTask(taskId: string): Promise<void> {
+  try {
+    const taskResponse = await callMainAPI(`/api/tasks/${taskId}`);
+    
+    if (taskResponse && taskResponse.task) {
+      const task = taskResponse.task;
+      
+      // Only re-queue if still pending
+      if (task.status === 'pending') {
+        addTaskToQueue({
+          id: task.id,
+          campaignId: task.campaignId,
+          creatorId: task.creatorId,
+          platform: task.platform,
+          serviceType: task.serviceType,
+          targetUrl: task.targetUrl,
+          targetId: task.targetId,
+          rewardCredits: task.rewardCredits,
+          priority: task.priority || 1,
+          createdAt: new Date(task.createdAt),
+          expiresAt: task.expiresAt ? new Date(task.expiresAt) : undefined
+        });
+        console.log(`[Engine] Task re-queued: ${taskId}`);
+      }
+    }
+  } catch (error) {
+    console.error(`[Engine] Error re-queuing task ${taskId}:`, error);
+  }
+}
+
+/**
+ * Clear worker's current task and optionally re-queue it
+ */
+async function clearWorkerTask(worker: ActiveWorker, socketId: string, shouldReQueue: boolean = true): Promise<void> {
+  if (worker.currentTaskId) {
+    const taskId = worker.currentTaskId;
+    
+    // Abandon task via API first
+    try {
+      await callMainAPI(`/api/tasks/${taskId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ action: 'abandon', userId: worker.userId })
+      });
+    } catch (e) {
+      console.error(`[Engine] Error abandoning task ${taskId}:`, e);
+    }
+    
+    // Re-queue if requested
+    if (shouldReQueue) {
+      await reQueueTask(taskId);
+    }
+    
+    // Clear local state
+    worker.currentTaskId = null;
+    workerTasks.delete(socketId);
+  }
+}
 
 function generateVerificationCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -281,6 +359,7 @@ io.on("connection", async (socket: Socket) => {
   
   /**
    * Request a task from the queue
+   * Includes retry logic for race condition handling
    */
   socket.on("task:request", async (data: { userId: string; platform?: string }) => {
     try {
@@ -296,27 +375,57 @@ io.on("connection", async (socket: Socket) => {
         return;
       }
       
-      // Get next available task
-      const task = getNextTask(data.userId, data.platform);
+      // Get next available task and atomically remove from queue
+      const task = getNextTaskAndRemove(data.userId, data.platform);
       
       if (!task) {
         socket.emit("task:empty", { message: "No tasks available", retryIn: 5000 });
         return;
       }
       
-      // Claim the task via API
-      const claimResult = await callMainAPI(`/api/tasks/${task.id}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ action: 'claim', userId: data.userId })
-      });
+      // Claim the task via API (with retry for race conditions)
+      const MAX_RETRIES = 2;
+      let claimResult: any = null;
+      let claimed = false;
       
-      if (!claimResult || !claimResult.success) {
-        socket.emit("error", { code: "CLAIM_FAILED", message: claimResult?.error || "Failed to claim task" });
+      for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+        claimResult = await callMainAPI(`/api/tasks/${task.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ action: 'claim', userId: data.userId })
+        });
+        
+        if (claimResult && claimResult.success) {
+          claimed = true;
+          break;
+        }
+        
+        // If claim failed due to status conflict, task was already claimed by another worker
+        if (claimResult?.error?.includes('cannot claim') || claimResult?.currentStatus) {
+          console.log(`[Engine] Task ${task.id} already claimed (attempt ${attempt + 1}), trying next task`);
+          
+          // Try to get another task
+          const nextTask = getNextTaskAndRemove(data.userId, data.platform);
+          if (nextTask) {
+            Object.assign(task, nextTask); // Update task reference
+            continue; // Retry with new task
+          } else {
+            socket.emit("task:empty", { message: "No tasks available", retryIn: 5000 });
+            return;
+          }
+        }
+        
+        // Small delay before retry
+        if (attempt < MAX_RETRIES) {
+          await new Promise(resolve => setTimeout(resolve, 100 * (attempt + 1)));
+        }
+      }
+      
+      if (!claimed) {
+        socket.emit("error", { code: "CLAIM_FAILED", message: claimResult?.error || "Failed to claim task after retries" });
         return;
       }
       
       // Update local state
-      removeFromQueue(task.id);
       worker.currentTaskId = task.id;
       workerTasks.set(socket.id, task.id);
       
@@ -534,39 +643,8 @@ io.on("connection", async (socket: Socket) => {
       const worker = activeWorkers.get(socket.id);
       if (!worker) return;
       
-      // Abandon task via API
-      await callMainAPI(`/api/tasks/${data.taskId}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ action: 'abandon', userId: data.userId })
-      });
-      
-      // Get task details to re-queue
-      const taskResponse = await callMainAPI(`/api/tasks/${data.taskId}`);
-      
-      if (taskResponse && taskResponse.task) {
-        const task = taskResponse.task;
-        
-        // Re-queue if still pending
-        if (task.status === 'pending') {
-          addTaskToQueue({
-            id: task.id,
-            campaignId: task.campaignId,
-            creatorId: task.creatorId,
-            platform: task.platform,
-            serviceType: task.serviceType,
-            targetUrl: task.targetUrl,
-            targetId: task.targetId,
-            rewardCredits: task.rewardCredits,
-            priority: task.priority,
-            createdAt: new Date(task.createdAt),
-            expiresAt: task.expiresAt ? new Date(task.expiresAt) : undefined
-          });
-        }
-      }
-      
-      // Clear worker state
-      worker.currentTaskId = null;
-      workerTasks.delete(socket.id);
+      // Use unified clearWorkerTask function
+      await clearWorkerTask(worker, socket.id, true);
       
       socket.emit("task:abandoned", { taskId: data.taskId });
       console.log(`[Engine] Task abandoned: ${data.taskId}`);
@@ -584,47 +662,16 @@ io.on("connection", async (socket: Socket) => {
     
     const worker = activeWorkers.get(socket.id);
     if (worker) {
-      // If worker had an active task, re-queue it
-      if (worker.currentTaskId) {
-        try {
-          // Abandon task via API
-          await callMainAPI(`/api/tasks/${worker.currentTaskId}`, {
-            method: 'PATCH',
-            body: JSON.stringify({ action: 'abandon', userId: worker.userId })
-          });
-          
-          // Get task to re-queue
-          const taskResponse = await callMainAPI(`/api/tasks/${worker.currentTaskId}`);
-          
-          if (taskResponse && taskResponse.task) {
-            const task = taskResponse.task;
-            
-            if (task.status === 'pending') {
-              addTaskToQueue({
-                id: task.id,
-                campaignId: task.campaignId,
-                creatorId: task.creatorId,
-                platform: task.platform,
-                serviceType: task.serviceType,
-                targetUrl: task.targetUrl,
-                targetId: task.targetId,
-                rewardCredits: task.rewardCredits,
-                priority: task.priority,
-                createdAt: new Date(task.createdAt),
-                expiresAt: task.expiresAt ? new Date(task.expiresAt) : undefined
-              });
-            }
-          }
-        } catch (e) {
-          console.error("[Engine] Error re-queuing task on disconnect:", e);
-        }
-      }
+      // Use unified clearWorkerTask function to handle task re-queuing
+      await clearWorkerTask(worker, socket.id, true);
       
       activeWorkers.delete(socket.id);
       workerTasks.delete(socket.id);
       
       // Broadcast updated online count
       io.emit("stats:online", { count: activeWorkers.size });
+      
+      console.log(`[Engine] Worker removed: ${socket.id} (Active workers: ${activeWorkers.size})`);
     }
   });
 });
@@ -661,15 +708,38 @@ setInterval(async () => {
   }
 }, 30000);
 
-// Check for stale workers (no heartbeat for 2 minutes)
+// Stale worker tracking with progressive warnings
+const workerWarnings = new Map<string, number>(); // socketId -> warning count
+
+// Check for stale workers (with progressive timeout)
 setInterval(() => {
-  const staleTime = 2 * 60 * 1000; // 2 minutes
+  const baseStaleTime = 2 * 60 * 1000; // 2 minutes base
   const now = Date.now();
   
   for (const [socketId, worker] of activeWorkers.entries()) {
-    if (now - worker.lastHeartbeat.getTime() > staleTime) {
-      console.log(`[Engine] Disconnecting stale worker: ${socketId}`);
-      io.sockets.sockets.get(socketId)?.disconnect(true);
+    const timeSinceHeartbeat = now - worker.lastHeartbeat.getTime();
+    const warningCount = workerWarnings.get(socketId) || 0;
+    
+    // Progressive timeout: 2min, 3min, 4min (max)
+    const staleTime = baseStaleTime + (warningCount * 60 * 1000);
+    
+    if (timeSinceHeartbeat > staleTime) {
+      if (warningCount < 2) {
+        // Send warning first
+        const newWarningCount = warningCount + 1;
+        workerWarnings.set(socketId, newWarningCount);
+        console.log(`[Engine] Warning ${newWarningCount} for stale worker: ${socketId}`);
+        io.to(socketId).emit("warning", {
+          code: "STALE_CONNECTION",
+          message: "Connection appears unstable. Please check your network.",
+          warningCount: newWarningCount
+        });
+      } else {
+        // Disconnect after warnings
+        console.log(`[Engine] Disconnecting stale worker after warnings: ${socketId}`);
+        workerWarnings.delete(socketId);
+        io.sockets.sockets.get(socketId)?.disconnect(true);
+      }
     }
   }
 }, 60000);
@@ -687,6 +757,53 @@ setInterval(() => {
     engineStats.resetDailyCounters();
   }
 }, 60000);
+
+// ============================================================================
+// GRACEFUL SHUTDOWN HANDLING
+// ============================================================================
+
+function gracefulShutdown(signal: string): void {
+  console.log(`\n[Engine] Received ${signal}. Starting graceful shutdown...`);
+  
+  // Stop accepting new connections
+  io.close(() => {
+    console.log('[Engine] Socket.io connections closed');
+  });
+  
+  // Close HTTP server
+  httpServer.close(() => {
+    console.log('[Engine] HTTP server closed');
+    
+    // Log final stats
+    console.log(`[Engine Final Stats]:
+      - Total Tasks Processed: ${engineStats.totalTasksProcessed}
+      - Total Credits Exchanged: ${engineStats.totalCreditsExchanged}
+      - Peak Concurrent Users: ${engineStats.peakConcurrentUsers}
+      - Uptime: ${engineStats.uptime()}s
+    `);
+    
+    process.exit(0);
+  });
+  
+  // Force shutdown after 10 seconds
+  setTimeout(() => {
+    console.error('[Engine] Forced shutdown after timeout');
+    process.exit(1);
+  }, 10000);
+}
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+  console.error('[Engine] Uncaught Exception:', error);
+  gracefulShutdown('UNCAUGHT_EXCEPTION');
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[Engine] Unhandled Rejection at:', promise, 'reason:', reason);
+});
 
 // ============================================================================
 // START SERVER

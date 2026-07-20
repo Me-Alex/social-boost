@@ -2,6 +2,78 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { z } from 'zod';
 
+// ============================================================================
+// VALIDATION SCHEMAS
+// ============================================================================
+
+// Allowed platforms and service types (whitelist approach)
+const ALLOWED_PLATFORMS = ['youtube', 'instagram', 'tiktok', 'twitter', 'facebook'] as const;
+const ALLOWED_SERVICE_TYPES = ['views', 'subscribers', 'likes', 'comments', 'followers', 'reels_views', 'story_views', 'shares', 'retweets'] as const;
+
+// URL validation patterns
+const YOUTUBE_URL_PATTERN = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+/i;
+const INSTAGRAM_URL_PATTERN = /^(https?:\/\/)?(www\.)?(instagram\.com|instagr\.am)\/.+/i;
+const TIKTOK_URL_PATTERN = /^(https?:\/\/)?(www\.)?(tiktok\.com)\/.+/i;
+const TWITTER_URL_PATTERN = /^(https?:\/\/)?(www\.)?(twitter\.com|x\.com)\/.+/i;
+const FACEBOOK_URL_PATTERN = /^(https?:\/\/)?(www\.)?(facebook\.com|fb\.com)\/.+/i;
+
+/**
+ * Validate URL against platform-specific patterns
+ */
+function validatePlatformUrl(url: string, platform: string): boolean {
+  try {
+    // Basic URL format check
+    new URL(url);
+    
+    switch (platform) {
+      case 'youtube': return YOUTUBE_URL_PATTERN.test(url);
+      case 'instagram': return INSTAGRAM_URL_PATTERN.test(url);
+      case 'tiktok': return TIKTOK_URL_PATTERN.test(url);
+      case 'twitter': return TWITTER_URL_PATTERN.test(url);
+      case 'facebook': return FACEBOOK_URL_PATTERN.test(url);
+      default: return false;
+    }
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Sanitize URL - remove tracking parameters and normalize
+ */
+function sanitizeUrl(url: string): string {
+  try {
+    const urlObj = new URL(url);
+    
+    // Remove dangerous/tracking query params
+    const dangerousParams = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 
+                            'fbclid', 'gclid', '_ga', 'ref', 'si', 'feature', 't'];
+    
+    for (const param of dangerousParams) {
+      urlObj.searchParams.delete(param);
+    }
+    
+    // Force HTTPS
+    if (urlObj.protocol === 'http:') {
+      urlObj.protocol = 'https:';
+    }
+    
+    return urlObj.toString();
+  } catch {
+    return url; // Return original if parsing fails
+  }
+}
+
+/**
+ * Sanitize string input to prevent XSS
+ */
+function sanitizeString(input: string, maxLength: number = 500): string {
+  return input
+    .trim()
+    .slice(0, maxLength)
+    .replace(/[<>"'&]/g, ''); // Remove potential HTML characters
+}
+
 // Validation schemas
 const taskQuerySchema = z.object({
   userId: z.string().min(1, 'userId is required'),
@@ -13,10 +85,10 @@ const taskQuerySchema = z.object({
 const createTaskSchema = z.object({
   userId: z.string().min(1, 'userId is required'),
   campaignId: z.string().optional(),
-  platform: z.enum(['youtube', 'instagram', 'tiktok', 'twitter', 'facebook'], { required_error: 'platform is required' }),
-  serviceType: z.enum(['views', 'subscribers', 'likes', 'comments', 'followers', 'reels_views', 'story_views', 'shares', 'retweets'], { required_error: 'serviceType is required' }),
-  targetUrl: z.string().url('Invalid URL format').min(1, 'targetUrl is required'),
-  targetId: z.string().min(1, 'targetId is required'),
+  platform: z.enum(ALLOWED_PLATFORMS, { required_error: 'platform is required' }),
+  serviceType: z.enum(ALLOWED_SERVICE_TYPES, { required_error: 'serviceType is required' }),
+  targetUrl: z.string().min(1, 'targetUrl is required'), // Will be validated further below
+  targetId: z.string().min(1).max(100, 'targetId must be 1-100 characters'),
   quantity: z.coerce.number().int().min(1).max(1000).default(1),
   creditsPerTask: z.coerce.number().int().min(1).max(10).default(1)
 });
@@ -167,6 +239,18 @@ export async function POST(request: NextRequest) {
     
     const { userId, campaignId, platform, serviceType, targetUrl, targetId, quantity, creditsPerTask } = validationResult.data;
     
+    // Validate and sanitize URL for specific platform
+    const sanitizedUrl = sanitizeUrl(targetUrl);
+    if (!validatePlatformUrl(sanitizedUrl, platform)) {
+      return NextResponse.json(
+        { error: `Invalid ${platform} URL. Please provide a valid ${platform} link.` },
+        { status: 400 }
+      );
+    }
+    
+    // Sanitize targetId
+    const sanitizedTargetId = sanitizeString(targetId, 100);
+    
     // Rate limiting for task creation (stricter)
     const clientIp = request.headers.get('x-forwarded-for') || 'unknown';
     const rateLimitResult = checkRateLimit(`tasks:create:${userId}:${clientIp}`);
@@ -251,8 +335,8 @@ export async function POST(request: NextRequest) {
         creatorId: userId,
         platform,
         serviceType,
-        targetUrl,
-        targetId,
+        targetUrl: sanitizedUrl,
+        targetId: sanitizedTargetId,
         rewardCredits: creditsPerTask,
         status: 'pending',
         priority: 1,
