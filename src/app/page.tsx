@@ -119,7 +119,11 @@ import {
   Facebook,
   MessageSquare,
   Rss,
-  AlertCircle
+  AlertCircle,
+  // Round 9 New Icons
+  Linkedin,
+  Phone,
+  Clock as ClockIcon
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useTheme } from 'next-themes'
@@ -2802,6 +2806,447 @@ function TestimonialsCarousel() {
   )
 }
 
+// ============================================
+// ROUND 9: NEW COMPONENTS
+// ============================================
+
+// Blog Article Interface
+interface BlogArticle {
+  id: number
+  title: string
+  excerpt: string
+  category: string
+  readTime: string
+  date: string
+  author: {
+    name: string
+    initials: string
+  }
+  featured?: boolean
+  gradient: string
+}
+
+// Blog Data
+const blogArticles: BlogArticle[] = [
+  {
+    id: 1,
+    title: "10 Proven Strategies to Triple Your Instagram Engagement in 30 Days",
+    excerpt: "Discover the exact tactics top creators use to skyrocket their engagement rates and build loyal communities that convert.",
+    category: "Growth Tips",
+    readTime: "8 min read",
+    date: "Dec 15, 2024",
+    author: { name: "Sarah Miller", initials: "SM" },
+    featured: true,
+    gradient: "from-warm-600 via-orange-500 to-amber-500"
+  },
+  {
+    id: 2,
+    title: "YouTube Algorithm Update: What Changed in Q4 2024",
+    excerpt: "Stay ahead of the curve with our comprehensive breakdown of the latest YouTube algorithm changes.",
+    category: "Platform Updates",
+    readTime: "5 min read",
+    date: "Dec 12, 2024",
+    author: { name: "David Kim", initials: "DK" },
+    gradient: "from-red-600 via-red-500 to-orange-500"
+  },
+  {
+    id: 3,
+    title: "From 0 to 100K Followers: A Creator Success Story",
+    excerpt: "How Emily Chen built a thriving YouTube channel in just 18 months using organic growth strategies.",
+    category: "Success Stories",
+    readTime: "6 min read",
+    date: "Dec 10, 2024",
+    author: { name: "Emma Wilson", initials: "EW" },
+    gradient: "from-purple-600 via-pink-500 to-rose-500"
+  }
+]
+
+// Team Member Interface
+interface TeamMember {
+  name: string
+  role: string
+  tagline: string
+  initials: string
+  gradient: string
+}
+
+// Team Data
+const teamMembers: TeamMember[] = [
+  { name: "Alex Chen", role: "CEO & Founder", tagline: "Building the future of social growth", initials: "AC", gradient: "from-warm-500 to-orange-600" },
+  { name: "Sarah Miller", role: "Head of Product", tagline: "Making complex things simple", initials: "SM", gradient: "from-pink-500 to-rose-600" },
+  { name: "David Kim", role: "Lead Developer", tagline: "Code is poetry", initials: "DK", gradient: "from-blue-500 to-indigo-600" },
+  { name: "Emma Wilson", role: "Marketing Director", tagline: "Growing communities", initials: "EW", gradient: "from-purple-500 to-violet-600" },
+  { name: "Michael Brown", role: "Customer Success", tagline: "Your success is our mission", initials: "MB", gradient: "from-green-500 to-emerald-600" },
+  { name: "Lisa Zhang", role: "Data Scientist", tagline: "Data-driven decisions", initials: "LZ", gradient: "from-cyan-500 to-teal-600" }
+]
+
+// Blog Section Component - Round 9 New Feature
+function BlogSection() {
+  const featuredArticle = blogArticles.find(a => a.featured)!
+  const regularArticles = blogArticles.filter(a => !a.featured)
+
+  return (
+    <section className="py-20 bg-muted/30">
+      <div className="container mx-auto px-4">
+        {/* Section Header */}
+        <div className="text-center mb-12">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
+            Latest <span className="gradient-text">Insights</span>
+          </h2>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Tips, tricks, and news to boost your social media growth
+          </p>
+        </div>
+
+        {/* Articles Grid */}
+        <div className="grid md:grid-cols-3 gap-8">
+          {/* Featured Article Card */}
+          <Card className="md:col-span-2 md:row-span-2 overflow-hidden group hover-lift cursor-pointer">
+            <div className={`relative h-full min-h-[400px] bg-gradient-to-br ${featuredArticle.gradient} p-8 flex flex-col justify-between`}>
+              {/* Overlay for readability */}
+              <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors duration-300"></div>
+              
+              {/* Content */}
+              <div className="relative z-10">
+                <Badge className="bg-white/20 backdrop-blur-sm text-white border-0 mb-4 hover:bg-white/30 transition-colors">
+                  {featuredArticle.category}
+                </Badge>
+                <h3 className="text-2xl md:text-3xl font-bold text-white mb-3 group-hover:text-warm-100 transition-colors">
+                  {featuredArticle.title}
+                </h3>
+                <p className="text-white/80 text-lg mb-6 line-clamp-2">
+                  {featuredArticle.excerpt}
+                </p>
+              </div>
+
+              {/* Footer */}
+              <div className="relative z-10 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                    <span className="text-white font-semibold">{featuredArticle.author.initials}</span>
+                  </div>
+                  <div>
+                    <p className="text-white font-medium">{featuredArticle.author.name}</p>
+                    <p className="text-white/70 text-sm">{featuredArticle.date} · {featuredArticle.readTime}</p>
+                  </div>
+                </div>
+                <Button variant="ghost" className="text-white hover:bg-white/20 hover:text-white group/btn">
+                  Read More
+                  <ArrowRight className="w-4 h-4 ml-2 group-hover/btn:translate-x-1 transition-transform" />
+                </Button>
+              </div>
+            </div>
+          </Card>
+
+          {/* Regular Article Cards */}
+          {regularArticles.map((article) => (
+            <Card key={article.id} className="overflow-hidden group hover-lift cursor-pointer">
+              <div className={`relative h-40 bg-gradient-to-br ${article.gradient} p-4`}>
+                <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors"></div>
+                <Badge className="relative z-10 bg-white/20 backdrop-blur-sm text-white border-0 text-xs">
+                  {article.category}
+                </Badge>
+              </div>
+              <CardContent className="p-5">
+                <h3 className="font-bold text-lg mb-2 line-clamp-2 group-hover:text-warm-600 transition-colors">
+                  {article.title}
+                </h3>
+                <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
+                  {article.excerpt}
+                </p>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-warm-100 to-orange-100 flex items-center justify-center">
+                      <span className="text-xs font-medium text-warm-700">{article.author.initials}</span>
+                    </div>
+                    <div className="text-xs">
+                      <p className="font-medium">{article.author.name}</p>
+                      <p className="text-muted-foreground">{article.readTime}</p>
+                    </div>
+                  </div>
+                  <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-warm-500 group-hover:translate-x-1 transition-all" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* View All Button */}
+        <div className="text-center mt-12">
+          <Button variant="outline" size="lg" className="group border-warm-300 hover:border-warm-500 hover:bg-warm-50 text-warm-700 hover:text-warm-800 transition-all">
+            View All Articles
+            <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+          </Button>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// Team Section Component - Round 9 New Feature
+function TeamSection() {
+  return (
+    <section className="py-20 bg-background">
+      <div className="container mx-auto px-4">
+        {/* Section Header */}
+        <div className="text-center mb-12">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
+            Meet Our <span className="gradient-text">Team</span>
+          </h2>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            The people behind SocialBoost
+          </p>
+        </div>
+
+        {/* Team Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 stagger-children">
+          {teamMembers.map((member) => (
+            <Card key={member.name} className="group text-center p-6 hover-lift cursor-pointer tilt-card">
+              <CardContent className="p-0 space-y-4">
+                {/* Avatar with pulse animation */}
+                <div className={`mx-auto w-20 h-20 rounded-full bg-gradient-to-br ${member.gradient} flex items-center justify-center pulse-ring`}>
+                  <span className="text-2xl font-bold text-white">{member.initials}</span>
+                </div>
+                
+                {/* Info */}
+                <div>
+                  <h3 className="font-bold text-lg group-hover:text-warm-600 transition-colors">
+                    {member.name}
+                  </h3>
+                  <p className="text-sm text-warm-600 font-medium mb-1">{member.role}</p>
+                  <p className="text-xs text-muted-foreground italic">&quot;{member.tagline}&quot;</p>
+                </div>
+
+                {/* Social Links */}
+                <div className="flex justify-center gap-2 pt-2">
+                  <button 
+                    className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center social-icon-hover"
+                    aria-label={`${member.name}'s LinkedIn`}
+                  >
+                    <Linkedin className="w-4 h-4 text-muted-foreground" />
+                  </button>
+                  <button 
+                    className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center social-icon-hover"
+                    aria-label={`${member.name}'s Twitter`}
+                  >
+                    <Twitter className="w-4 h-4 text-muted-foreground" />
+                  </button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// Contact Section Component - Round 9 New Feature
+function ContactSection() {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    subject: 'general',
+    message: ''
+  })
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSubmitted, setIsSubmitted] = useState(false)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    // Basic validation
+    if (!formData.name || !formData.email || !formData.message) {
+      toast.error('Please fill in all required fields')
+      return
+    }
+    
+    if (!formData.email.includes('@')) {
+      toast.error('Please enter a valid email address')
+      return
+    }
+
+    setIsSubmitting(true)
+    
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1500))
+    
+    setIsSubmitting(false)
+    setIsSubmitted(true)
+    toast.success('Message sent successfully! We\'ll get back to you soon.')
+    
+    // Reset form after delay
+    setTimeout(() => {
+      setFormData({ name: '', email: '', subject: 'general', message: '' })
+      setIsSubmitted(false)
+    }, 3000)
+  }
+
+  const contactInfo = [
+    { icon: Mail, label: 'Email', value: 'hello@socialboost.io', href: 'mailto:hello@socialboost.io' },
+    { icon: MapPin, label: 'Location', value: 'San Francisco, CA', href: '#' },
+    { icon: Phone, label: 'Phone', value: '+1 (555) 123-4567', href: 'tel:+15551234567' },
+    { icon: ClockIcon, label: 'Hours', value: '24/7 Support', href: '#' }
+  ]
+
+  return (
+    <section id="contact" className="py-20 bg-gradient-to-br from-warm-900 via-warm-800 to-orange-900 text-white relative overflow-hidden">
+      {/* Decorative Background Elements */}
+      <div className="floating-orb floating-orb-1 opacity-30"></div>
+      <div className="floating-orb floating-orb-2 opacity-20"></div>
+      
+      <div className="container mx-auto px-4 relative z-10">
+        <div className="grid md:grid-cols-2 gap-12 items-start">
+          {/* Left: Contact Info */}
+          <div className="space-y-8">
+            <div>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
+                Get In <span className="text-warm-400">Touch</span>
+              </h2>
+              <p className="text-warm-200 text-lg">
+                Have questions? We&apos;d love to hear from you. Send us a message and we&apos;ll respond as soon as possible.
+              </p>
+            </div>
+
+            {/* Contact Info Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {contactInfo.map((item) => (
+                <a
+                  key={item.label}
+                  href={item.href}
+                  className="flex items-start gap-4 p-4 rounded-xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 hover:border-warm-500/50 transition-all group"
+                >
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-warm-500 to-orange-500 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                    <item.icon className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-warm-300">{item.label}</p>
+                    <p className="font-medium group-hover:text-warm-400 transition-colors">{item.value}</p>
+                  </div>
+                </a>
+              ))}
+            </div>
+
+            {/* Stats */}
+            <div className="flex flex-wrap gap-8 pt-4">
+              <div>
+                <p className="text-3xl font-bold neon-text">
+                  <AnimatedCounter value={98} suffix="%" />
+                </p>
+                <p className="text-warm-300 text-sm">Satisfaction Rate</p>
+              </div>
+              <div>
+                <p className="text-3xl font-bold neon-text">
+                  <AnimatedCounter value={24} suffix="/7" />
+                </p>
+                <p className="text-warm-300 text-sm">Support Available</p>
+              </div>
+              <div>
+                <p className="text-3xl font-bold neon-text">
+                  <AnimatedCounter value={2} suffix="hr" />
+                </p>
+                <p className="text-warm-300 text-sm">Avg Response Time</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Right: Contact Form */}
+          <Card className="p-8 bg-white/10 backdrop-blur-md border border-white/20 shadow-2xl">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Name Field */}
+              <div className="space-y-2">
+                <Label htmlFor="contact-name" className="text-white">Name *</Label>
+                <Input
+                  id="contact-name"
+                  placeholder="Your name"
+                  value={formData.name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-warm-400 focus:ring-warm-400/50"
+                  required
+                />
+              </div>
+
+              {/* Email Field */}
+              <div className="space-y-2">
+                <Label htmlFor="contact-email" className="text-white">Email *</Label>
+                <Input
+                  id="contact-email"
+                  type="email"
+                  placeholder="your@email.com"
+                  value={formData.email}
+                  onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                  className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-warm-400 focus:ring-warm-400/50"
+                  required
+                />
+              </div>
+
+              {/* Subject Dropdown */}
+              <div className="space-y-2">
+                <Label htmlFor="contact-subject" className="text-white">Subject *</Label>
+                <Select value={formData.subject} onValueChange={(value) => setFormData(prev => ({ ...prev, subject: value }))}>
+                  <SelectTrigger className="bg-white/10 border-white/20 text-white focus:border-warm-400 focus:ring-warm-400/50">
+                    <SelectValue placeholder="Select a subject" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-warm-900 border-white/20">
+                    <SelectItem value="general" className="text-white focus:bg-warm-800">General Inquiry</SelectItem>
+                    <SelectItem value="support" className="text-white focus:bg-warm-800">Technical Support</SelectItem>
+                    <SelectItem value="sales" className="text-white focus:bg-warm-800">Sales & Partnerships</SelectItem>
+                    <SelectItem value="feedback" className="text-white focus:bg-warm-800">Feedback</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Message Field with Character Count */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="contact-message" className="text-white">Message *</Label>
+                  <span className={`text-sm ${formData.message.length > 500 ? 'text-red-400' : 'text-white/60'}`}>
+                    {formData.message.length}/500
+                  </span>
+                </div>
+                <textarea
+                  id="contact-message"
+                  placeholder="Tell us how we can help..."
+                  value={formData.message}
+                  onChange={(e) => setFormData(prev => ({ ...prev, message: e.target.value.slice(0, 500) }))}
+                  rows={5}
+                  maxLength={500}
+                  className="w-full rounded-lg bg-white/10 border border-white/20 text-white placeholder:text-white/50 p-3 resize-none focus:border-warm-400 focus:ring-2 focus:ring-warm-400/50 outline-none transition-all"
+                  required
+                ></textarea>
+              </div>
+
+              {/* Submit Button */}
+              <Button
+                type="submit"
+                disabled={isSubmitting || isSubmitted}
+                className="w-full py-6 text-lg font-semibold bg-gradient-to-r from-warm-500 to-orange-500 hover:from-warm-600 hover:to-orange-600 text-white border-0 shadow-lg shadow-warm-500/30 btn-shine disabled:opacity-70 disabled:cursor-not-allowed transition-all ripple-effect"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    Sending...
+                  </>
+                ) : isSubmitted ? (
+                  <>
+                    <CheckCircle2 className="w-5 h-5 mr-2" />
+                    Message Sent!
+                  </>
+                ) : (
+                  <>
+                    Send Message
+                    <Send className="w-5 h-5 ml-2" />
+                  </>
+                )}
+              </Button>
+            </form>
+          </Card>
+        </div>
+      </div>
+    </section>
+  )
+}
+
 export default function Home() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isSignUpOpen, setIsSignUpOpen] = useState(false)
@@ -4481,6 +4926,19 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* ============================================ */}
+      {/* ROUND 9: NEW SECTIONS                      */}
+      {/* ============================================ */}
+
+      {/* Blog / Latest News Section - Round 9 New Feature */}
+      <BlogSection />
+
+      {/* Team / Meet The Team Section - Round 9 New Feature */}
+      <TeamSection />
+
+      {/* Contact Us Section - Round 9 New Feature */}
+      <ContactSection />
 
       {/* Trust Signals / Security Badges */}
       <section className="py-16 bg-muted/30 border-y border-border">

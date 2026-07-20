@@ -1174,3 +1174,202 @@
 .smooth-accordion {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
+/* ============================================
+   ROUND 9: PARALLAX & MICRO-INTERACTIONS
+   ============================================ */
+
+/* Parallax Container */
+.parallax-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.parallax-bg {
+  position: absolute;
+  top: -20%;
+  left: 0;
+  right: 0;
+  bottom: -20%;
+  background-attachment: fixed;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+/* Gradient Mesh Background */
+.gradient-mesh {
+  background-color: #fef3c7;
+  background-image: 
+    radial-gradient(at 40% 20%, rgba(251, 191, 36, 0.3) 0px, transparent 50%),
+    radial-gradient(at 80% 0%, rgba(245, 158, 11, 0.2) 0px, transparent 50%),
+    radial-gradient(at 0% 50%, rgba(217, 119, 6, 0.2) 0px, transparent 50%),
+    radial-gradient(at 80% 50%, rgba(251, 146, 60, 0.2) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, rgba(245, 158, 11, 0.15) 0px, transparent 50%);
+}
+
+/* Magnetic Button Effect (follows cursor slightly) */
+.magnetic-btn {
+  transition: transform 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+/* Text Reveal Animation */
+@keyframes textReveal {
+  from { clip-path: inset(0 100% 0 0); }
+  to { clip-path: inset(0 0 0 0); }
+}
+
+.text-reveal {
+  animation: textReveal 0.8s ease-out forwards;
+}
+
+/* Stagger Children Entrance */
+.stagger-children > * {
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeInUp 0.5s ease-out forwards;
+}
+
+.stagger-children > *:nth-child(1) { animation-delay: 0.1s; }
+.stagger-children > *:nth-child(2) { animation-delay: 0.2s; }
+.stagger-children > *:nth-child(3) { animation-delay: 0.3s; }
+.stagger-children > *:nth-child(4) { animation-delay: 0.4s; }
+.stagger-children > *:nth-child(5) { animation-delay: 0.5s; }
+.stagger-children > *:nth-child(6) { animation-delay: 0.6s; }
+
+/* Ripple Effect on Click */
+.ripple-effect {
+  position: relative;
+  overflow: hidden;
+}
+
+.ripple-effect::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: var(--ripple-y, 50%);
+  left: var(--ripple-x, 50%);
+  transform: scale(0);
+  background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%);
+  opacity: 0;
+  transition: transform 0.5s, opacity 0.3s;
+}
+
+.ripple-effect:active::after {
+  transform: scale(2.5);
+  opacity: 1;
+  transition: 0s;
+}
+
+/* Hover Tilt Effect */
+.tilt-card {
+  transform-style: preserve-3d;
+  transition: transform 0.3s ease;
+}
+
+.tilt-card:hover {
+  transform: perspective(1000px) rotateX(5deg) rotateY(5deg);
+}
+
+/* Glowing Underline Animation */
+.glow-underline {
+  position: relative;
+}
+
+.glow-underline::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #f59e0b, #fbbf24);
+  transition: width 0.3s ease;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+}
+
+.glow-underline:hover::after {
+  width: 100%;
+}
+
+/* Counter Bounce Animation - Round 9 Enhanced */
+@keyframes counterBounce {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.15); }
+  50% { transform: scale(0.95); }
+  70% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+.counter-bounce {
+  animation: counterBounce 0.5s ease-out forwards;
+}
+
+/* Blog Card Image Zoom Effect */
+.blog-image-zoom {
+  overflow: hidden;
+}
+
+.blog-image-zoom img,
+.blog-image-zoom > div {
+  transition: transform 0.5s ease;
+}
+
+.blog-image-zoom:hover img,
+.blog-image-zoom:hover > div {
+  transform: scale(1.05);
+}
+
+/* Team Avatar Pulse Glow */
+@keyframes avatarPulse {
+  0%, 100% { 
+    box-shadow: 0 0 0 0 rgba(217, 119, 6, 0.4);
+  }
+  50% { 
+    box-shadow: 0 0 0 15px rgba(217, 119, 6, 0);
+  }
+}
+
+.avatar-pulse-glow {
+  animation: avatarPulse 2s ease-in-out infinite;
+}
+
+/* Contact Form Focus Glow */
+.contact-glow:focus {
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2), 0 0 20px rgba(245, 158, 11, 0.1);
+}
+
+/* Smooth Scroll Behavior for Anchor Links */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Selection Color Override */
+::selection {
+  background-color: rgba(245, 158, 11, 0.3);
+  color: inherit;
+}
+
+/* Focus Visible Ring Enhancement */
+:focus-visible {
+  outline: 2px solid #f59e0b;
+  outline-offset: 2px;
+}
+
+/* Line Clamp Utility Extensions */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

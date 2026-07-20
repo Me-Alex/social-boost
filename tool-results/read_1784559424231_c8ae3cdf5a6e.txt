@@ -1,0 +1,1177 @@
+     1→     1→@import "tailwindcss";
+     2→     2→@import "tw-animate-css";
+     3→     3→
+     4→     4→@custom-variant dark (&:is(.dark *));
+     5→     5→
+     6→     6→@theme inline {
+     7→     7→  --color-background: var(--background);
+     8→     8→  --color-foreground: var(--foreground);
+     9→     9→  --font-sans: var(--font-geist-sans);
+    10→    10→  --font-mono: var(--font-geist-mono);
+    11→    11→  --color-sidebar-ring: var(--sidebar-ring);
+    12→    12→  --color-sidebar-border: var(--sidebar-border);
+    13→    13→  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    14→    14→  --color-sidebar-accent: var(--sidebar-accent);
+    15→    15→  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    16→    16→  --color-sidebar-primary: var(--sidebar-primary);
+    17→    17→  --color-sidebar-foreground: var(--sidebar-foreground);
+    18→    18→  --color-sidebar: var(--sidebar);
+    19→    19→  --color-chart-5: var(--chart-5);
+    20→    20→  --color-chart-4: var(--chart-4);
+    21→    21→  --color-chart-3: var(--chart-3);
+    22→    22→  --color-chart-2: var(--chart-2);
+    23→    23→  --color-chart-1: var(--chart-1);
+    24→    24→  --color-ring: var(--ring);
+    25→    25→  --color-input: var(--input);
+    26→    26→  --color-border: var(--border);
+    27→    27→  --color-destructive: var(--destructive);
+    28→    28→  --color-accent-foreground: var(--accent-foreground);
+    29→    29→  --color-accent: var(--accent);
+    30→    30→  --color-muted-foreground: var(--muted-foreground);
+    31→    31→  --color-muted: var(--muted);
+    32→    32→  --color-secondary-foreground: var(--secondary-foreground);
+    33→    33→  --color-secondary: var(--secondary);
+    34→    34→  --color-primary-foreground: var(--primary-foreground);
+    35→    35→  --color-primary: var(--primary);
+    36→    36→  --color-popover-foreground: var(--popover-foreground);
+    37→    37→  --color-popover: var(--popover);
+    38→    38→  --color-card-foreground: var(--card-foreground);
+    39→    39→  --color-card: var(--card);
+    40→    40→  --radius-sm: calc(var(--radius) - 4px);
+    41→    41→  --radius-md: calc(var(--radius) - 2px);
+    42→    42→  --radius-lg: var(--radius);
+    43→    43→  --radius-xl: calc(var(--radius) + 4px);
+    44→    44→  --color-warm-50: #fffbeb;
+    45→    45→  --color-warm-100: #fef3c7;
+    46→    46→  --color-warm-200: #fde68a;
+    47→    47→  --color-warm-300: #fcd34d;
+    48→    48→  --color-warm-400: #fbbf24;
+    49→    49→  --color-warm-500: #f59e0b;
+    50→    50→  --color-warm-600: #d97706;
+    51→    51→  --color-warm-700: #b45309;
+    52→    52→  --color-warm-800: #92400e;
+    53→    53→  --color-warm-900: #78350f;
+    54→    54→  --color-youtube: #FF0000;
+    55→    55→  --color-instagram: #E4405F;
+    56→    56→  --color-success: #10B981;
+    57→    57→  --color-warning: #F59E0B;
+    58→    58→}
+    59→    59→
+    60→    60→:root {
+    61→    61→  --radius: 0.625rem;
+    62→    62→  --background: #fffbf5;
+    63→    63→  --foreground: #1c1917;
+    64→    64→  --card: #ffffff;
+    65→    65→  --card-foreground: #1c1917;
+    66→    66→  --popover: #ffffff;
+    67→    67→  --popover-foreground: #1c1917;
+    68→    68→  --primary: #d97706;
+    69→    69→  --primary-foreground: #ffffff;
+    70→    70→  --secondary: #fef3c7;
+    71→    71→  --secondary-foreground: #78350f;
+    72→    72→  --muted: #f5f5f4;
+    73→    73→  --muted-foreground: #78716c;
+    74→    74→  --accent: #fef3c7;
+    75→    75→  --accent-foreground: #78350f;
+    76→    76→  --destructive: #ef4444;
+    77→    77→  --border: #e7e5e4;
+    78→    78→  --input: #e7e5e4;
+    79→    79→  --ring: #d97706;
+    80→    80→  --chart-1: #d97706;
+    81→    81→  --chart-2: #f59e0b;
+    82→    82→  --chart-3: #fbbf24;
+    83→    83→  --chart-4: #fcd34d;
+    84→    84→  --chart-5: #fde68a;
+    85→    85→  --sidebar: #fffbf5;
+    86→    86→  --sidebar-foreground: #1c1917;
+    87→    87→  --sidebar-primary: #d97706;
+    88→    88→  --sidebar-primary-foreground: #ffffff;
+    89→    89→  --sidebar-accent: #fef3c7;
+    90→    90→  --sidebar-accent-foreground: #78350f;
+    91→    91→  --sidebar-border: #e7e5e4;
+    92→    92→  --sidebar-ring: #d97706;
+    93→    93→}
+    94→    94→
+    95→    95→.dark {
+    96→    96→  --background: #1c1917;
+    97→    97→  --foreground: #fafaf9;
+    98→    98→  --card: #292524;
+    99→    99→  --card-foreground: #fafaf9;
+   100→   100→  --popover: #292524;
+   101→   101→  --popover-foreground: #fafaf9;
+   102→   102→  --primary: #f59e0b;
+   103→   103→  --primary-foreground: #1c1917;
+   104→   104→  --secondary: #44403c;
+   105→   105→  --secondary-foreground: #fafaf9;
+   106→   106→  --muted: #44403c;
+   107→   107→  --muted-foreground: #a8a29e;
+   108→   108→  --accent: #44403c;
+   109→   109→  --accent-foreground: #fafaf9;
+   110→   110→  --destructive: #dc2626;
+   111→   111→  --border: #44403c;
+   112→   112→  --input: #44403c;
+   113→   113→  --ring: #f59e0b;
+   114→   114→  --chart-1: #f59e0b;
+   115→   115→  --chart-2: #fbbf24;
+   116→   116→  --chart-3: #fcd34d;
+   117→   117→  --chart-4: #d97706;
+   118→   118→  --chart-5: #b45309;
+   119→   119→  --sidebar: #1c1917;
+   120→   120→  --sidebar-foreground: #fafaf9;
+   121→   121→  --sidebar-primary: #f59e0b;
+   122→   122→  --sidebar-primary-foreground: #1c1917;
+   123→   123→  --sidebar-accent: #44403c;
+   124→   124→  --sidebar-accent-foreground: #fafaf9;
+   125→   125→  --sidebar-border: #44403c;
+   126→   126→  --sidebar-ring: #f59e0b;
+   127→   127→}
+   128→   128→
+   129→   129→@layer base {
+   130→   130→  * {
+   131→   131→    @apply border-border outline-ring/50;
+   132→   132→  }
+   133→   133→  body {
+   134→   134→    @apply bg-background text-foreground;
+   135→   135→  }
+   136→   136→}
+   137→   137→
+   138→   138→/* Custom scrollbar */
+   139→   139→::-webkit-scrollbar {
+   140→   140→  width: 8px;
+   141→   141→  height: 8px;
+   142→   142→}
+   143→   143→
+   144→   144→::-webkit-scrollbar-track {
+   145→   145→  background: #f5f5f4;
+   146→   146→  border-radius: 4px;
+   147→   147→}
+   148→   148→
+   149→   149→::-webkit-scrollbar-thumb {
+   150→   150→  background: #d6d3d1;
+   151→   151→  border-radius: 4px;
+   152→   152→}
+   153→   153→
+   154→   154→::-webkit-scrollbar-thumb:hover {
+   155→   155→  background: #a8a29e;
+   156→   156→}
+   157→   157→
+   158→   158→/* Gradient text utility */
+   159→   159→.gradient-text {
+   160→   160→  background: linear-gradient(135deg, #d97706 0%, #f59e0b 50%, #fbbf24 100%);
+   161→   161→  -webkit-background-clip: text;
+   162→   162→  -webkit-text-fill-color: transparent;
+   163→   163→  background-clip: text;
+   164→   164→}
+   165→   165→
+   166→   166→/* Animated gradient background */
+   167→   167→.gradient-bg {
+   168→   168→  background: linear-gradient(135deg, #d97706 0%, #f59e0b 50%, #fbbf24 100%);
+   169→   169→}
+   170→   170→
+   171→   171→/* Glass effect */
+   172→   172→.glass {
+   173→   173→  background: rgba(255, 255, 255, 0.75);
+   174→   174→  backdrop-filter: blur(16px) saturate(180%);
+   175→   175→  -webkit-backdrop-filter: blur(16px) saturate(180%);
+   176→   176→  border: 1px solid rgba(255, 255, 255, 0.3);
+   177→   177→}
+   178→   178→
+   179→   179→/* Enhanced Glass Card */
+   180→   180→.glass-card {
+   181→   181→  background: rgba(255, 255, 255, 0.7);
+   182→   182→  backdrop-filter: blur(20px) saturate(180%);
+   183→   183→  -webkit-backdrop-filter: blur(20px) saturate(180%);
+   184→   184→  border: 1px solid rgba(217, 119, 6, 0.15);
+   185→   185→  box-shadow: 
+   186→   186→    0 4px 6px -1px rgba(217, 119, 6, 0.05),
+   187→   187→    0 2px 4px -2px rgba(217, 119, 6, 0.03),
+   188→   188→    inset 0 1px 0 0 rgba(255, 255, 255, 0.5);
+   189→   189→}
+   190→   190→
+   191→   191→.dark .glass-card {
+   192→   192→  background: rgba(41, 37, 36, 0.8);
+   193→   193→  border: 1px solid rgba(245, 158, 11, 0.15);
+   194→   194→  box-shadow: 
+   195→   195→    0 4px 6px -1px rgba(0, 0, 0, 0.3),
+   196→   196→    inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+   197→   197→}
+   198→   198→
+   199→   199→/* Glass Header */
+   200→   200→.glass-header {
+   201→   201→  background: rgba(255, 251, 245, 0.85);
+   202→   202→  backdrop-filter: blur(20px) saturate(180%);
+   203→   203→  -webkit-backdrop-filter: blur(20px) saturate(180%);
+   204→   204→  border-bottom: 1px solid rgba(217, 119, 6, 0.1);
+   205→   205→}
+   206→   206→
+   207→   207→.dark .glass-header {
+   208→   208→  background: rgba(28, 25, 23, 0.9);
+   209→   209→  border-bottom-color: rgba(245, 158, 11, 0.1);
+   210→   210→}
+   211→   211→
+   212→   212→/* Shimmer Border Animation */
+   213→   213→@keyframes shimmer-border {
+   214→   214→  0% { 
+   215→   215→    background-position: 0% 50%; 
+   216→   216→    border-color: rgba(217, 119, 6, 0.3);
+   217→   217→  }
+   218→   218→  25% { 
+   219→   219→    border-color: rgba(245, 158, 11, 0.5);
+   220→   220→  }
+   221→   221→  50% { 
+   222→   222→    background-position: 100% 50%; 
+   223→   223→    border-color: rgba(251, 191, 36, 0.5);
+   224→   224→  }
+   225→   225→  75% { 
+   226→   226→    border-color: rgba(245, 158, 11, 0.5);
+   227→   227→  }
+   228→   228→  100% { 
+   229→   229→    background-position: 0% 50%; 
+   230→   230→    border-color: rgba(217, 119, 6, 0.3);
+   231→   231→  }
+   232→   232→}
+   233→   233→
+   234→   234→.shimmer-border {
+   235→   235→  position: relative;
+   236→   236→  border: 2px solid transparent;
+   237→   237→  background-clip: padding-box;
+   238→   238→}
+   239→   239→
+   240→   240→.shimmer-border::before {
+   241→   241→  content: '';
+   242→   242→  position: absolute;
+   243→   243→  top: -2px;
+   244→   244→  left: -2px;
+   245→   245→  right: -2px;
+   246→   246→  bottom: -2px;
+   247→   247→  border-radius: inherit;
+   248→   248→  background: linear-gradient(
+   249→   249→    90deg,
+   250→   250→    #d97706,
+   251→   251→    #f59e0b,
+   252→   252→    #fbbf24,
+   253→   253→    #f59e0b,
+   254→   254→    #d97706
+   255→   255→  );
+   256→   256→  background-size: 300% 100%;
+   257→   257→  animation: shimmer-border 4s ease-in-out infinite;
+   258→   258→  z-index: -1;
+   259→   259→  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+   260→   260→  mask-composite: exclude;
+   261→   261→  -webkit-mask-composite: xor;
+   262→   262→  padding: 2px;
+   263→   263→}
+   264→   264→
+   265→   265→/* Marquee/Scroll Ticker Animation */
+   266→   266→@keyframes marquee {
+   267→   267→  0% { transform: translateX(0); }
+   268→   268→  100% { transform: translateX(-50%); }
+   269→   269→}
+   270→   270→
+   271→   271→.animate-marquee {
+   272→   272→  animation: marquee 30s linear infinite;
+   273→   273→}
+   274→   274→
+   275→   275→.animate-marquee:hover {
+   276→   276→  animation-play-state: paused;
+   277→   277→}
+   278→   278→
+   279→   279→/* Scroll Progress Bar */
+   280→   280→.scroll-progress {
+   281→   281→  transform-origin: left;
+   282→   282→  transition: transform 0.1s ease-out;
+   283→   283→  will-change: transform;
+   284→   284→}
+   285→   285→
+   286→   286→/* Notification Badge Pulse */
+   287→   287→@keyframes badge-pulse {
+   288→   288→  0%, 100% { transform: scale(1); }
+   289→   289→  50% { transform: scale(1.15); }
+   290→   290→}
+   291→   291→
+   292→   292→.badge-pulse {
+   293→   293→  animation: badge-pulse 2s ease-in-out infinite;
+   294→   294→}
+   295→   295→
+   296→   296→/* Testimonial Carousel Fade */
+   297→   297→@keyframes testimonial-fade-in {
+   298→   298→  from { opacity: 0; transform: scale(0.98); }
+   299→   299→  to { opacity: 1; transform: scale(1); }
+   300→   300→}
+   301→   301→
+   302→   302→@keyframes testimonial-fade-out {
+   303→   303→  from { opacity: 1; transform: scale(1); }
+   304→   304→  to { opacity: 0; transform: scale(0.98); }
+   305→   305→}
+   306→   306→
+   307→   307→.testimonial-enter {
+   308→   308→  animation: testimonial-fade-in 0.5s ease-out forwards;
+   309→   309→}
+   310→   310→
+   311→   311→.testimonial-exit {
+   312→   312→  animation: testimonial-fade-out 0.3s ease-in forwards;
+   313→   313→}
+   314→   314→
+   315→   315→/* Floating animation */
+   316→   316→@keyframes float {
+   317→   317→  0%, 100% { transform: translateY(0); }
+   318→   318→  50% { transform: translateY(-10px); }
+   319→   319→}
+   320→   320→
+   321→   321→.animate-float {
+   322→   322→  animation: float 3s ease-in-out infinite;
+   323→   323→}
+   324→   324→
+   325→   325→/* Pulse glow */
+   326→   326→@keyframes pulse-glow {
+   327→   327→  0%, 100% { box-shadow: 0 0 20px rgba(217, 119, 6, 0.3); }
+   328→   328→  50% { box-shadow: 0 0 40px rgba(217, 119, 6, 0.6); }
+   329→   329→}
+   330→   330→
+   331→   331→.animate-pulse-glow {
+   332→   332→  animation: pulse-glow 2s ease-in-out infinite;
+   333→   333→}
+   334→   334→
+   335→   335→/* Fade in animation */
+   336→   336→@keyframes fadeIn {
+   337→   337→  from { opacity: 0; }
+   338→   338→  to { opacity: 1; }
+   339→   339→}
+   340→   340→
+   341→   341→.animate-fadeIn {
+   342→   342→  animation: fadeIn 0.5s ease-out forwards;
+   343→   343→}
+   344→   344→
+   345→   345→/* Fade in up animation */
+   346→   346→@keyframes fadeInUp {
+   347→   347→  from { 
+   348→   348→    opacity: 0; 
+   349→   349→    transform: translateY(20px); 
+   350→   350→  }
+   351→   351→  to { 
+   352→   352→    opacity: 1; 
+   353→   353→    transform: translateY(0); 
+   354→   354→  }
+   355→   355→}
+   356→   356→
+   357→   357→.animate-fadeInUp {
+   358→   358→  animation: fadeInUp 0.6s ease-out forwards;
+   359→   359→}
+   360→   360→
+   361→   361→/* Slide down animation */
+   362→   362→@keyframes slideDown {
+   363→   363→  from { 
+   364→   364→    opacity: 0; 
+   365→   365→    transform: translateY(-10px); 
+   366→   366→  }
+   367→   367→  to { 
+   368→   368→    opacity: 1; 
+   369→   369→    transform: translateY(0); 
+   370→   370→  }
+   371→   371→}
+   372→   372→
+   373→   373→.animate-slideDown {
+   374→   374→  animation: slideDown 0.3s ease-out forwards;
+   375→   375→}
+   376→   376→
+   377→   377→/* Bounce animation */
+   378→   378→@keyframes bounce {
+   379→   379→  0%, 100% { 
+   380→   380→    transform: translateY(0) scale(1); 
+   381→   381→  }
+   382→   382→  50% { 
+   383→   383→    transform: translateY(-5px) scale(1.05); 
+   384→   384→  }
+   385→   385→}
+   386→   386→
+   387→   387→.animate-bounce {
+   388→   388→  animation: bounce 2s ease-in-out infinite;
+   389→   389→}
+   390→   390→
+   391→   391→/* Shimmer effect for loading states */
+   392→   392→@keyframes shimmer {
+   393→   393→  0% { background-position: -200% 0; }
+   394→   394→  100% { background-position: 200% 0; }
+   395→   395→}
+   396→   396→
+   397→   397→.animate-shimmer {
+   398→   398→  background: linear-gradient(
+   399→   399→    90deg,
+   400→   400→    transparent 0%,
+   401→   401→    rgba(255, 255, 255, 0.4) 50%,
+   402→   402→    transparent 100%
+   403→   403→  );
+   404→   404→  background-size: 200% 100%;
+   405→   405→  animation: shimmer 2s ease-in-out infinite;
+   406→   406→}
+   407→   407→
+   408→   408→/* Progress bar stripe animation */
+   409→   409→@keyframes progress-stripes {
+   410→   410→  0% { background-position: 1rem 0; }
+   411→   411→  100% { background-position: 0 0; }
+   412→   412→}
+   413→   413→
+   414→   414→.animate-progress-stripes {
+   415→   415→  background-image: linear-gradient(
+   416→   416→    45deg,
+   417→   417→    rgba(255, 255, 255, 0.15) 25%,
+   418→   418→    transparent 25%,
+   419→   419→    transparent 50%,
+   420→   420→    rgba(255, 255, 255, 0.15) 50%,
+   421→   421→    rgba(255, 255, 255, 0.15) 75%,
+   422→   422→    transparent 75%,
+   423→   423→    transparent
+   424→   424→  );
+   425→   425→  background-size: 1rem 1rem;
+   426→   426→  animation: progress-stripes 1s linear infinite;
+   427→   427→}
+   428→   428→
+   429→   429→/* Scale in animation */
+   430→   430→@keyframes scaleIn {
+   431→   431→  from { 
+   432→   432→    opacity: 0; 
+   433→   433→    transform: scale(0.9); 
+   434→   434→  }
+   435→   435→  to { 
+   436→   436→    opacity: 1; 
+   437→   437→    transform: scale(1); 
+   438→   438→  }
+   439→   439→}
+   440→   440→
+   441→   441→.animate-scaleIn {
+   442→   442→  animation: scaleIn 0.4s ease-out forwards;
+   443→   443→}
+   444→   444→
+   445→   445→/* Rotate subtle */
+   446→   446→@keyframes rotate-subtle {
+   447→   447→  from { transform: rotate(0deg); }
+   448→   448→  to { transform: rotate(360deg); }
+   449→   449→}
+   450→   450→
+   451→   451→.animate-rotate-subtle {
+   452→   452→  animation: rotate-subtle 20s linear infinite;
+   453→   453→}
+   454→   454→
+   455→   455→/* Glow pulse for badges */
+   456→   456→@keyframes glow-pulse {
+   457→   457→  0%, 100% { 
+   458→   458→    box-shadow: 0 0 5px rgba(217, 119, 6, 0.3),
+   459→   459→                0 0 10px rgba(217, 119, 6, 0.2);
+   460→   460→  }
+   461→   461→  50% { 
+   462→   462→    box-shadow: 0 0 15px rgba(217, 119, 6, 0.5),
+   463→   463→                0 0 30px rgba(217, 119, 6, 0.3);
+   464→   464→  }
+   465→   465→}
+   466→   466→
+   467→   467→.animate-glow-pulse {
+   468→   468→  animation: glow-pulse 2s ease-in-out infinite;
+   469→   469→}
+   470→   470→
+   471→   471→/* Slide in from left */
+   472→   472→@keyframes slideInLeft {
+   473→   473→  from { 
+   474→   474→    opacity: 0; 
+   475→   475→    transform: translateX(-20px); 
+   476→   476→  }
+   477→   477→  to { 
+   478→   478→    opacity: 1; 
+   479→   479→    transform: translateX(0); 
+   480→   480→  }
+   481→   481→}
+   482→   482→
+   483→   483→.animate-slideInLeft {
+   484→   484→  animation: slideInLeft 0.5s ease-out forwards;
+   485→   485→}
+   486→   486→
+   487→   487→/* Slide in from right */
+   488→   488→@keyframes slideInRight {
+   489→   489→  from { 
+   490→   490→    opacity: 0; 
+   491→   491→    transform: translateX(20px); 
+   492→   492→  }
+   493→   493→  to { 
+   494→   494→    opacity: 1; 
+   495→   495→    transform: translateX(0); 
+   496→   496→  }
+   497→   497→}
+   498→   498→
+   499→   499→.animate-slideInRight {
+   500→   500→  animation: slideInRight 0.5s ease-out forwards;
+   501→   501→}
+   502→   502→
+   503→   503→/* Counter up animation helper */
+   504→   504→@keyframes countUp {
+   505→   505→  from { opacity: 0; transform: translateY(10px); }
+   506→   506→  to { opacity: 1; transform: translateY(0); }
+   507→   507→}
+   508→   508→
+   509→   509→.animate-countUp {
+   510→   510→  animation: countUp 0.6s ease-out forwards;
+   511→   511→}
+   512→   512→
+   513→   513→/* Floating action button bounce */
+   514→   514→@keyframes fab-bounce {
+   515→   515→  0%, 100% { transform: translateY(0) scale(1); }
+   516→   516→  10% { transform: translateY(-4px) scale(1.05); }
+   517→   517→  20% { transform: translateY(0) scale(1); }
+   518→   518→  30% { transform: translateY(-2px) scale(1.02); }
+   519→   519→  40%, 100% { transform: translateY(0) scale(1); }
+   520→   520→}
+   521→   521→
+   522→   522→.animate-fab-bounce {
+   523→   523→  animation: fab-bounce 3s ease-in-out infinite;
+   524→   524→  animation-delay: 2s;
+   525→   525→}
+   526→   526→
+   527→   527→/* Gradient shift animation */
+   528→   528→@keyframes gradient-shift {
+   529→   529→  0% { background-position: 0% 50%; }
+   530→   530→  50% { background-position: 100% 50%; }
+   531→   531→  100% { background-position: 0% 50%; }
+   532→   532→}
+   533→   533→
+   534→   534→.animate-gradient-shift {
+   535→   535→  background-size: 200% 200%;
+   536→   536→  animation: gradient-shift 3s ease-in-out infinite;
+   537→   537→}
+   538→   538→
+   539→   539→/* Card hover lift effect base */
+   540→   540→.hover-lift {
+   541→   541→  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+   542→   542→}
+   543→   543→
+   544→   544→.hover-lift:hover {
+   545→   545→  transform: translateY(-4px);
+   546→   546→  box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.15);
+   547→   547→}
+   548→   548→
+   549→   549→/* Smooth transition for all interactive elements */
+   550→   550→.transition-smooth {
+   551→   551→  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+   552→   552→}
+   553→   553→
+   554→   554→/* Text gradient animation for special headings */
+   555→   555→@keyframes text-shimmer {
+   556→   556→  0% { background-position: -200% center; }
+   557→   557→  100% { background-position: 200% center; }
+   558→   558→}
+   559→   559→
+   560→   560→.text-animated-gradient {
+   561→   561→  background: linear-gradient(
+   562→   562→    90deg,
+   563→   563→    #d97706 0%,
+   564→   564→    #f59e0b 25%,
+   565→   565→    #fbbf24 50%,
+   566→   566→    #f59e0b 75%,
+   567→   567→    #d97706 100%
+   568→   568→  );
+   569→   569→  background-size: 200% auto;
+   570→   570→  -webkit-background-clip: text;
+   571→   571→  -webkit-text-fill-color: transparent;
+   572→   572→  background-clip: text;
+   573→   573→  animation: text-shimmer 4s linear infinite;
+   574→   574→}
+   575→   575→
+   576→   576→/* ============================================
+   577→   577→   NEW ADVANCED ANIMATIONS & EFFECTS
+   578→   578→   ============================================ */
+   579→   579→
+   580→   580→/* Particle/Dot Pattern Background */
+   581→   581→.particle-bg {
+   582→   582→  background-image: radial-gradient(circle, rgba(217, 119, 6, 0.15) 1px, transparent 1px);
+   583→   583→  background-size: 30px 30px;
+   584→   584→  animation: particle-float 20s ease-in-out infinite;
+   585→   585→}
+   586→   586→
+   587→   587→@keyframes particle-float {
+   588→   588→  0%, 100% { background-position: 0 0, 0 0; }
+   589→   589→  25% { background-position: 10px -10px, -5px 5px; }
+   590→   590→  50% { background-position: -5px 5px, 10px 10px; }
+   591→   591→  75% { background-position: 5px 10px, -10px -5px; }
+   592→   592→}
+   593→   593→
+   594→   594→.dark .particle-bg {
+   595→   595→  background-image: radial-gradient(circle, rgba(245, 158, 11, 0.1) 1px, transparent 1px);
+   596→   596→}
+   597→   597→
+   598→   598→/* Glowing Text Effect */
+   599→   599→.text-glow {
+   600→   600→  text-shadow: 
+   601→   601→    0 0 10px rgba(217, 119, 6, 0.5),
+   602→   602→    0 0 20px rgba(217, 119, 6, 0.3),
+   603→   603→    0 0 40px rgba(217, 119, 6, 0.2);
+   604→   604→  animation: glow-pulse-text 2s ease-in-out infinite alternate;
+   605→   605→}
+   606→   606→
+   607→   607→@keyframes glow-pulse-text {
+   608→   608→  from {
+   609→   609→    text-shadow: 
+   610→   610→      0 0 10px rgba(217, 119, 6, 0.5),
+   611→   611→      0 0 20px rgba(217, 119, 6, 0.3),
+   612→   612→      0 0 40px rgba(217, 119, 6, 0.2);
+   613→   613→  }
+   614→   614→  to {
+   615→   615→    text-shadow: 
+   616→   616→      0 0 15px rgba(245, 158, 11, 0.7),
+   617→   617→      0 0 30px rgba(245, 158, 11, 0.5),
+   618→   618→      0 0 60px rgba(245, 158, 11, 0.3);
+   619→   619→  }
+   620→   620→}
+   621→   621→
+   622→   622→/* 3D Card Effect */
+   623→   623→.card-3d {
+   624→   624→  transform-style: preserve-3d;
+   625→   625→  perspective: 1000px;
+   626→   626→  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+   627→   627→              box-shadow 0.3s ease;
+   628→   628→}
+   629→   629→
+   630→   630→.card-3d:hover {
+   631→   631→  transform: rotateY(-5deg) rotateX(5deg) translateZ(20px);
+   632→   632→  box-shadow: 
+   633→   633→    -20px 20px 40px rgba(0, 0, 0, 0.15),
+   634→   634→    0 0 40px rgba(217, 119, 6, 0.1);
+   635→   635→}
+   636→   636→
+   637→   637→/* Animated Gradient Border */
+   638→   638→.gradient-border {
+   639→   639→  position: relative;
+   640→   640→  border-radius: var(--radius-lg, 1rem);
+   641→   641→  overflow: hidden;
+   642→   642→}
+   643→   643→
+   644→   644→.gradient-border::before {
+   645→   645→  content: '';
+   646→   646→  position: absolute;
+   647→   647→  top: -2px;
+   648→   648→  left: -2px;
+   649→   649→  right: -2px;
+   650→   650→  bottom: -2px;
+   651→   651→  background: linear-gradient(
+   652→   652→    45deg,
+   653→   653→    #d97706,
+   654→   654→    #f59e0b,
+   655→   655→    #fbbf24,
+   656→   656→    #f59e0b,
+   657→   657→    #d97706,
+   658→   658→    #f59e0b,
+   659→   659→    #fbbf24
+   660→   660→  );
+   661→   661→  background-size: 300% 300%;
+   662→   662→  border-radius: inherit;
+   663→   663→  z-index: -1;
+   664→   664→  animation: gradient-border-rotate 4s linear infinite;
+   665→   665→  padding: 2px;
+   666→   666→}
+   667→   667→
+   668→   668→@keyframes gradient-border-rotate {
+   669→   669→  0% { background-position: 0% 50%; }
+   670→   670→  50% { background-position: 100% 50%; }
+   671→   671→  100% { background-position: 0% 50%; }
+   672→   672→}
+   673→   673→
+   674→   674→/* Slower Float Animation */
+   675→   675→.float-slow {
+   676→   676→  animation: float-slow 6s ease-in-out infinite;
+   677→   677→}
+   678→   678→
+   679→   679→@keyframes float-slow {
+   680→   680→  0%, 100% { transform: translateY(0); }
+   681→   681→  50% { transform: translateY(-15px); }
+   682→   682→}
+   683→   683→
+   684→   684→/* Pulse Ring Animation */
+   685→   685→.pulse-ring {
+   686→   686→  position: relative;
+   687→   687→}
+   688→   688→
+   689→   689→.pulse-ring::after {
+   690→   690→  content: '';
+   691→   691→  position: absolute;
+   692→   692→  inset: -8px;
+   693→   693→  border-radius: 50%;
+   694→   694→  border: 2px solid currentColor;
+   695→   695→  opacity: 0;
+   696→   696→  animation: pulse-ring-expand 2s ease-out infinite;
+   697→   697→}
+   698→   698→
+   699→   699→@keyframes pulse-ring-expand {
+   700→   700→  0% {
+   701→   701→    transform: scale(0.8);
+   702→   702→    opacity: 0.8;
+   703→   703→  }
+   704→   704→  100% {
+   705→   705→    transform: scale(1.5);
+   706→   706→    opacity: 0;
+   707→   707→  }
+   708→   708→}
+   709→   709→
+   710→   710→/* Typewriter Animation */
+   711→   711→.typewriter {
+   712→   712→  overflow: hidden;
+   713→   713→  white-space: nowrap;
+   714→   714→  border-right: 3px solid #d97706;
+   715→   715→  animation: 
+   716→   716→    typewriter-typing 3s steps(40) forwards,
+   717→   717→    typewriter-blink 0.7s step-end infinite;
+   718→   718→}
+   719→   719→
+   720→   720→@keyframes typewriter-typing {
+   721→   721→  from { width: 0; }
+   722→   722→  to { width: 100%; }
+   723→   723→}
+   724→   724→
+   725→   725→@keyframes typewriter-blink {
+   726→   726→  50% { border-color: transparent; }
+   727→   727→}
+   728→   728→
+   729→   729→/* Wave Motion Animation */
+   730→   730→.wave {
+   731→   731→  animation: wave-motion 2s ease-in-out infinite;
+   732→   732→  transform-origin: bottom center;
+   733→   733→}
+   734→   734→
+   735→   735→@keyframes wave-motion {
+   736→   736→  0%, 100% { transform: rotate(-3deg); }
+   737→   737→  25% { transform: rotate(3deg); }
+   738→   738→  50% { transform: rotate(-2deg); }
+   739→   739→  75% { transform: rotate(2deg); }
+   740→   740→}
+   741→   741→
+   742→   742→/* Enhanced Glass Card with more blur and inner shadow */
+   743→   743→.glass-card {
+   744→   744→  background: rgba(255, 255, 255, 0.65);
+   745→   745→  backdrop-filter: blur(24px) saturate(180%);
+   746→   746→  -webkit-backdrop-filter: blur(24px) saturate(180%);
+   747→   747→  border: 1px solid rgba(217, 119, 6, 0.12);
+   748→   748→  box-shadow: 
+   749→   749→    0 4px 6px -1px rgba(217, 119, 6, 0.05),
+   750→   750→    0 2px 4px -2px rgba(217, 119, 6, 0.03),
+   751→   751→    inset 0 1px 0 0 rgba(255, 255, 255, 0.6),
+   752→   752→    inset 0 0 20px rgba(255, 255, 255, 0.1);
+   753→   753→}
+   754→   754→
+   755→   755→.dark .glass-card {
+   756→   756→  background: rgba(41, 37, 36, 0.85);
+   757→   757→  backdrop-filter: blur(24px) saturate(180%);
+   758→   758→  -webkit-backdrop-filter: blur(24px) saturate(180%);
+   759→   759→  border: 1px solid rgba(245, 158, 11, 0.12);
+   760→   760→  box-shadow: 
+   761→   761→    0 4px 6px -1px rgba(0, 0, 0, 0.35),
+   762→   762→    0 2px 4px -2px rgba(0, 0, 0, 0.2),
+   763→   763→    inset 0 1px 0 0 rgba(255, 255, 255, 0.08),
+   764→   764→    inset 0 0 20px rgba(0, 0, 0, 0.15);
+   765→   765→}
+   766→   766→
+   767→   767→/* Dashed Line Animation for Step Connectors */
+   768→   768→.dashed-line-animate {
+   769→   769→  background-image: repeating-linear-gradient(
+   770→   770→    90deg,
+   771→   771→    #d97706 0px,
+   772→   772→    #d97706 10px,
+   773→   773→    transparent 10px,
+   774→   774→    transparent 20px
+   775→   775→  );
+   776→   776→  background-size: 200% 100%;
+   777→   777→  animation: dash-move 1s linear infinite;
+   778→   778→}
+   779→   779→
+   780→   780→@keyframes dash-move {
+   781→   781→  0% { background-position: 0 0; }
+   782→   782→  100% { background-position: 20px 0; }
+   783→   783→}
+   784→   784→
+   785→   785→/* Logo Marquee Slower */
+   786→   786→.logo-marquee {
+   787→   787→  animation: marquee 40s linear infinite;
+   788→   788→}
+   789→   789→
+   790→   790→/* Counter Number Glow */
+   791→   791→.counter-glow {
+   792→   792→  position: relative;
+   793→   793→}
+   794→   794→
+   795→   795→.counter-glow::before {
+   796→   796→  content: '';
+   797→   797→  position: absolute;
+   798→   798→  inset: -10px;
+   799→   799→  background: radial-gradient(circle, rgba(217, 119, 6, 0.2) 0%, transparent 70%);
+   800→   800→  z-index: -1;
+   801→   801→  opacity: 0;
+   802→   802→  transition: opacity 0.3s ease;
+   803→   803→}
+   804→   804→
+   805→   805→.counter-glow:hover::before {
+   806→   806→  opacity: 1;
+   807→   807→}
+   808→   808→
+   809→   809→/* Back to Top Button Entrance */
+   810→   810→.back-to-top-enter {
+   811→   811→  animation: back-to-top-enter 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+   812→   812→}
+   813→   813→
+   814→   814→@keyframes back-to-top-enter {
+   815→   815→  from {
+   816→   816→    opacity: 0;
+   817→   817→    transform: scale(0.5) rotate(-45deg) translateY(20px);
+   818→   818→  }
+   819→   819→  to {
+   820→   820→    opacity: 1;
+   821→   821→    transform: scale(1) rotate(0) translateY(0);
+   822→   822→  }
+   823→   823→}
+   824→   824→
+   825→   825→.back-to-top-exit {
+   826→   826→  animation: back-to-top-exit 0.3s ease-in forwards;
+   827→   827→}
+   828→   828→
+   829→   829→@keyframes back-to-top-exit {
+   830→   830→  from {
+   831→   831→    opacity: 1;
+   832→   832→    transform: scale(1);
+   833→   833→  }
+   834→   834→  to {
+   835→   835→    opacity: 0;
+   836→   836→    transform: scale(0.5) translateY(20px);
+   837→   837→  }
+   838→   838→}
+   839→   839→
+   840→   840→/* Table Row Hover Effect */
+   841→   841→.comparison-row {
+   842→   842→  transition: all 0.3s ease;
+   843→   843→}
+   844→   844→
+   845→   845→.comparison-row:hover {
+   846→   846→  background-color: rgba(217, 119, 6, 0.05);
+   847→   847→  transform: translateX(4px);
+   848→   848→}
+   849→   849→
+   850→   850→.dark .comparison-row:hover {
+   851→   851→  background-color: rgba(245, 158, 11, 0.1);
+   852→   852→}
+   853→   853→
+   854→   854→/* Featured Logo Styling */
+   855→   855→.featured-logo {
+   856→   856→  filter: grayscale(100%) opacity(0.6);
+   857→   857→  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+   858→   858→}
+   859→   859→
+   860→   860→.featured-logo:hover {
+   861→   861→  filter: grayscale(0%) opacity(1);
+   862→   862→  transform: scale(1.1);
+   863→   863→}
+   864→   864→
+   865→   865→/* Video Modal Overlay */
+   866→   866→.video-overlay {
+   867→   867→  background: linear-gradient(
+   868→   868→    135deg,
+   869→   869→    rgba(28, 25, 23, 0.9) 0%,
+   870→   870→    rgba(78, 56, 46, 0.95) 100%
+   871→   871→  );
+   872→   872→}
+   873→   873→
+   874→   874→/* ============================================
+   875→   875→   ROUND 8: NEW ADVANCED NEON & GLOW EFFECTS
+   876→   876→   ============================================ */
+   877→   877→
+   878→   878→/* Neon text glow effect - Amber/Warm Theme */
+   879→   879→.neon-text {
+   880→   880→  text-shadow: 
+   881→   881→    0 0 7px #f59e0b, 
+   882→   882→    0 0 10px #f59e0b, 
+   883→   883→    0 0 21px #f59e0b, 
+   884→   884→    0 0 42px #d97706;
+   885→   885→}
+   886→   886→
+   887→   887→.neon-text-strong {
+   888→   888→  text-shadow: 
+   889→   889→    0 0 5px #f59e0b,
+   890→   890→    0 0 10px #f59e0b,
+   891→   891→    0 0 20px #f59e0b,
+   892→   892→    0 0 40px #d97706,
+   893→   893→    0 0 70px #b45309;
+   894→   894→}
+   895→   895→
+   896→   896→/* Neon border glow */
+   897→   897→.neon-border {
+   898→   898→  box-shadow: 
+   899→   899→    0 0 5px #f59e0b, 
+   900→   900→    0 0 10px #f59e0b, 
+   901→   901→    inset 0 0 5px rgba(245, 158, 11, 0.2);
+   902→   902→}
+   903→   903→
+   904→   904→.neon-border-strong {
+   905→   905→  box-shadow: 
+   906→   906→    0 0 8px #f59e0b,
+   907→   907→    0 0 16px #f59e0b,
+   908→   908→    0 0 32px #d97706,
+   909→   909→    inset 0 0 8px rgba(245, 158, 11, 0.15);
+   910→   910→  border-color: #f59e0b;
+   911→   911→}
+   912→   912→
+   913→   913→/* Animated gradient background */
+   914→   914→.animated-gradient-bg {
+   915→   915→  background-size: 200% 200%;
+   916→   916→  animation: gradientShift 8s ease infinite;
+   917→   917→}
+   918→   918→
+   919→   919→@keyframes gradientShift {
+   920→   920→  0% { background-position: 0% 50%; }
+   921→   921→  50% { background-position: 100% 50%; }
+   922→   922→  100% { background-position: 0% 50%; }
+   923→   923→}
+   924→   924→
+   925→   925→/* Floating orbs decoration */
+   926→   926→.floating-orb {
+   927→   927→  position: absolute;
+   928→   928→  border-radius: 50%;
+   929→   929→  filter: blur(60px);
+   930→   930→  opacity: 0.5;
+   931→   931→  animation: floatOrb 15s ease-in-out infinite;
+   932→   932→  pointer-events: none;
+   933→   933→}
+   934→   934→
+   935→   935→.floating-orb-1 {
+   936→   936→  width: 300px;
+   937→   937→  height: 300px;
+   938→   938→  background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+   939→   939→  top: 10%;
+   940→   940→  left: 5%;
+   941→   941→  animation-delay: 0s;
+   942→   942→}
+   943→   943→
+   944→   944→.floating-orb-2 {
+   945→   945→  width: 250px;
+   946→   946→  height: 250px;
+   947→   947→  background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%);
+   948→   948→  bottom: 20%;
+   949→   949→  right: 10%;
+   950→   950→  animation-delay: -5s;
+   951→   951→}
+   952→   952→
+   953→   953→.floating-orb-3 {
+   954→   954→  width: 200px;
+   955→   955→  height: 200px;
+   956→   956→  background: linear-gradient(135deg, #fbbf24 0%, #fde68a 100%);
+   957→   957→  top: 60%;
+   958→   958→  left: 40%;
+   959→   959→  animation-delay: -10s;
+   960→   960→}
+   961→   961→
+   962→   962→@keyframes floatOrb {
+   963→   963→  0%, 100% { 
+   964→   964→    transform: translate(0, 0) scale(1); 
+   965→   965→  }
+   966→   966→  25% { 
+   967→   967→    transform: translate(30px, -30px) scale(1.05); 
+   968→   968→  }
+   969→   969→  50% { 
+   970→   970→    transform: translate(-20px, 20px) scale(0.95); 
+   971→   971→  }
+   972→   972→  75% { 
+   973→   973→    transform: translate(20px, 30px) scale(1.02); 
+   974→   974→  }
+   975→   975→}
+   976→   976→
+   977→   977→/* Shine effect on buttons */
+   978→   978→.btn-shine {
+   979→   979→  position: relative;
+   980→   980→  overflow: hidden;
+   981→   981→}
+   982→   982→
+   983→   983→.btn-shine::after {
+   984→   984→  content: '';
+   985→   985→  position: absolute;
+   986→   986→  top: -50%;
+   987→   987→  left: -50%;
+   988→   988→  width: 200%;
+   989→   989→  height: 200%;
+   990→   990→  background: linear-gradient(
+   991→   991→    transparent,
+   992→   992→    rgba(255, 255, 255, 0.25),
+   993→   993→    transparent
+   994→   994→  );
+   995→   995→  transform: rotate(45deg);
+   996→   996→  animation: shine 3s infinite;
+   997→   997→}
+   998→   998→
+   999→   999→@keyframes shine {
+  1000→  1000→  0% { transform: translateX(-100%) rotate(45deg); }
+  1001→  1001→  100% { transform: translateX(100%) rotate(45deg); }
+  1002→  1002→}
+  1003→  1003→
+  1004→  1004→/* Morphing blob shape for decorative elements */
+  1005→  1005→.morph-blob {
+  1006→  1006→  animation: morphBlob 12s ease-in-out infinite;
+  1007→  1007→}
+  1008→  1008→
+  1009→  1009→@keyframes morphBlob {
+  1010→  1010→  0%, 100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
+  1011→  1011→  25% { border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%; }
+  1012→  1012→  50% { border-radius: 50% 60% 30% 60% / 30% 60% 70% 40%; }
+  1013→  1013→  75% { border-radius: 60% 40% 60% 30% / 70% 30% 50% 60%; }
+  1014→  1014→}
+  1015→  1015→
+  1016→  1016→/* Cookie Consent Slide Animation */
+  1017→  1017→@keyframes slideUpCookie {
+  1018→  1018→  from {
+  1019→  1019→    opacity: 0;
+  1020→  1020→    transform: translateY(100%);
+  1021→  1021→  }
+  1022→  1022→  to {
+  1023→  1023→    opacity: 1;
+  1024→  1024→    transform: translateY(0);
+  1025→  1025→  }
+  1026→  1026→}
+  1027→  1027→
+  1028→  1028→.slide-up-cookie {
+  1029→  1029→  animation: slideUpCookie 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  1030→  1030→}
+  1031→  1031→
+  1032→  1032→@keyframes slideDownCookie {
+  1033→  1033→  from {
+  1034→  1034→    opacity: 1;
+  1035→  1035→    transform: translateY(0);
+  1036→  1036→  }
+  1037→  1037→  to {
+  1038→  1038→    opacity: 0;
+  1039→  1039→    transform: translateY(100%);
+  1040→  1040→  }
+  1041→  1041→}
+  1042→  1042→
+  1043→  1043→.slide-down-cookie {
+  1044→  1044→  animation: slideDownCookie 0.3s cubic-bezier(0.4, 0, 1, 1) forwards;
+  1045→  1045→}
+  1046→  1046→
+  1047→  1047→/* Skeleton Loading States */
+  1048→  1048→.skeleton {
+  1049→  1049→  background: linear-gradient(
+  1050→  1050→    90deg,
+  1051→  1051→    #f0f0f0 25%,
+  1052→  1052→    #e0e0e0 50%,
+  1053→  1053→    #f0f0f0 75%
+  1054→  1054→  );
+  1055→  1055→  background-size: 200% 100%;
+  1056→  1056→  animation: shimmer 1.5s ease-in-out infinite;
+  1057→  1057→}
+  1058→  1058→
+  1059→  1059→.dark .skeleton {
+  1060→  1060→  background: linear-gradient(
+  1061→  1061→    90deg,
+  1062→  1062→    #374151 25%,
+  1063→  1063→    #4b5563 50%,
+  1064→  1064→    #374151 75%
+  1065→  1065→  );
+  1066→  1066→  background-size: 200% 100%;
+  1067→  1067→}
+  1068→  1068→
+  1069→  1069→.skeleton-card {
+  1070→  1070→  @apply rounded-xl p-4 h-32;
+  1071→  1071→}
+  1072→  1072→
+  1073→  1073→.skeleton-text {
+  1074→  1074→  @apply rounded h-4 mb-2;
+  1075→  1075→}
+  1076→  1076→
+  1077→  1077→.skeleton-text-sm {
+  1078→  1078→  @apply rounded h-3 w-3/4;
+  1079→  1079→}
+  1080→  1080→
+  1081→  1081→.skeleton-avatar {
+  1082→  1082→  @apply rounded-full w-12 h-12;
+  1083→  1083→}
+  1084→  1084→
+  1085→  1085→.skeleton-button {
+  1086→  1086→  @apply rounded-lg h-10 w-24;
+  1087→  1087→}
+  1088→  1088→
+  1089→  1089→/* FAQ Search Highlight */
+  1090→  1090→.faq-highlight {
+  1091→  1091→  background-color: rgba(245, 158, 11, 0.25);
+  1092→  1092→  padding: 0 2px;
+  1093→  1093→  border-radius: 2px;
+  1094→  1094→}
+  1095→  1095→
+  1096→  1096→/* Calculator Value Animation */
+  1097→  1097→.calculator-value {
+  1098→  1098→  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  1099→  1099→}
+  1100→  1100→
+  1101→  1101→.calculator-value-updating {
+  1102→  1102→  transform: scale(1.05);
+  1103→  1103→  color: #f59e0b;
+  1104→  1104→}
+  1105→  1105→
+  1106→  1106→/* Pricing Calculator Card Glow */
+  1107→  1107→.pricing-calc-glow {
+  1108→  1108→  position: relative;
+  1109→  1109→}
+  1110→  1110→
+  1111→  1111→.pricing-calc-glow::before {
+  1112→  1112→  content: '';
+  1113→  1113→  position: absolute;
+  1114→  1114→  inset: -2px;
+  1115→  1115→  background: linear-gradient(
+  1116→  1116→    45deg,
+  1117→  1117→    #f59e0b,
+  1118→  1118→    #fbbf24,
+  1119→  1119→    #d97706,
+  1120→  1120→    #f59e0b
+  1121→  1121→  );
+  1122→  1122→  background-size: 400% 400%;
+  1123→  1123→  border-radius: inherit;
+  1124→  1124→  z-index: -1;
+  1125→  1125→  animation: calcGlowRotate 6s linear infinite;
+  1126→  1126→  filter: blur(8px);
+  1127→  1127→  opacity: 0.5;
+  1128→  1128→}
+  1129→  1129→
+  1130→  1130→@keyframes calcGlowRotate {
+  1131→  1131→  0% { background-position: 0% 50%; }
+  1132→  1132→  50% { background-position: 100% 50%; }
+  1133→  1133→  100% { background-position: 0% 50%; }
+  1134→  1134→}
+  1135→  1135→
+  1136→  1136→/* Social Icon Hover Effects */
+  1137→  1137→.social-icon-hover {
+  1138→  1138→  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  1139→  1139→}
+  1140→  1140→
+  1141→  1141→.social-icon-hover:hover {
+  1142→  1142→  transform: translateY(-3px) scale(1.1);
+  1143→  1143→  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  1144→  1144→}
+  1145→  1145→
+  1146→  1146→/* Footer Gradient Line */
+  1147→  1147→.footer-gradient-line {
+  1148→  1148→  height: 3px;
+  1149→  1149→  background: linear-gradient(
+  1150→  1150→    90deg,
+  1151→  1151→    transparent,
+  1152→  1152→    #f59e0b 20%,
+  1153→  1153→    #fbbf24 50%,
+  1154→  1154→    #f59e0b 80%,
+  1155→  1155→    transparent
+  1156→  1156→  );
+  1157→  1157→  background-size: 200% 100%;
+  1158→  1158→  animation: footerLineMove 4s linear infinite;
+  1159→  1159→}
+  1160→  1160→
+  1161→  1161→@keyframes footerLineMove {
+  1162→  1162→  0% { background-position: 0% 0%; }
+  1163→  1163→  100% { background-position: 200% 0%; }
+  1164→  1164→}
+  1165→  1165→
+  1166→  1166→/* Category Pill Active State */
+  1167→  1167→.category-pill-active {
+  1168→  1168→  background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%);
+  1169→  1169→  color: white;
+  1170→  1170→  box-shadow: 0 4px 12px rgba(217, 119, 6, 0.35);
+  1171→  1171→}
+  1172→  1172→
+  1173→  1173→/* Smooth Accordion Transitions */
+  1174→  1174→.smooth-accordion {
+  1175→  1175→  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  1176→  1176→}
+  1177→  1177→
