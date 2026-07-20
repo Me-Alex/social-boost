@@ -3247,6 +3247,1211 @@ function ContactSection() {
   )
 }
 
+// Helper Components - Defined before Home for proper hoisting
+
+// User icon helper
+function UserIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+      <circle cx="12" cy="7" r="4" />
+    </svg>
+  )
+}
+
+// Live User Counter Component
+function LiveUserCounter() {
+  const [count, setCount] = useState(12847)
+  const [isCounting, setIsCounting] = useState(false)
+
+  useEffect(() => {
+    // Simulate live counter updates
+    const interval = setInterval(() => {
+      setIsCounting(true)
+      setCount(prev => prev + Math.floor(Math.random() * 3) + 1)
+      setTimeout(() => setIsCounting(false), 2000)
+    }, 5000)
+
+    return () => clearInterval(interval)
+  }, [])
+
+  return (
+    <div className="text-center">
+      <p className="flex items-center justify-center gap-1">
+        <Users className={`w-4 h-4 ${isCounting ? 'text-green-400 animate-pulse' : 'text-green-500'}`} />
+        <span className={isCounting ? 'text-green-400' : 'text-green-500'}>
+          {count.toLocaleString()}
+        </span>
+      </p>
+      <p className="text-xs opacity-60">Online Now</p>
+    </div>
+  )
+}
+
+// Twitter/X icon helper
+function TwitterIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/>
+    </svg>
+  )
+}
+
+// Medal icon for reward tiers
+function Medal(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M7.21 15 2.66 7.14a2 2 0 0 1 .13-2.2L7.21 0"/>
+      <path d="M16.79 15l4.54-7.86a2 2 0 0 0-.13-2.2L16.79 0"/>
+      <circle cx="12" cy="15" r="6"/>
+      <path d="M12 12v3"/>
+    </svg>
+  )
+}
+
+// Trophy icon for Gold tier
+function Trophy(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
+      <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
+      <path d="M4 22h16"/>
+      <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/>
+      <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/>
+      <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
+    </svg>
+  )
+}
+
+// Gem icon for Platinum tier
+function Gem(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M6 3h12l4 6-10 13L2 9Z"/>
+      <path d="M11 3 8 9l4 13 4-13-3-6"/>
+      <path d="M2 9h20"/>
+    </svg>
+  )
+}
+
+// Back to Top Button Component
+function BackToTopButton() {
+  const [isVisible, setIsVisible] = useState(false)
+  const [isAnimating, setIsAnimating] = useState<'enter' | 'exit' | null>(null)
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const shouldShow = window.scrollY > 500
+      if (shouldShow !== isVisible) {
+        if (shouldShow) {
+          setIsAnimating('enter')
+          setIsVisible(true)
+        } else {
+          setIsAnimating('exit')
+          setTimeout(() => {
+            setIsVisible(false)
+            setIsAnimating(null)
+          }, 300)
+        }
+      }
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [isVisible])
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  if (!isVisible && !isAnimating) return null
+
+  return (
+    <button
+      onClick={scrollToTop}
+      className={`fixed bottom-24 left-6 z-50 w-12 h-12 rounded-full gradient-bg text-white shadow-lg shadow-warm-300/30 flex items-center justify-center hover:shadow-xl hover:shadow-warm-400/40 transition-all duration-300 group ${
+        isAnimating === 'enter' ? 'back-to-top-enter' : 
+        isAnimating === 'exit' ? 'back-to-top-exit' : ''
+      }`}
+      aria-label="Back to top"
+    >
+      <ArrowUp className="w-5 h-5 group-hover:-translate-y-1 transition-transform duration-200" />
+      
+      {/* Tooltip */}
+      <span className="absolute left-full ml-3 px-2 py-1 bg-slate-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+        Back to top
+      </span>
+    </button>
+  )
+}
+
+// ============================================
+// FEATURE 1: Quick Start Wizard Component
+// ============================================
+interface WizardStep {
+  id: number
+  title: string
+  description: string
+}
+
+const wizardSteps: WizardStep[] = [
+  { id: 1, title: 'Select Platform', description: 'Choose your social media platform' },
+  { id: 2, title: 'Choose Service', description: 'Pick the service you need' },
+  { id: 3, title: 'Enter URL', description: 'Provide your content URL' },
+  { id: 4, title: 'Set Quantity', description: 'Set desired amount' },
+  { id: 5, title: 'Launch', description: 'Review and start campaign' }
+]
+
+function QuickStartWizard() {
+  const [isOpen, setIsOpen] = useState(false)
+  const [currentStep, setCurrentStep] = useState(1)
+  const [isTransitioning, setIsTransitioning] = useState(false)
+  
+  // Form state
+  const [platform, setPlatform] = useState<'youtube' | 'instagram'>('youtube')
+  const [service, setService] = useState('views')
+  const [url, setUrl] = useState('')
+  const [quantity, setQuantity] = useState(1000)
+
+  const platforms = [
+    { id: 'youtube', name: 'YouTube', icon: Youtube, color: 'bg-red-500 hover:bg-red-600' },
+    { id: 'instagram', name: 'Instagram', icon: Instagram, color: 'bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 hover:from-purple-600 hover:via-pink-600 hover:to-orange-500' }
+  ]
+
+  const services = [
+    { id: 'views', name: 'Video Views', icon: Eye, price: '$1 per 1K' },
+    { id: 'likes', name: 'Likes', icon: Heart, price: '$2 per 1K' },
+    { id: 'subscribers', name: 'Subscribers', icon: Users, price: '$5 per 1K' },
+    { id: 'comments', name: 'Comments', icon: MessageCircle, price: '$10 per 1K' }
+  ]
+
+  const quantityOptions = [500, 1000, 2500, 5000, 10000, 25000]
+
+  const nextStep = () => {
+    if (currentStep < 5) {
+      setIsTransitioning(true)
+      setTimeout(() => {
+        setCurrentStep(prev => prev + 1)
+        setIsTransitioning(false)
+      }, 200)
+    }
+  }
+
+  const prevStep = () => {
+    if (currentStep > 1) {
+      setIsTransitioning(true)
+      setTimeout(() => {
+        setCurrentStep(prev => prev - 1)
+        setIsTransitioning(false)
+      }, 200)
+    }
+  }
+
+  const launchCampaign = () => {
+    toast.success('🚀 Campaign Launched!', {
+      description: `Your ${platform} ${service} campaign for ${quantity.toLocaleString()} units has started.`
+    })
+    setIsOpen(false)
+    // Reset wizard
+    setTimeout(() => {
+      setCurrentStep(1)
+      setPlatform('youtube')
+      setService('views')
+      setUrl('')
+      setQuantity(1000)
+    }, 300)
+  }
+
+  const selectedServiceData = services.find(s => s.id === service)
+
+  return (
+    <>
+      {/* Floating Trigger Button */}
+      <button
+        onClick={() => setIsOpen(true)}
+        className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full gradient-bg text-white shadow-lg shadow-warm-300/40 flex items-center justify-center hover:shadow-xl hover:shadow-warm-400/50 hover:scale-110 transition-all duration-300 group animate-bounce-subtle"
+        aria-label="Quick Start Wizard"
+      >
+        <Zap className="w-6 h-6 group-hover:rotate-12 transition-transform" />
+        
+        {/* Pulse ring effect */}
+        <span className="absolute inset-0 rounded-full bg-warm-400 animate-ping opacity-30"></span>
+        
+        {/* Tooltip */}
+        <span className="absolute right-full mr-4 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-slate-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+          Quick Launch ✨
+        </span>
+      </button>
+
+      {/* Modal */}
+      {isOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fadeIn"
+            onClick={() => setIsOpen(false)}
+          ></div>
+
+          {/* Modal Content */}
+          <div className="relative w-full max-w-lg bg-background rounded-2xl shadow-2xl border border-border overflow-hidden animate-scaleIn">
+            {/* Header with Gradient */}
+            <div className="relative bg-gradient-to-r from-warm-500 via-orange-400 to-warm-500 p-6 text-white">
+              <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=%2260%22 height=%2260%22 viewBox=%220 0 60 60%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cg fill=%22none%22 fill-rule=%22evenodd%22%3E%3Cg fill=%22%23ffffff%22 fill-opacity=%220.15%22%3E%3Cpath d=%22M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')]"></div>
+              
+              <button
+                onClick={() => setIsOpen(false)}
+                className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+              
+              <div className="relative">
+                <div className="flex items-center gap-2 mb-2">
+                  <Rocket className="w-6 h-6" />
+                  <h2 className="text-xl font-bold">Quick Start Wizard</h2>
+                </div>
+                <p className="text-white/80 text-sm">{wizardSteps[currentStep - 1].description}</p>
+              </div>
+
+              {/* Progress Steps */}
+              <div className="relative mt-4 flex items-center justify-between">
+                {wizardSteps.map((step, idx) => (
+                  <div key={step.id} className="flex flex-col items-center">
+                    <div className={cn(
+                      "w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-300",
+                      currentStep >= step.id 
+                        ? "bg-white text-warm-600 scale-105 shadow-lg" 
+                        : "bg-white/25 text-white/70"
+                    )}>
+                      {currentStep > step.id ? (
+                        <Check className="w-4 h-4" />
+                      ) : (
+                        step.id
+                      )}
+                    </div>
+                    {/* Connector Line */}
+                    {idx < wizardSteps.length - 1 && (
+                      <div className={cn(
+                        "absolute top-4 h-0.5 transition-all duration-300",
+                        currentStep > step.id + 1 ? "bg-white" : "bg-white/25"
+                      )} style={{
+                        left: `${((idx + 0.5) / wizardSteps.length) * 100}%`,
+                        right: `${((wizardSteps.length - idx - 0.5) / wizardSteps.length) * 100}%`
+                      }}></div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Step Content */}
+            <div className={cn(
+              "p-6 transition-all duration-200",
+              isTransitioning ? "opacity-0 translate-x-4" : "opacity-100 translate-x-0"
+            )}>
+              {/* Step 1: Select Platform */}
+              {currentStep === 1 && (
+                <div className="space-y-4 animate-fadeIn">
+                  <Label className="text-base font-semibold">Choose Your Platform</Label>
+                  <div className="grid grid-cols-2 gap-4">
+                    {platforms.map(p => (
+                      <button
+                        key={p.id}
+                        onClick={() => setPlatform(p.id as typeof platform)}
+                        className={cn(
+                          "relative p-4 rounded-xl border-2 transition-all duration-300 group",
+                          platform === p.id 
+                            ? "border-warm-500 bg-warm-50 dark:bg-warm-950/30 shadow-md" 
+                            : "border-border hover:border-warm-300 hover:bg-muted/50"
+                        )}
+                      >
+                        <p.icon className={cn("w-8 h-8 mx-auto mb-2", 
+                          platform === p.id ? "text-warm-600" : "text-muted-foreground group-hover:text-warm-500"
+                        )} />
+                        <span className={cn("font-medium",
+                          platform === p.id ? "text-warm-700 dark:text-warm-300" : ""
+                        )}>{p.name}</span>
+                        {platform === p.id && (
+                          <CheckCircle2 className="w-5 h-5 absolute top-2 right-2 text-warm-500" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Step 2: Choose Service */}
+              {currentStep === 2 && (
+                <div className="space-y-4 animate-fadeIn">
+                  <Label className="text-base font-semibold">Select a Service</Label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {services.map(s => (
+                      <button
+                        key={s.id}
+                        onClick={() => setService(s.id)}
+                        className={cn(
+                          "relative p-3 rounded-xl border-2 transition-all duration-300 text-left",
+                          service === s.id 
+                            ? "border-warm-500 bg-warm-50 dark:bg-warm-950/30 shadow-md" 
+                            : "border-border hover:border-warm-300 hover:bg-muted/50"
+                        )}
+                      >
+                        <s.icon className={cn("w-5 h-5 mb-1",
+                          service === s.id ? "text-warm-600" : "text-muted-foreground"
+                        )} />
+                        <p className={cn("font-medium text-sm",
+                          service === s.id ? "text-warm-700 dark:text-warm-300" : ""
+                        )}>{s.name}</p>
+                        <p className="text-xs text-muted-foreground">{s.price}</p>
+                        {service === s.id && (
+                          <CheckCircle2 className="w-4 h-4 absolute top-2 right-2 text-warm-500" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Step 3: Enter URL */}
+              {currentStep === 3 && (
+                <div className="space-y-4 animate-fadeIn">
+                  <Label className="text-base font-semibold">Your Content URL</Label>
+                  <div className="relative">
+                    <Input
+                      type="url"
+                      placeholder={`https://${platform}.com/...`}
+                      value={url}
+                      onChange={(e) => setUrl(e.target.value)}
+                      className="pl-10 h-12 text-base"
+                    />
+                    <LinkIcon className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  </div>
+                  {platform === 'youtube' && (
+                    <p className="text-sm text-muted-foreground">
+                      💡 Paste your YouTube video or channel URL
+                    </p>
+                  )}
+                  {platform === 'instagram' && (
+                    <p className="text-sm text-muted-foreground">
+                      💡 Paste your Instagram post, reel, or profile URL
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Step 4: Set Quantity */}
+              {currentStep === 4 && (
+                <div className="space-y-4 animate-fadeIn">
+                  <Label className="text-base font-semibold">How Many?</Label>
+                  
+                  {/* Quick select buttons */}
+                  <div className="flex flex-wrap gap-2">
+                    {quantityOptions.map(q => (
+                      <button
+                        key={q}
+                        onClick={() => setQuantity(q)}
+                        className={cn(
+                          "px-4 py-2 rounded-lg border-2 font-medium text-sm transition-all duration-200",
+                          quantity === q 
+                            ? "border-warm-500 bg-warm-500 text-white" 
+                            : "border-border hover:border-warm-300"
+                        )}
+                      >
+                        {(q >= 1000 ? `${q/1000}K` : q)}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Custom input */}
+                  <div className="relative">
+                    <Input
+                      type="number"
+                      min="100"
+                      max="100000"
+                      value={quantity}
+                      onChange={(e) => setQuantity(Number(e.target.value))}
+                      className="pl-4 pr-16 h-12 text-base"
+                    />
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">units</span>
+                  </div>
+
+                  {/* Price estimate */}
+                  <Card className="bg-gradient-to-r from-warm-50 to-orange-50 dark:from-warm-950/30 dark:to-orange-950/20 border-warm-200">
+                    <CardContent className="p-4">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">Estimated Cost</span>
+                        <span className="text-xl font-bold text-warm-600">
+                          ${((quantity / 1000) * (selectedServiceData?.id === 'views' ? 1 : selectedServiceData?.id === 'likes' ? 2 : selectedServiceData?.id === 'subscribers' ? 5 : 10)).toFixed(2)}
+                        </span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              {/* Step 5: Summary & Launch */}
+              {currentStep === 5 && (
+                <div className="space-y-4 animate-fadeIn">
+                  <div className="text-center mb-4">
+                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 dark:bg-green-950/30 mb-3">
+                      <Rocket className="w-8 h-8 text-green-600" />
+                    </div>
+                    <h3 className="text-lg font-bold">Ready to Launch!</h3>
+                    <p className="text-sm text-muted-foreground">Review your campaign settings</p>
+                  </div>
+
+                  <Card className="border-warm-200 bg-muted/30">
+                    <CardContent className="p-4 space-y-3">
+                      <div className="flex justify-between items-center py-2 border-b border-border">
+                        <span className="text-sm text-muted-foreground">Platform</span>
+                        <span className="font-medium flex items-center gap-2">
+                          {platform === 'youtube' ? <Youtube className="w-4 h-4 text-red-500" /> : <Instagram className="w-4 h-4 text-pink-500" />}
+                          {platform === 'youtube' ? 'YouTube' : 'Instagram'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center py-2 border-b border-border">
+                        <span className="text-sm text-muted-foreground">Service</span>
+                        <span className="font-medium capitalize">{selectedServiceData?.name || service}</span>
+                      </div>
+                      <div className="flex justify-between items-center py-2 border-b border-border">
+                        <span className="text-sm text-muted-foreground">URL</span>
+                        <span className="font-mono text-xs truncate max-w-[180px]" title={url}>
+                          {url || 'Not provided'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center py-2">
+                        <span className="text-sm text-muted-foreground">Quantity</span>
+                        <span className="font-bold text-warm-600">{quantity.toLocaleString()}</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              {/* Navigation Buttons */}
+              <div className="flex justify-between mt-6 pt-4 border-t">
+                {currentStep > 1 ? (
+                  <Button variant="outline" onClick={prevStep} className="gap-2">
+                    <ChevronLeft className="w-4 h-4" /> Back
+                  </Button>
+                ) : (
+                  <Button variant="ghost" onClick={() => setIsOpen(false)}>Cancel</Button>
+                )}
+
+                {currentStep < 5 ? (
+                  <Button 
+                    onClick={nextStep}
+                    disabled={(currentStep === 3 && !url) || (currentStep === 4 && quantity < 100)}
+                    className="gradient-bg text-white border-0 gap-2"
+                  >
+                    Next <ChevronRight className="w-4 h-4" />
+                  </Button>
+                ) : (
+                  <Button 
+                    onClick={launchCampaign}
+                    className="gradient-bg text-white border-0 gap-2 shadow-lg shadow-warm-300/30"
+                  >
+                    <Rocket className="w-4 h-4" /> Launch Campaign
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  )
+}
+
+// Helper icon for link input
+function LinkIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+    </svg>
+  )
+}
+
+// ============================================
+// FEATURE 2: Achievement Badges Component
+// ============================================
+interface AchievementBadge {
+  id: string
+  title: string
+  description: string
+  icon: React.ReactNode
+  unlocked: boolean
+  xpReward: number
+  progress?: number
+  category: 'campaigns' | 'engagement' | 'loyalty' | 'special'
+}
+
+const achievementBadges: AchievementBadge[] = [
+  {
+    id: 'first-campaign',
+    title: 'First Campaign',
+    description: 'Launch your first growth campaign',
+    icon: <Rocket className="w-8 h-8" />,
+    unlocked: true,
+    xpReward: 100,
+    progress: 100,
+    category: 'campaigns'
+  },
+  {
+    id: 'rising-star',
+    title: 'Rising Star',
+    description: 'Complete 10 successful campaigns',
+    icon: <Star className="w-8 h-8" />,
+    unlocked: true,
+    xpReward: 500,
+    progress: 100,
+    category: 'campaigns'
+  },
+  {
+    id: 'social-butterfly',
+    title: 'Social Butterfly',
+    description: 'Use services on 3 different platforms',
+    icon: <Sparkles className="w-8 h-8" />,
+    unlocked: true,
+    xpReward: 750,
+    progress: 100,
+    category: 'engagement'
+  },
+  {
+    id: 'viral-champion',
+    title: 'Viral Champion',
+    description: 'Reach 1 million total engagements',
+    icon: <Flame className="w-8 h-8" />,
+    unlocked: false,
+    xpReward: 2000,
+    progress: 67,
+    category: 'engagement'
+  },
+  {
+    id: 'loyal-user',
+    title: 'Loyal User',
+    description: 'Active member for 30 days straight',
+    icon: <Heart className="w-8 h-8" />,
+    unlocked: false,
+    xpReward: 1500,
+    progress: 85,
+    category: 'loyalty'
+  },
+  {
+    id: 'power-user',
+    title: 'Power User',
+    description: 'Spend 10,000 credits in total',
+    icon: <Zap className="w-8 h-8" />,
+    unlocked: false,
+    xpReward: 3000,
+    progress: 42,
+    category: 'loyalty'
+  },
+  {
+    id: 'influencer',
+    title: 'Influencer Elite',
+    description: 'Refer 5 friends who sign up',
+    icon: <Crown className="w-8 h-8" />,
+    unlocked: false,
+    xpReward: 2500,
+    progress: 20,
+    category: 'special'
+  },
+  {
+    id: 'early-bird',
+    title: 'Early Bird',
+    description: 'Join during our beta launch period',
+    icon: <Award className="w-8 h-8" />,
+    unlocked: true,
+    xpReward: 1000,
+    progress: 100,
+    category: 'special'
+  }
+]
+
+function AchievementBadges() {
+  const [hoveredId, setHoveredId] = useState<string | null>(null)
+  
+  const userXP = achievementBadges
+    .filter(b => b.unlocked)
+    .reduce((sum, b) => sum + b.xpReward, 0)
+  
+  const nextLevelXP = 5000
+  const levelProgress = Math.min((userXP / nextLevelXP) * 100, 100)
+  const currentLevel = Math.floor(userXP / 1000) + 1
+
+  const getCategoryColor = (category: AchievementBadge['category']) => {
+    switch (category) {
+      case 'campaigns': return 'from-blue-500 to-cyan-500'
+      case 'engagement': return 'from-purple-500 to-pink-500'
+      case 'loyalty': return 'from-amber-500 to-orange-500'
+      case 'special': return 'from-emerald-500 to-teal-500'
+      default: return 'from-gray-500 to-gray-400'
+    }
+  }
+
+  return (
+    <section className="py-20 lg:py-28 bg-gradient-to-b from-background to-muted/30 relative overflow-hidden">
+      {/* Background decorations */}
+      <div className="absolute inset-0 -z-10 overflow-hidden">
+        <div className="absolute top-20 right-20 w-64 h-64 bg-warm-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-float"></div>
+        <div className="absolute bottom-20 left-20 w-72 h-72 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-float" style={{ animationDelay: '1.5s' }}></div>
+      </div>
+
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Section Header */}
+        <div className="text-center max-w-3xl mx-auto mb-12">
+          <Badge variant="secondary" className="mb-4 px-4 py-2 bg-gradient-to-r from-purple-100 to-pink-100 text-purple-800 border-purple-200">
+            <Trophy className="w-4 h-4 mr-2" />
+            Gamification System
+          </Badge>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
+            Your <span className="gradient-text">Achievement Badges</span>
+          </h2>
+          <p className="text-lg text-muted-foreground">
+            Unlock badges as you grow your social presence. Each badge rewards you with XP!
+          </p>
+        </div>
+
+        {/* XP Progress Bar */}
+        <Card className="max-w-2xl mx-auto mb-12 overflow-hidden border-0 shadow-lg bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-warm-500 to-orange-500 flex items-center justify-center">
+                  <Crown className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <p className="font-bold text-lg">Level {currentLevel}</p>
+                  <p className="text-sm text-slate-400">Growth Master</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="font-bold text-xl text-warm-400">{userXP.toLocaleString()} XP</p>
+                <p className="text-xs text-slate-400">of {nextLevelXP.toLocaleString()} XP</p>
+              </div>
+            </div>
+            
+            {/* Progress Bar */}
+            <div className="relative h-3 bg-slate-700 rounded-full overflow-hidden">
+              <div 
+                className="absolute inset-y-0 left-0 bg-gradient-to-r from-warm-500 via-orange-400 to-warm-400 rounded-full transition-all duration-1000 ease-out"
+                style={{ width: `${levelProgress}%` }}
+              >
+                <div className="absolute inset-0 bg-[linear-gradient(90deg,transparent,rgba(255,255,255,0.3),transparent)] animate-shimmer"></div>
+              </div>
+            </div>
+            <p className="text-xs text-slate-500 mt-2 text-right">
+              {(nextLevelXP - userXP).toLocaleString()} XP until next level
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Badges Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {achievementBadges.map((badge) => (
+            <Card 
+              key={badge.id}
+              onMouseEnter={() => setHoveredId(badge.id)}
+              onMouseLeave={() => setHoveredId(null)}
+              className={cn(
+                "relative overflow-hidden transition-all duration-300 cursor-pointer group",
+                badge.unlocked 
+                  ? "border-transparent bg-white shadow-lg hover:shadow-xl hover:-translate-y-1" 
+                  : "border-dashed border-slate-300 bg-slate-50 dark:bg-slate-900/50",
+                hoveredId === badge.id && "ring-2 ring-warm-400 ring-offset-2"
+              )}
+            >
+              {/* Glow effect for unlocked badges */}
+              {badge.unlocked && (
+                <div className={cn(
+                  "absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300",
+                  "bg-gradient-to-br bg-opacity-10",
+                  getCategoryColor(badge.category)
+                )}></div>
+              )}
+
+              <CardContent className="p-6 relative">
+                {/* Badge Icon Container */}
+                <div className={cn(
+                  "w-20 h-20 rounded-2xl mx-auto mb-4 flex items-center justify-center transition-all duration-300",
+                  badge.unlocked 
+                    ? cn("bg-gradient-to-br text-white shadow-lg group-hover:scale-110", getCategoryColor(badge.category))
+                    : "bg-slate-200 dark:bg-slate-700 text-slate-400"
+                )}>
+                  {badge.unlocked ? badge.icon : <Lock className="w-8 h-8" />}
+                </div>
+
+                {/* Status indicator */}
+                {badge.unlocked && (
+                  <div className="absolute top-3 right-3">
+                    <BadgeCheck className="w-5 h-5 text-green-500" />
+                  </div>
+                )}
+
+                {!badge.unlocked && (
+                  <div className="absolute top-3 right-3">
+                    <Lock className="w-4 h-4 text-slate-400" />
+                  </div>
+                )}
+
+                {/* Badge Info */}
+                <div className="text-center">
+                  <h3 className={cn(
+                    "font-bold mb-1 transition-colors",
+                    badge.unlocked ? "text-foreground" : "text-slate-500"
+                  )}>
+                    {badge.title}
+                  </h3>
+                  <p className={cn(
+                    "text-sm mb-3",
+                    badge.unlocked ? "text-muted-foreground" : "text-slate-400"
+                  )}>
+                    {badge.description}
+                  </p>
+
+                  {/* Progress bar for locked badges with partial progress */}
+                  {!badge.unlocked && badge.progress !== undefined && badge.progress > 0 && (
+                    <div className="mb-2">
+                      <div className="h-1.5 bg-slate-200 dark:bg-slate-600 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-amber-400 rounded-full transition-all duration-500"
+                          style={{ width: `${badge.progress}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* XP Reward */}
+                  <div className={cn(
+                    "inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium",
+                    badge.unlocked 
+                      ? "bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400" 
+                      : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
+                  )}>
+                    <Zap className="w-3 h-3" />
+                    +{badge.xpReward.toLocaleString()} XP
+                  </div>
+                </div>
+
+                {/* Hover overlay showing more details */}
+                {hoveredId === badge.id && (
+                  <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/80 to-transparent translate-y-full group-hover:translate-y-0 transition-transform duration-300 rounded-b-lg">
+                    <p className="text-white text-xs text-center">
+                      {badge.unlocked ? '✨ Unlocked!' : `Keep going! ${badge.progress}% complete`}
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Stats Summary */}
+        <div className="mt-12 flex flex-wrap justify-center gap-8">
+          {[
+            { label: 'Unlocked', value: `${achievementBadges.filter(b => b.unlocked).length}/${achievementBadges.length}`, icon: Award },
+            { label: 'Total XP Earned', value: userXP.toLocaleString(), icon: Zap },
+            { label: 'Next Reward', value: '850 XP', icon: Gift }
+          ].map((stat, idx) => (
+            <div key={idx} className="flex items-center gap-3 px-6 py-3 rounded-xl bg-muted/50">
+              <stat.icon className="w-5 h-5 text-warm-500" />
+              <div>
+                <p className="font-bold text-foreground">{stat.value}</p>
+                <p className="text-xs text-muted-foreground">{stat.label}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ============================================
+// FEATURE 3: Live Activity Feed Component
+// ============================================
+interface ActivityItem {
+  id: string
+  user: string
+  avatar: string
+  action: string
+  type: 'campaign' | 'earning' | 'milestone' | 'referral'
+  timestamp: Date
+}
+
+const generateMockActivities = (): ActivityItem[] => {
+  const names = ['John D.', 'Sarah M.', 'Mike R.', 'Emma L.', 'Alex K.', 'Lisa T.', 'David P.', 'Nina S.', 'Chris B.', 'Anna W.']
+  const actions = [
+    { action: 'started a YouTube Views campaign', type: 'campaign' as const },
+    { action: 'earned 500 credits', type: 'earning' as const },
+    { action: 'unlocked "Rising Star" badge', type: 'milestone' as const },
+    { action: 'launched Instagram followers boost', type: 'campaign' as const },
+    { action: 'reached 10K milestone!', type: 'milestone' as const },
+    { action: 'referred a new friend (+200 XP)', type: 'referral' as const },
+    { action: 'completed their first campaign', type: 'milestone' as const },
+    { action: 'bought premium package', type: 'earning' as const }
+  ]
+  
+  return Array.from({ length: 10 }, (_, i) => ({
+    id: `activity-${i}`,
+    user: names[i % names.length],
+    avatar: names[i % names.length][0],
+    action: actions[i % actions.length].action,
+    type: actions[i % actions.length].type,
+    timestamp: new Date(Date.now() - (i * 120000)) // Every 2 minutes ago
+  }))
+}
+
+function LiveActivityFeed() {
+  const [activities, setActivities] = useState<ActivityItem[]>(generateMockActivities())
+  const [isPaused, setIsPaused] = useState(false)
+  const feedRef = useRef<HTMLDivElement>(null)
+
+  // Simulate new activities coming in
+  useEffect(() => {
+    if (isPaused) return
+    
+    const interval = setInterval(() => {
+      const newActivities = [...activities]
+      const randomNames = ['James H.', 'Sophie K.', 'Ryan L.', 'Mia C.', 'Tom W.', 'Grace F.']
+      const randomActions = [
+        { action: 'started a new campaign', type: 'campaign' as const },
+        { action: 'just joined SocialBoost!', type: 'milestone' as const },
+        { action: 'earned bonus credits', type: 'earning' as const },
+        { action: 'upgraded to Pro plan', type: 'earning' as const }
+      ]
+      const randomAction = randomActions[Math.floor(Math.random() * randomActions.length)]
+      
+      const newActivity: ActivityItem = {
+        id: `activity-${Date.now()}`,
+        user: randomNames[Math.floor(Math.random() * randomNames.length)],
+        avatar: randomNames[Math.floor(Math.random() * randomNames.length)][0],
+        action: randomAction.action,
+        type: randomAction.type,
+        timestamp: new Date()
+      }
+      
+      setActivities([newActivity, ...newActivities.slice(0, 9)])
+    }, 8000) // New activity every 8 seconds
+
+    return () => clearInterval(interval)
+  }, [isPaused])
+
+  const formatTimestamp = (date: Date): string => {
+    const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000)
+    if (seconds < 60) return 'Just now'
+    const minutes = Math.floor(seconds / 60)
+    if (minutes < 60) return `${minutes}m ago`
+    const hours = Math.floor(minutes / 60)
+    return `${hours}h ago`
+  }
+
+  const getActivityTypeColor = (type: ActivityItem['type']) => {
+    switch (type) {
+      case 'campaign': return 'bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400'
+      case 'earning': return 'bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400'
+      case 'milestone': return 'bg-purple-100 text-purple-700 dark:bg-purple-950/30 dark:text-purple-400'
+      case 'referral': return 'bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400'
+      default: return 'bg-gray-100 text-gray-700'
+    }
+  }
+
+  const getAvatarGradient = (initial: string): string => {
+    const gradients = [
+      'from-red-400 to-pink-500',
+      'from-blue-400 to-indigo-500',
+      'from-green-400 to-emerald-500',
+      'from-yellow-400 to-orange-500',
+      'from-purple-400 to-violet-500',
+      'from-cyan-400 to-blue-500',
+    ]
+    const index = initial.charCodeAt(0) % gradients.length
+    return gradients[index]
+  }
+
+  return (
+    <div 
+      ref={feedRef}
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+      className="rounded-xl border bg-card shadow-sm overflow-hidden"
+    >
+      {/* Feed Header */}
+      <div className="flex items-center justify-between px-4 py-3 border-b bg-muted/30">
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <span className="w-2.5 h-2.5 block rounded-full bg-green-500 animate-pulse"></span>
+            <span className="absolute inset-0 rounded-full bg-green-500 animate-ping opacity-50"></span>
+          </div>
+          <span className="font-semibold text-sm">Live Activity</span>
+          <Badge variant="secondary" className="text-xs px-2 py-0">Real-time</Badge>
+        </div>
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          {isPaused ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
+          {isPaused ? 'Paused' : 'Live'}
+        </div>
+      </div>
+
+      {/* Activity List */}
+      <div className="max-h-[360px] overflow-y-auto scrollbar-thin">
+        <div className="divide-y">
+          {activities.map((activity, idx) => (
+            <div 
+              key={activity.id}
+              className={cn(
+                "flex items-start gap-3 p-3 transition-all duration-300 hover:bg-muted/30",
+                idx === 0 && "animate-slideInRight"
+              )}
+            >
+              {/* Avatar */}
+              <div className={cn(
+                "w-9 h-9 rounded-full bg-gradient-to-br flex items-center justify-center text-white font-bold text-sm shrink-0",
+                getAvatarGradient(activity.avatar)
+              )}>
+                {activity.avatar}
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 min-w-0 pt-0.5">
+                <p className="text-sm leading-relaxed">
+                  <span className="font-semibold text-foreground">{activity.user}</span>{' '}
+                  <span className="text-muted-foreground">{activity.action}</span>
+                </p>
+                <div className="flex items-center gap-2 mt-1.5">
+                  <span className="text-xs text-muted-foreground">
+                    {formatTimestamp(activity.timestamp)}
+                  </span>
+                  <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0", getActivityTypeColor(activity.type))}>
+                    {activity.type}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="px-4 py-2.5 border-t bg-muted/20 text-center">
+        <button className="text-xs text-warm-600 hover:text-warm-700 font-medium flex items-center justify-center gap-1 w-full transition-colors">
+          <ExternalLink className="w-3 h-3" />
+          View All Activity
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ============================================
+// FEATURE 4: Platform Statistics Widget
+// ============================================
+interface MetricData {
+  label: string
+  value: number
+  suffix?: string
+  targetValue: number
+  color: string
+  sparklineData: number[]
+}
+
+const initialMetrics: MetricData[] = [
+  { label: 'Delivery Rate', value: 98.7, suffix: '%', targetValue: 99.5, color: 'from-green-500 to-emerald-400', sparklineData: [95, 96, 97, 97.5, 98, 98.2, 98.7] },
+  { label: 'Satisfaction', value: 99.2, suffix: '%', targetValue: 100, color: 'from-amber-500 to-orange-400', sparklineData: [97, 98, 98.5, 98.8, 99, 99.1, 99.2] },
+  { label: 'Uptime', value: 99.9, suffix: '%', targetValue: 100, color: 'from-blue-500 to-cyan-400', sparklineData: [99.5, 99.6, 99.7, 99.8, 99.85, 99.88, 99.9] },
+  { label: 'Avg Response', value: 2.4, suffix: 'min', targetValue: 1, color: 'from-purple-500 to-violet-400', sparklineData: [5, 4.5, 3.8, 3.2, 2.8, 2.6, 2.4] }
+]
+
+function PlatformStatsWidget() {
+  const [metrics, setMetrics] = useState<MetricData[]>(initialMetrics)
+  const [isVisible, setIsVisible] = useState(false)
+  const [animatedValues, setAnimatedValues] = useState<number[]>(metrics.map(() => 0))
+  const widgetRef = useRef<HTMLDivElement>(null)
+
+  // Intersection Observer for animation trigger
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !isVisible) {
+          setIsVisible(true)
+        }
+      },
+      { threshold: 0.3 }
+    )
+
+    if (widgetRef.current) {
+      observer.observe(widgetRef.current)
+    }
+
+    return () => observer.disconnect()
+  }, [isVisible])
+
+  // Animate counters when visible
+  useEffect(() => {
+    if (!isVisible) return
+
+    const duration = 2000
+    const steps = 60
+    const interval = duration / steps
+
+    let step = 0
+    const timer = setInterval(() => {
+      step++
+      const progress = step / steps
+      
+      const eased = 1 - Math.pow(1 - progress, 3) // Ease out cubic
+
+      setAnimatedValues(metrics.map(metric => metric.value * eased))
+
+      if (step >= steps) {
+        clearInterval(timer)
+        setAnimatedValues(metrics.map(m => m.value))
+      }
+    }, interval)
+
+    return () => clearInterval(timer)
+  }, [isVisible])
+
+  // Circular progress component
+  const CircularProgress = ({ 
+    value, 
+    maxValue = 100, 
+    size = 120, 
+    strokeWidth = 8, 
+    color 
+  }: { 
+    value: number; 
+    maxValue?: number; 
+    size?: number; 
+    strokeWidth?: number; 
+    color: string 
+  }) => {
+    const radius = (size - strokeWidth) / 2
+    const circumference = radius * 2 * Math.PI
+    const offset = circumference - ((value / maxValue) * circumference)
+
+    return (
+      <svg width={size} height={size} className="-rotate-90">
+        {/* Background circle */}
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={strokeWidth}
+          className="text-muted/30"
+        />
+        {/* Progress circle */}
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="url(#gradient)"
+          strokeWidth={strokeWidth}
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          className="transition-all duration-1000 ease-out"
+        />
+        {/* Gradient definition */}
+        <defs>
+          <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor={color.includes('green') ? '#22c55e' : color.includes('amber') ? '#f59e0b' : color.includes('blue') ? '#3b82f6' : '#a855f7'} />
+            <stop offset="100%" stopColor={color.includes('green') ? '#10b981' : color.includes('amber') ? '#f97316' : color.includes('blue') ? '#06b6d4' : '#8b5cf6'} />
+          </linearGradient>
+        </defs>
+      </svg>
+    )
+  }
+
+  // Mini sparkline chart using CSS
+  const SparklineChart = ({ data, color }: { data: number[]; color: string }) => {
+    const min = Math.min(...data)
+    const max = Math.max(...data)
+    const range = max - min || 1
+    const points = data.map((val, i) => ({
+      x: (i / (data.length - 1)) * 100,
+      y: 100 - ((val - min) / range) * 100
+    }))
+    
+    const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ')
+    const areaD = `${pathD} L${points[points.length - 1].x},100 L0,100 Z`
+
+    return (
+      <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="w-full h-8">
+        <defs>
+          <linearGradient id={`area-${color}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={color.includes('green') ? '#22c55e' : color.includes('amber') ? '#f59e0b' : color.includes('blue') ? '#3b82f6' : '#a855f7'} stopOpacity="0.3" />
+            <stop offset="100%" stopColor={color.includes('green') ? '#22c55e' : color.includes('amber') ? '#f59e0b' : color.includes('blue') ? '#3b82f6' : '#a855f7'} stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <path d={areaD} fill={`url(#area-${color})`} />
+        <path d={pathD} fill="none" stroke={color.includes('green') ? '#22c55e' : color.includes('amber') ? '#f59e0b' : color.includes('blue') ? '#3b82f6' : '#a855f7'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    )
+  }
+
+  return (
+    <div ref={widgetRef} className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+      {metrics.map((metric, idx) => (
+        <Card 
+          key={metric.label} 
+          className="relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-shadow duration-300 group"
+        >
+          {/* Background gradient on hover */}
+          <div className={cn(
+            "absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-5 transition-opacity duration-300",
+            metric.color
+          )}></div>
+          
+          <CardContent className="p-5 md:p-6 relative">
+            {/* Circular Progress */}
+            <div className="relative w-28 h-28 md:w-32 md:h-32 mx-auto mb-4">
+              <CircularProgress 
+                value={animatedValues[idx]} 
+                size={128} 
+                strokeWidth={8}
+                color={metric.color}
+              />
+              
+              {/* Value display in center */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className={cn(
+                  "text-2xl md:text-3xl font-bold tabular-nums",
+                  metric.color.includes('green') ? 'text-green-500' :
+                  metric.color.includes('amber') ? 'text-amber-500' :
+                  metric.color.includes('blue') ? 'text-blue-500' :
+                  'text-purple-500'
+                )}>
+                  {animatedValues[idx].toFixed(metric.suffix === '%' ? 1 : 1)}
+                  {metric.suffix}
+                </span>
+              </div>
+            </div>
+
+            {/* Label */}
+            <h3 className="text-center font-semibold text-foreground mb-1">{metric.label}</h3>
+            
+            {/* Sparkline Chart */}
+            <SparklineChart data={metric.sparklineData} color={metric.color} />
+
+            {/* Target indicator */}
+            <div className="flex items-center justify-center gap-1.5 mt-2">
+              <TrendingUp className="w-3.5 h-3.5 text-green-500" />
+              <span className="text-xs text-muted-foreground">
+                Goal: {metric.targetValue}{metric.suffix}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  )
+}
+
 export default function Home() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isSignUpOpen, setIsSignUpOpen] = useState(false)
@@ -3667,7 +4872,7 @@ export default function Home() {
               Numbers That{' '}
               <span className="text-glow">Speak Volumes</span>
             </h2>
-            <p class="text-lg text-gray-400">
+            <p className="text-lg text-gray-400">
               Track our real-time impact on creators worldwide
             </p>
           </div>
@@ -3711,6 +4916,36 @@ export default function Home() {
 
       {/* Live Activity Ticker */}
       <LiveActivityTicker />
+
+      {/* Platform Statistics Widget - NEW FEATURE */}
+      <section className="py-20 lg:py-28 bg-muted/30 relative overflow-hidden">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Section Header */}
+          <div className="text-center max-w-3xl mx-auto mb-12">
+            <Badge variant="secondary" className="mb-4 bg-gradient-to-r from-blue-100 to-cyan-100 text-blue-800 border-blue-200">
+              <Activity className="w-4 h-4 mr-1" />
+              Real-time Metrics
+            </Badge>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
+              Platform <span className="gradient-text">Statistics</span>
+            </h2>
+            <p className="text-lg text-muted-foreground">
+              Monitor our platform performance in real-time with live metrics
+            </p>
+          </div>
+
+          <PlatformStatsWidget />
+
+          {/* Live Activity Feed - NEW FEATURE */}
+          <div className="mt-16 max-w-md mx-auto">
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <Rss className="w-5 h-5 text-warm-500" />
+              <h3 className="font-semibold text-lg">Live Community Feed</h3>
+            </div>
+            <LiveActivityFeed />
+          </div>
+        </div>
+      </section>
 
       {/* Services Section */}
       <section id="services" className="py-20 lg:py-28 bg-gradient-to-b from-background to-muted/30">
@@ -4408,6 +5643,9 @@ export default function Home() {
           <TestimonialsCarousel />
         </div>
       </section>
+
+      {/* Achievement Badges Section - NEW FEATURE */}
+      <AchievementBadges />
 
       {/* Social Proof / As Featured In Section */}
       <section className="py-16 bg-gradient-to-b from-muted/50 to-background overflow-hidden border-y border-border/50">
@@ -5185,144 +6423,11 @@ export default function Home() {
 
       {/* Back to Top Button */}
       <BackToTopButton />
+
+      {/* Quick Start Wizard - NEW FEATURE (Floating Widget) */}
+      <QuickStartWizard />
     </div>
   )
 }
 
-// Helper component for User icon
-function UserIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-      <circle cx="12" cy="7" r="4" />
-    </svg>
-  )
-}
-
-// Live User Counter Component
-function LiveUserCounter() {
-  const [count, setCount] = useState(12847)
-  const [isCounting, setIsCounting] = useState(false)
-
-  useEffect(() => {
-    // Simulate live counter updates
-    const interval = setInterval(() => {
-      setIsCounting(true)
-      setCount(prev => prev + Math.floor(Math.random() * 3) + 1)
-      setTimeout(() => setIsCounting(false), 2000)
-    }, 5000)
-
-    return () => clearInterval(interval)
-  }, [])
-
-  return (
-    <div className="text-center">
-      <p className="flex items-center justify-center gap-1">
-        <Users className={`w-4 h-4 ${isCounting ? 'text-green-400 animate-pulse' : 'text-green-500'}`} />
-        <span className={isCounting ? 'text-green-400' : 'text-green-500'}>
-          {count.toLocaleString()}
-        </span>
-      </p>
-      <p className="text-xs opacity-60">Online Now</p>
-    </div>
-  )
-}
-
-// Twitter/X icon helper
-function TwitterIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/>
-    </svg>
-  )
-}
-
-// Medal icon for reward tiers
-function Medal(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <path d="M7.21 15 2.66 7.14a2 2 0 0 1 .13-2.2L7.21 0"/>
-      <path d="M16.79 15l4.54-7.86a2 2 0 0 0-.13-2.2L16.79 0"/>
-      <circle cx="12" cy="15" r="6"/>
-      <path d="M12 12v3"/>
-    </svg>
-  )
-}
-
-// Trophy icon for Gold tier
-function Trophy(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
-      <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
-      <path d="M4 22h16"/>
-      <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/>
-      <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/>
-      <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
-    </svg>
-  )
-}
-
-// Gem icon for Platinum tier
-function Gem(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <path d="M6 3h12l4 6-10 13L2 9Z"/>
-      <path d="M11 3 8 9l4 13 4-13-3-6"/>
-      <path d="M2 9h20"/>
-    </svg>
-  )
-}
-
-// Components moved before Home function for proper hoisting
-
-// Back to Top Button Component
-function BackToTopButton() {
-  const [isVisible, setIsVisible] = useState(false)
-  const [isAnimating, setIsAnimating] = useState<'enter' | 'exit' | null>(null)
-
-  useEffect(() => {
-    const handleScroll = () => {
-      const shouldShow = window.scrollY > 500
-      if (shouldShow !== isVisible) {
-        if (shouldShow) {
-          setIsAnimating('enter')
-          setIsVisible(true)
-        } else {
-          setIsAnimating('exit')
-          setTimeout(() => {
-            setIsVisible(false)
-            setIsAnimating(null)
-          }, 300)
-        }
-      }
-    }
-
-    window.addEventListener('scroll', handleScroll, { passive: true })
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [isVisible])
-
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
-
-  if (!isVisible && !isAnimating) return null
-
-  return (
-    <button
-      onClick={scrollToTop}
-      className={`fixed bottom-24 left-6 z-50 w-12 h-12 rounded-full gradient-bg text-white shadow-lg shadow-warm-300/30 flex items-center justify-center hover:shadow-xl hover:shadow-warm-400/40 transition-all duration-300 group ${
-        isAnimating === 'enter' ? 'back-to-top-enter' : 
-        isAnimating === 'exit' ? 'back-to-top-exit' : ''
-      }`}
-      aria-label="Back to top"
-    >
-      <ArrowUp className="w-5 h-5 group-hover:-translate-y-1 transition-transform duration-200" />
-      
-      {/* Tooltip */}
-      <span className="absolute left-full ml-3 px-2 py-1 bg-slate-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-        Back to top
-      </span>
-    </button>
-  )
-}
+// Helper components moved above Home function for proper hoisting - see above
