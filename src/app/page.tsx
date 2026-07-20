@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { 
   AreaChart,
   Area,
@@ -50,6 +51,7 @@ import {
   Lock,
   Rocket,
   ChevronRight,
+  ChevronLeft,
   Menu,
   X,
   Sparkles,
@@ -1800,8 +1802,11 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background overflow-x-hidden">
+      {/* Scroll Progress Bar */}
+      <ScrollProgress />
+
       {/* Header / Navigation */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/60 shadow-sm">
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/60 shadow-sm glass-header">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
             {/* Logo */}
@@ -1829,6 +1834,7 @@ export default function Home() {
             <div className="hidden md:flex items-center gap-3">
               <DemoDashboardButton />
               <ThemeToggle />
+              <NotificationBellDropdown />
               <Dialog open={isSignInOpen} onOpenChange={setIsSignInOpen}>
                 <DialogTrigger asChild>
                   <Button variant="ghost" size="sm" className="hover:bg-muted">Sign In</Button>
@@ -2067,6 +2073,9 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* Live Activity Ticker */}
+      <LiveActivityTicker />
 
       {/* Services Section */}
       <section id="services" className="py-20 lg:py-28 bg-gradient-to-b from-background to-muted/30">
@@ -2559,55 +2568,7 @@ export default function Home() {
             </h2>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {[
-              {
-                name: 'Sarah M.',
-                role: 'YouTuber • 250K subscribers',
-                content: 'SocialBoost helped me grow my channel from 10K to 250K subscribers in just 6 months. The engagement is real and the support is amazing!',
-                rating: 5,
-                avatar: 'S',
-                gradient: 'from-pink-500 to-rose-500'
-              },
-              {
-                name: 'Mike T.',
-                role: 'Instagram Influencer • 1M followers',
-                content: 'I was skeptical at first, but this platform delivers real results. My engagement rates have never been higher. Highly recommend!',
-                rating: 5,
-                avatar: 'M',
-                gradient: 'from-blue-500 to-cyan-500'
-              },
-              {
-                name: 'Emily R.',
-                role: 'Content Creator • Multi-platform',
-                content: 'The best investment for my social media growth. Easy to use, great results, and excellent customer service. 10/10 would recommend!',
-                rating: 5,
-                avatar: 'E',
-                gradient: 'from-purple-500 to-violet-500'
-              }
-            ].map((testimonial, i) => (
-              <Card key={i} className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group">
-                <CardContent className="pt-8 pb-8">
-                  <div className="flex gap-1 mb-4">
-                    {[...Array(testimonial.rating)].map((_, j) => (
-                      <Star key={j} className="w-5 h-5 fill-warm-400 text-warm-400 group-hover:scale-110 transition-transform" />
-                    ))}
-                  </div>
-                  <p className="text-muted-foreground mb-6 italic leading-relaxed">&ldquo;{testimonial.content}&rdquo;</p>
-                  <Separator className="mb-6" />
-                  <div className="flex items-center gap-3">
-                    <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${testimonial.gradient} flex items-center justify-center text-white font-bold text-lg shadow-lg`}>
-                      {testimonial.avatar}
-                    </div>
-                    <div>
-                      <div className="font-semibold">{testimonial.name}</div>
-                      <div className="text-sm text-muted-foreground">{testimonial.role}</div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <TestimonialsCarousel />
         </div>
       </section>
 
@@ -3340,5 +3301,293 @@ function Gem(props: React.SVGProps<SVGSVGElement>) {
       <path d="M11 3 8 9l4 13 4-13-3-6"/>
       <path d="M2 9h20"/>
     </svg>
+  )
+}
+
+// ==================== NEW UI COMPONENTS ====================
+
+// Scroll Progress Indicator Component
+function ScrollProgress() {
+  const [scrollProgress, setScrollProgress] = useState(0)
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const totalHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight
+      const progress = (window.scrollY / totalHeight) * 100
+      setScrollProgress(progress)
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  return (
+    <div className="fixed top-0 left-0 right-0 h-1 z-[100] bg-transparent">
+      <div 
+        className="h-full bg-gradient-to-r from-warm-500 via-warm-400 to-yellow-400 shadow-sm scroll-progress"
+        style={{ transform: `scaleX(${scrollProgress / 100})` }}
+      />
+    </div>
+  )
+}
+
+// Notification Bell Dropdown Component
+function NotificationBellDropdown() {
+  const [notifications, setNotifications] = useState([
+    { id: 1, icon: CheckCircle2, title: 'Campaign completed', desc: 'Your YouTube views campaign finished', time: '2 min ago', read: false, color: 'text-green-500' },
+    { id: 2, icon: UserPlus, title: 'New referral joined', desc: 'John D. signed up with your link', time: '15 min ago', read: false, color: 'text-blue-500' },
+    { id: 3, icon: Coins, title: 'Credits earned!', desc: '+250 credits from referral bonus', time: '1 hour ago', read: false, color: 'text-warm-500' },
+    { id: 4, icon: TrendingUp, title: 'Growth milestone reached', desc: 'Your channel gained 10K views', time: '3 hours ago', read: true, color: 'text-purple-500' },
+    { id: 5, icon: Gift, title: 'Daily reward available', desc: 'Claim your free daily credits', time: '5 hours ago', read: true, color: 'text-pink-500' },
+  ])
+
+  const unreadCount = notifications.filter(n => !n.read).length
+
+  const markAllAsRead = () => {
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })))
+  }
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="ghost" size="icon" className="relative hover:bg-muted">
+          <Bell className="w-5 h-5" />
+          {unreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center badge-pulse">
+              {unreadCount}
+            </span>
+          )}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-80 p-0">
+        <div className="flex items-center justify-between px-4 py-3 border-b">
+          <h4 className="font-semibold text-sm">Notifications</h4>
+          {unreadCount > 0 && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={markAllAsRead}
+              className="h-auto p-0 text-xs text-warm-600 hover:text-warm-700"
+            >
+              Mark all as read
+            </Button>
+          )}
+        </div>
+        <div className="max-h-[300px] overflow-y-auto">
+          {notifications.map((notification) => (
+            <div 
+              key={notification.id}
+              className={`flex items-start gap-3 px-4 py-3 hover:bg-muted/50 transition-colors cursor-pointer border-b last:border-b-0 ${
+                !notification.read ? 'bg-warm-50/50 dark:bg-warm-900/10' : ''
+              }`}
+            >
+              <div className={`w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0 ${notification.color}`}>
+                <notification.icon className="w-4 h-4" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">{notification.title}</p>
+                <p className="text-xs text-muted-foreground truncate">{notification.desc}</p>
+                <p className="text-xs text-muted-foreground mt-1">{notification.time}</p>
+              </div>
+              {!notification.read && (
+                <div className="w-2 h-2 rounded-full bg-warm-500 flex-shrink-0 mt-2" />
+              )}
+            </div>
+          ))}
+        </div>
+        <div className="px-4 py-3 border-t">
+          <Button variant="ghost" size="sm" className="w-full text-warm-600 hover:text-warm-700 hover:bg-warm-50">
+            View all notifications
+            <ChevronRight className="w-4 h-4 ml-1" />
+          </Button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  )
+}
+
+// Live Activity Ticker Component
+function LiveActivityTicker() {
+  const activities = [
+    { emoji: '🎉', user: 'John D.', action: 'gained', value: '1,000 YouTube views', color: 'text-red-500' },
+    { emoji: '📈', user: 'Sarah M.', action: 'earned', value: '250 credits', color: 'text-warm-500' },
+    { emoji: '⭐', user: 'Mike T.', action: 'received', value: '89 new followers', color: 'text-pink-500' },
+    { emoji: '🚀', user: 'Emily R.', action: 'boosted', value: 'Instagram post to 5K likes', color: 'text-purple-500' },
+    { emoji: '💰', user: 'Alex K.', action: 'claimed', value: 'referral bonus +150 credits', color: 'text-green-500' },
+    { emoji: '🎯', user: 'Lisa P.', action: 'completed', value: 'campaign milestone', color: 'text-blue-500' },
+    { emoji: '✨', user: 'David L.', action: 'unlocked', value: 'Premium features', color: 'text-indigo-500' },
+    { emoji: '🌟', user: 'Amy W.', action: 'reached', value: '10K subscribers!', color: 'text-orange-500' },
+  ]
+
+  return (
+    <div className="bg-gradient-to-r from-warm-500 via-warm-600 to-orange-500 py-3 overflow-hidden">
+      <div className="relative">
+        {/* Gradient fade edges */}
+        <div className="absolute left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-warm-500 to-transparent z-10 pointer-events-none" />
+        <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-orange-500 to-transparent z-10 pointer-events-none" />
+        
+        <div className="animate-marquee flex whitespace-nowrap">
+          {[...activities, ...activities].map((activity, i) => (
+            <div 
+              key={i} 
+              className="inline-flex items-center gap-3 mx-4 text-white"
+            >
+              <span className="text-lg">{activity.emoji}</span>
+              <span className="font-medium">{activity.user}</span>
+              <span className="opacity-75">{activity.action}</span>
+              <span className={`font-bold ${activity.color}`}>{activity.value}</span>
+              <span className="w-1 h-1 rounded-full bg-white/40" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Testimonials Carousel Component
+function TestimonialsCarousel() {
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [isPaused, setIsPaused] = useState(false)
+  
+  const testimonials = [
+    {
+      name: 'Sarah M.',
+      role: 'YouTuber • 250K subscribers',
+      content: 'SocialBoost helped me grow my channel from 10K to 250K subscribers in just 6 months. The engagement is real and the support is amazing!',
+      rating: 5,
+      avatar: 'S',
+      gradient: 'from-pink-500 to-rose-500'
+    },
+    {
+      name: 'Mike T.',
+      role: 'Instagram Influencer • 1M followers',
+      content: 'I was skeptical at first, but this platform delivers real results. My engagement rates have never been higher. Highly recommend!',
+      rating: 5,
+      avatar: 'M',
+      gradient: 'from-blue-500 to-cyan-500'
+    },
+    {
+      name: 'Emily R.',
+      role: 'Content Creator • Multi-platform',
+      content: 'The best investment for my social media growth. Easy to use, great results, and excellent customer service. 10/10 would recommend!',
+      rating: 5,
+      avatar: 'E',
+      gradient: 'from-purple-500 to-violet-500'
+    },
+    {
+      name: 'Alex K.',
+      role: 'Small Business Owner',
+      content: 'SocialBoost transformed our online presence. We went from zero to hero in just a few months. The ROI is incredible!',
+      rating: 5,
+      avatar: 'A',
+      gradient: 'from-green-500 to-emerald-500'
+    },
+    {
+      name: 'Jessica L.',
+      role: 'Fitness Coach • TikTok Star',
+      content: 'As a fitness coach, visibility is everything. SocialBoost helped me reach thousands of potential clients. Game changer!',
+      rating: 5,
+      avatar: 'J',
+      gradient: 'from-orange-500 to-amber-500'
+    }
+  ]
+
+  // Auto-play functionality
+  useEffect(() => {
+    if (isPaused) return
+    
+    const timer = setInterval(() => {
+      setCurrentIndex(prev => (prev + 1) % Math.ceil(testimonials.length / 3))
+    }, 5000)
+
+    return () => clearInterval(timer)
+  }, [isPaused, testimonials.length])
+
+  const goToSlide = (index: number) => {
+    setCurrentIndex(index)
+  }
+
+  const goToPrev = () => {
+    setCurrentIndex(prev => (prev === 0 ? Math.ceil(testimonials.length / 3) - 1 : prev - 1))
+  }
+
+  const goToNext = () => {
+    setCurrentIndex(prev => (prev + 1) % Math.ceil(testimonials.length / 3))
+  }
+
+  // Calculate which testimonials to show
+  const getVisibleTestimonials = () => {
+    const startIdx = currentIndex * 3
+    return testimonials.slice(startIdx, startIdx + 3)
+  }
+
+  const totalPages = Math.ceil(testimonials.length / 3)
+
+  return (
+    <div 
+      className="relative max-w-5xl mx-auto"
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+    >
+      {/* Navigation Arrows */}
+      <button
+        onClick={goToPrev}
+        className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 md:-translate-x-12 z-10 w-10 h-10 rounded-full bg-white shadow-lg flex items-center justify-center hover:bg-muted transition-colors border border-border"
+        aria-label="Previous testimonial"
+      >
+        <ChevronLeft className="w-5 h-5" />
+      </button>
+      
+      <button
+        onClick={goToNext}
+        className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 md:translate-x-12 z-10 w-10 h-10 rounded-full bg-white shadow-lg flex items-center justify-center hover:bg-muted transition-colors border border-border"
+        aria-label="Next testimonial"
+      >
+        <ChevronRight className="w-5 h-5" />
+      </button>
+
+      {/* Testimonials Grid */}
+      <div className="grid md:grid-cols-3 gap-8">
+        {getVisibleTestimonials().map((testimonial, i) => (
+          <Card key={`${currentIndex}-${i}`} className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group testimonial-enter">
+            <CardContent className="pt-8 pb-8">
+              <div className="flex gap-1 mb-4">
+                {[...Array(testimonial.rating)].map((_, j) => (
+                  <Star key={j} className="w-5 h-5 fill-warm-400 text-warm-400 group-hover:scale-110 transition-transform" />
+                ))}
+              </div>
+              <p className="text-muted-foreground mb-6 italic leading-relaxed">&ldquo;{testimonial.content}&rdquo;</p>
+              <Separator className="mb-6" />
+              <div className="flex items-center gap-3">
+                <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${testimonial.gradient} flex items-center justify-center text-white font-bold text-lg shadow-lg`}>
+                  {testimonial.avatar}
+                </div>
+                <div>
+                  <div className="font-semibold">{testimonial.name}</div>
+                  <div className="text-sm text-muted-foreground">{testimonial.role}</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Navigation Dots */}
+      <div className="flex justify-center gap-2 mt-8">
+        {Array.from({ length: totalPages }).map((_, index) => (
+          <button
+            key={index}
+            onClick={() => goToSlide(index)}
+            className={`w-3 h-3 rounded-full transition-all duration-300 ${
+              index === currentIndex 
+                ? 'bg-warm-500 w-8' 
+                : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
+            }`}
+            aria-label={`Go to slide ${index + 1}`}
+          />
+        ))}
+      </div>
+    </div>
   )
 }

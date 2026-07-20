@@ -170,9 +170,146 @@
 
 /* Glass effect */
 .glass {
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Enhanced Glass Card */
+.glass-card {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(217, 119, 6, 0.15);
+  box-shadow: 
+    0 4px 6px -1px rgba(217, 119, 6, 0.05),
+    0 2px 4px -2px rgba(217, 119, 6, 0.03),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.5);
+}
+
+.dark .glass-card {
+  background: rgba(41, 37, 36, 0.8);
+  border: 1px solid rgba(245, 158, 11, 0.15);
+  box-shadow: 
+    0 4px 6px -1px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+}
+
+/* Glass Header */
+.glass-header {
+  background: rgba(255, 251, 245, 0.85);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid rgba(217, 119, 6, 0.1);
+}
+
+.dark .glass-header {
+  background: rgba(28, 25, 23, 0.9);
+  border-bottom-color: rgba(245, 158, 11, 0.1);
+}
+
+/* Shimmer Border Animation */
+@keyframes shimmer-border {
+  0% { 
+    background-position: 0% 50%; 
+    border-color: rgba(217, 119, 6, 0.3);
+  }
+  25% { 
+    border-color: rgba(245, 158, 11, 0.5);
+  }
+  50% { 
+    background-position: 100% 50%; 
+    border-color: rgba(251, 191, 36, 0.5);
+  }
+  75% { 
+    border-color: rgba(245, 158, 11, 0.5);
+  }
+  100% { 
+    background-position: 0% 50%; 
+    border-color: rgba(217, 119, 6, 0.3);
+  }
+}
+
+.shimmer-border {
+  position: relative;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.shimmer-border::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    #d97706,
+    #f59e0b,
+    #fbbf24,
+    #f59e0b,
+    #d97706
+  );
+  background-size: 300% 100%;
+  animation: shimmer-border 4s ease-in-out infinite;
+  z-index: -1;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  -webkit-mask-composite: xor;
+  padding: 2px;
+}
+
+/* Marquee/Scroll Ticker Animation */
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  animation: marquee 30s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+/* Scroll Progress Bar */
+.scroll-progress {
+  transform-origin: left;
+  transition: transform 0.1s ease-out;
+  will-change: transform;
+}
+
+/* Notification Badge Pulse */
+@keyframes badge-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
+
+.badge-pulse {
+  animation: badge-pulse 2s ease-in-out infinite;
+}
+
+/* Testimonial Carousel Fade */
+@keyframes testimonial-fade-in {
+  from { opacity: 0; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes testimonial-fade-out {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: scale(0.98); }
+}
+
+.testimonial-enter {
+  animation: testimonial-fade-in 0.5s ease-out forwards;
+}
+
+.testimonial-exit {
+  animation: testimonial-fade-out 0.3s ease-in forwards;
 }
 
 /* Floating animation */
