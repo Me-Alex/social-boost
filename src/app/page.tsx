@@ -9,8 +9,26 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Select, SelectContent, SelectItem, SelectSelectTrigger, SelectValue } from '@/components/ui/select'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
+import { Switch } from '@/components/ui/switch'
+import { 
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  LineChart,
+  Line,
+  Legend
+} from 'recharts'
 import { 
   Play, 
   Users, 
@@ -48,7 +66,34 @@ import {
   Flame,
   Building2,
   Send,
-  Loader2
+  Loader2,
+  LayoutDashboard,
+  Plus,
+  Settings,
+  LogOut,
+  Coins,
+  Video,
+  Image as ImageIcon,
+  Pause,
+  PlayCircle,
+  MoreHorizontal,
+  Filter,
+  Download,
+  RefreshCw,
+  Calendar,
+  DollarSign,
+  Percent,
+  ArrowUpRight,
+  ArrowDownRight,
+  ArrowDownLeft,
+  User,
+  Bell,
+  Search,
+  ChevronDown,
+  ExternalLink,
+  Copy,
+  Trash2,
+  Edit3
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -77,6 +122,31 @@ interface PricingPlan {
   cta: string
   popular?: boolean
   icon: React.ReactNode
+}
+
+// Dashboard Types
+interface Campaign {
+  id: string
+  name: string
+  platform: 'youtube' | 'instagram'
+  serviceType: string
+  targetUrl: string
+  quantity: number
+  completedCount: number
+  status: 'active' | 'paused' | 'completed' | 'pending'
+  creditsSpent: number
+  createdAt: string
+  progress: number
+}
+
+interface UserStats {
+  totalCredits: number
+  usedCredits: number
+  activeCampaigns: number
+  totalCampaigns: number
+  totalViews: number
+  totalFollowers: number
+  engagementRate: number
 }
 
 // Data
@@ -295,6 +365,109 @@ const stats = [
   { value: 99.9, suffix: '%', label: 'Uptime', icon: <Activity className="w-5 h-5" /> }
 ]
 
+// Dashboard Mock Data
+const mockUserStats: UserStats = {
+  totalCredits: 1250,
+  usedCredits: 425,
+  activeCampaigns: 3,
+  totalCampaigns: 12,
+  totalViews: 45230,
+  totalFollowers: 3280,
+  engagementRate: 8.7
+}
+
+const mockCampaigns: Campaign[] = [
+  {
+    id: 'camp1',
+    name: 'Product Review Video',
+    platform: 'youtube',
+    serviceType: 'views',
+    targetUrl: 'https://youtube.com/watch?v=example1',
+    quantity: 10000,
+    completedCount: 7234,
+    status: 'active',
+    creditsSpent: 72,
+    createdAt: '2024-01-15',
+    progress: 72
+  },
+  {
+    id: 'camp2',
+    name: 'Summer Collection Post',
+    platform: 'instagram',
+    serviceType: 'followers',
+    targetUrl: 'https://instagram.com/p/example2',
+    quantity: 5000,
+    completedCount: 5000,
+    status: 'completed',
+    creditsSpent: 250,
+    createdAt: '2024-01-10',
+    progress: 100
+  },
+  {
+    id: 'camp3',
+    name: 'Tutorial Series Ep.5',
+    platform: 'youtube',
+    serviceType: 'subscribers',
+    targetUrl: 'https://youtube.com/watch?v=example3',
+    quantity: 2000,
+    completedCount: 1456,
+    status: 'active',
+    creditsSpent: 73,
+    createdAt: '2024-01-18',
+    progress: 73
+  },
+  {
+    id: 'camp4',
+    name: 'Behind the Scenes Reel',
+    platform: 'instagram',
+    serviceType: 'reels_views',
+    targetUrl: 'https://instagram.com/reel/example4',
+    quantity: 15000,
+    completedCount: 8920,
+    status: 'active',
+    creditsSpent: 89,
+    createdAt: '2024-01-20',
+    progress: 59
+  },
+  {
+    id: 'camp5',
+    name: 'Q&A Live Stream',
+    platform: 'youtube',
+    serviceType: 'comments',
+    targetUrl: 'https://youtube.com/watch?v=example5',
+    quantity: 500,
+    completedCount: 0,
+    status: 'paused',
+    creditsSpent: 15,
+    createdAt: '2024-01-22',
+    progress: 0
+  }
+]
+
+const chartDataViews = [
+  { date: 'Mon', views: 4200, followers: 120 },
+  { date: 'Tue', views: 5800, followers: 180 },
+  { date: 'Wed', views: 4500, followers: 95 },
+  { date: 'Thu', views: 7200, followers: 250 },
+  { date: 'Fri', views: 6100, followers: 210 },
+  { date: 'Sat', views: 8900, followers: 320 },
+  { date: 'Sun', views: 7500, followers: 280 },
+]
+
+const chartDataEngagement = [
+  { name: 'Likes', value: 4500, color: '#ef4444' },
+  { name: 'Comments', value: 850, color: '#f59e0b' },
+  { name: 'Shares', value: 320, color: '#10b981' },
+  { name: 'Saves', value: 180, color: '#8b5cf6' },
+]
+
+const chartDataWeekly = [
+  { name: 'Week 1', youtube: 4200, instagram: 3100 },
+  { name: 'Week 2', youtube: 5800, instagram: 4200 },
+  { name: 'Week 3', youtube: 6500, instagram: 4800 },
+  { name: 'Week 4', youtube: 7800, instagram: 5200 },
+]
+
 // Animated Counter Component
 function AnimatedCounter({ value, suffix, duration = 2000 }: { value: number; suffix: string; duration?: number }) {
   const [count, setCount] = useState(0)
@@ -395,6 +568,1033 @@ function LiveActivity() {
   )
 }
 
+// ==================== DASHBOARD COMPONENT ====================
+interface DashboardProps {
+  user: { name: string; email: string }
+  onLogout: () => void
+}
+
+function Dashboard({ user, onLogout }: DashboardProps) {
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [activeDashboardTab, setActiveDashboardTab] = useState('overview')
+  const [campaigns, setCampaigns] = useState<Campaign[]>(mockCampaigns)
+  const [isNewCampaignOpen, setIsNewCampaignOpen] = useState(false)
+  const [selectedCampaigns, setSelectedCampaigns] = useState<string[]>([])
+
+  // New Campaign Form State
+  const [newCampaign, setNewCampaign] = useState({
+    name: '',
+    platform: 'youtube' as 'youtube' | 'instagram',
+    serviceType: 'views',
+    targetUrl: '',
+    quantity: 1000,
+    speed: 'normal',
+    geoTarget: 'all'
+  })
+
+  // Stats calculations
+  const availableCredits = mockUserStats.totalCredits - mockUserStats.usedCredits
+  const creditsPercentage = Math.round((mockUserStats.usedCredits / mockUserStats.totalCredits) * 100)
+
+  const handleCreateCampaign = () => {
+    if (!newCampaign.name || !newCampaign.targetUrl) {
+      toast.error('Please fill in all required fields')
+      return
+    }
+
+    const creditsNeeded = Math.ceil(newCampaign.quantity / 100)
+    if (creditsNeeded > availableCredits) {
+      toast.error(`Insufficient credits. You need ${creditsNeeded} but have ${availableCredits}`)
+      return
+    }
+
+    const campaign: Campaign = {
+      id: `camp${Date.now()}`,
+      name: newCampaign.name,
+      platform: newCampaign.platform,
+      serviceType: newCampaign.serviceType,
+      targetUrl: newCampaign.targetUrl,
+      quantity: newCampaign.quantity,
+      completedCount: 0,
+      status: 'pending',
+      creditsSpent: creditsNeeded,
+      createdAt: new Date().toISOString().split('T')[0],
+      progress: 0
+    }
+
+    setCampaigns([campaign, ...campaigns])
+    setIsNewCampaignOpen(false)
+    toast.success('Campaign created successfully!', { description: `${newCampaign.name} is now processing` })
+    
+    // Reset form
+    setNewCampaign({
+      name: '',
+      platform: 'youtube',
+      serviceType: 'views',
+      targetUrl: '',
+      quantity: 1000,
+      speed: 'normal',
+      geoTarget: 'all'
+    })
+  }
+
+  const handleToggleCampaignStatus = (id: string) => {
+    setCampaigns(campaigns.map(c => 
+      c.id === id 
+        ? { ...c, status: c.status === 'active' ? 'paused' : c.status === 'paused' ? 'active' : c.status }
+        : c
+    ))
+  }
+
+  const handleDeleteCampaign = (id: string) => {
+    setCampaigns(campaigns.filter(c => c.id !== id))
+    toast.success('Campaign deleted')
+  }
+
+  const getStatusBadge = (status: string) => {
+    const styles: Record<string, string> = {
+      active: 'bg-green-100 text-green-700 border-green-200',
+      paused: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+      completed: 'bg-blue-100 text-blue-700 border-blue-200',
+      pending: 'bg-gray-100 text-gray-700 border-gray-200'
+    }
+    return styles[status] || styles.pending
+  }
+
+  const getPlatformIcon = (platform: string) => {
+    return platform === 'youtube' 
+      ? <Youtube className="w-4 h-4 text-red-500" />
+      : <Instagram className="w-4 h-4 text-pink-500" />
+  }
+
+  return (
+    <div className="min-h-screen flex bg-gray-50">
+      {/* Sidebar */}
+      <aside className={`${sidebarOpen ? 'w-64' : 'w-20'} bg-slate-900 text-white transition-all duration-300 flex flex-col fixed h-screen z-40`}>
+        {/* Logo */}
+        <div className="p-4 border-b border-slate-800 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl gradient-bg flex items-center justify-center flex-shrink-0">
+            <Rocket className="w-6 h-6 text-white" />
+          </div>
+          {sidebarOpen && <span className="font-bold text-lg gradient-text">SocialBoost</span>}
+        </div>
+
+        {/* Navigation */}
+        <nav className="flex-1 p-4 space-y-2">
+          {[
+            { icon: <LayoutDashboard />, label: 'Overview', id: 'overview' },
+            { icon: <Target />, label: 'Campaigns', id: 'campaigns' },
+            { icon: <BarChart3 />, label: 'Analytics', id: 'analytics' },
+            { icon: <Coins />, label: 'Credits', id: 'credits' },
+            { icon: <Settings />, label: 'Settings', id: 'settings' },
+          ].map((item) => (
+            <button
+              key={item.id}
+              onClick={() => setActiveDashboardTab(item.id)}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${
+                activeDashboardTab === item.id 
+                  ? 'bg-warm-500/20 text-warm-400 font-medium' 
+                  : 'hover:bg-slate-800 text-slate-400 hover:text-white'
+              }`}
+            >
+              {item.icon}
+              {sidebarOpen && <span>{item.label}</span>}
+            </button>
+          ))}
+        </nav>
+
+        {/* User Section */}
+        <div className="p-4 border-t border-slate-800">
+          <div className={`flex items-center ${sidebarOpen ? 'gap-3' : 'justify-center'}`}>
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-warm-400 to-warm-600 flex items-center justify-center text-white font-bold">
+              {user.name.charAt(0)}
+            </div>
+            {sidebarOpen && (
+              <div className="flex-1 min-w-0">
+                <p className="font-medium truncate">{user.name}</p>
+                <p className="text-xs text-slate-400 truncate">{user.email}</p>
+              </div>
+            )}
+            <button onClick={onLogout} className="p-2 hover:bg-slate-800 rounded-lg transition-colors" title="Logout">
+              <LogOut className="w-5 h-5 text-slate-400" />
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className={`flex-1 ${sidebarOpen ? 'ml-64' : 'ml-20'} transition-all duration-300`}>
+        {/* Top Header */}
+        <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <button 
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                className="p-2 hover:bg-gray-100 rounded-lg"
+              >
+                <Menu className="w-5 h-5" />
+              </button>
+              <h1 className="text-xl font-bold capitalize">{activeDashboardTab}</h1>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <Button variant="outline" size="sm" className="gap-2">
+                <Bell className="w-4 h-4" />
+                Notifications
+              </Button>
+              <Button 
+                size="sm" 
+                className="gradient-bg text-white border-0 gap-2"
+                onClick={() => setIsNewCampaignOpen(true)}
+              >
+                <Plus className="w-4 h-4" />
+                New Campaign
+              </Button>
+            </div>
+          </div>
+        </header>
+
+        {/* Dashboard Content */}
+        <div className="p-6">
+          {/* OVERVIEW TAB */}
+          {activeDashboardTab === 'overview' && (
+            <div className="space-y-6">
+              {/* Stats Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <Card className="border-0 shadow-sm overflow-hidden">
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Available Credits</p>
+                        <p className="text-3xl font-bold mt-1">{availableCredits.toLocaleString()}</p>
+                        <p className="text-xs text-muted-foreground mt-1">{creditsPercentage}% used</p>
+                      </div>
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-warm-400 to-orange-500 flex items-center justify-center">
+                        <Coins className="w-6 h-6 text-white" />
+                      </div>
+                    </div>
+                    <div className="mt-3 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-full gradient-bg rounded-full" style={{ width: `${creditsPercentage}%` }}></div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-0 shadow-sm">
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Active Campaigns</p>
+                        <p className="text-3xl font-bold mt-1">{mockUserStats.activeCampaigns}</p>
+                        <p className="text-xs text-green-600 flex items-center gap-1 mt-1">
+                          <ArrowUpRight className="w-3 h-3" /> +2 this week
+                        </p>
+                      </div>
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-400 to-cyan-500 flex items-center justify-center">
+                        <Target className="w-6 h-6 text-white" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-0 shadow-sm">
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Total Views</p>
+                        <p className="text-3xl font-bold mt-1">{(mockUserStats.totalViews / 1000).toFixed(1)}K</p>
+                        <p className="text-xs text-green-600 flex items-center gap-1 mt-1">
+                          <ArrowUpRight className="w-3 h-3" /> +18% vs last week
+                        </p>
+                      </div>
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-400 to-violet-500 flex items-center justify-center">
+                        <Eye className="w-6 h-6 text-white" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-0 shadow-sm">
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Engagement Rate</p>
+                        <p className="text-3xl font-bold mt-1">{mockUserStats.engagementRate}%</p>
+                        <p className="text-xs text-green-600 flex items-center gap-1 mt-1">
+                          <ArrowUpRight className="w-3 h-3" /> +2.3% improvement
+                        </p>
+                      </div>
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center">
+                        <TrendingUp className="w-6 h-6 text-white" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Charts Row */}
+              <div className="grid lg:grid-cols-3 gap-6">
+                {/* Views Chart */}
+                <Card className="lg:col-span-2 border-0 shadow-sm">
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-base">Views & Followers Trend</CardTitle>
+                      <Select defaultValue="7d">
+                        <SelectTrigger className="w-28 h-8 text-xs" />
+                        <SelectContent>
+                          <SelectItem value="7d">Last 7 days</SelectItem>
+                          <SelectItem value="30d">Last 30 days</SelectItem>
+                          <SelectItem value="90d">Last 90 days</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={280}>
+                      <AreaChart data={chartDataViews}>
+                        <defs>
+                          <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3}/>
+                            <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/>
+                          </linearGradient>
+                          <linearGradient id="colorFollowers" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3}/>
+                            <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                        <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
+                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
+                        <Tooltip 
+                          contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                        />
+                        <Area type="monotone" dataKey="views" stroke="#f59e0b" strokeWidth={2} fillOpacity={1} fill="url(#colorViews)" />
+                        <Area type="monotone" dataKey="followers" stroke="#8b5cf6" strokeWidth={2} fillOpacity={1} fill="url(#colorFollowers)" />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+
+                {/* Engagement Pie Chart */}
+                <Card className="border-0 shadow-sm">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base">Engagement Breakdown</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={200}>
+                      <PieChart>
+                        <Pie
+                          data={chartDataEngagement}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={50}
+                          outerRadius={80}
+                          paddingAngle={5}
+                          dataKey="value"
+                        >
+                          {chartDataEngagement.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <div className="space-y-2 mt-4">
+                      {chartDataEngagement.map((item, i) => (
+                        <div key={i} className="flex items-center justify-between text-sm">
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }}></div>
+                            <span>{item.name}</span>
+                          </div>
+                          <span className="font-medium">{item.value.toLocaleString()}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Recent Activity */}
+              <Card className="border-0 shadow-sm">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-base">Recent Campaign Activity</CardTitle>
+                    <Button variant="ghost" size="sm" className="text-warm-600">
+                      View All <ArrowRight className="w-4 h-4 ml-1" />
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="text-left text-sm text-muted-foreground border-b">
+                          <th className="pb-3 font-medium">Campaign</th>
+                          <th className="pb-3 font-medium">Platform</th>
+                          <th className="pb-3 font-medium">Progress</th>
+                          <th className="pb-3 font-medium">Status</th>
+                          <th className="pb-3 font-medium">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {campaigns.slice(0, 5).map((campaign) => (
+                          <tr key={campaign.id} className="border-b last:border-0">
+                            <td className="py-3">
+                              <div>
+                                <p className="font-medium text-sm">{campaign.name}</p>
+                                <p className="text-xs text-muted-foreground">{campaign.createdAt}</p>
+                              </div>
+                            </td>
+                            <td className="py-3">
+                              <div className="flex items-center gap-1">
+                                {getPlatformIcon(campaign.platform)}
+                                <span className="text-sm capitalize">{campaign.serviceType}</span>
+                              </div>
+                            </td>
+                            <td className="py-3">
+                              <div className="flex items-center gap-2">
+                                <div className="w-20 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                  <div 
+                                    className="h-full gradient-bg rounded-full" 
+                                    style={{ width: `${campaign.progress}%` }}
+                                  ></div>
+                                </div>
+                                <span className="text-xs text-muted-foreground">{campaign.progress}%</span>
+                              </div>
+                            </td>
+                            <td className="py-3">
+                              <Badge variant="outline" className={getStatusBadge(campaign.status)}>
+                                {campaign.status}
+                              </Badge>
+                            </td>
+                            <td className="py-3">
+                              <div className="flex items-center gap-1">
+                                <button 
+                                  onClick={() => handleToggleCampaignStatus(campaign.id)}
+                                  className="p-1.5 hover:bg-gray-100 rounded-lg"
+                                >
+                                  {campaign.status === 'active' ? <Pause className="w-4 h-4" /> : <PlayCircle className="w-4 h-4" />}
+                                </button>
+                                <button className="p-1.5 hover:bg-gray-100 rounded-lg">
+                                  <MoreHorizontal className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* CAMPAIGNS TAB */}
+          {activeDashboardTab === 'campaigns' && (
+            <div className="space-y-6">
+              {/* Filters Bar */}
+              <Card className="border-0 shadow-sm">
+                <CardContent className="p-4">
+                  <div className="flex flex-wrap items-center gap-4">
+                    <div className="relative flex-1 min-w-[200px]">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input placeholder="Search campaigns..." className="pl-9" />
+                    </div>
+                    <Select defaultValue="all-platforms">
+                      <SelectTrigger className="w-40" />
+                      <SelectContent>
+                        <SelectItem value="all-platforms">All Platforms</SelectItem>
+                        <SelectItem value="youtube">YouTube</SelectItem>
+                        <SelectItem value="instagram">Instagram</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select defaultValue="all-statuses">
+                      <SelectTrigger className="w-36" />
+                      <SelectContent>
+                        <SelectItem value="all-statuses">All Status</SelectItem>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="paused">Paused</SelectItem>
+                        <SelectItem value="completed">Completed</SelectItem>
+                        <SelectItem value="pending">Pending</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button variant="outline" size="sm" className="gap-2">
+                      <Filter className="w-4 h-4" /> More Filters
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Campaigns Table */}
+              <Card className="border-0 shadow-sm">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <CardTitle className="text-base">All Campaigns</CardTitle>
+                      <Badge variant="secondary">{campaigns.length} total</Badge>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" size="sm" className="gap-2">
+                        <Download className="w-4 h-4" /> Export
+                      </Button>
+                      <Button variant="outline" size="sm" className="gap-2">
+                        <RefreshCw className="w-4 h-4" /> Refresh
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="text-left text-sm text-muted-foreground border-b bg-gray-50">
+                          <th className="p-3 font-medium w-10">
+                            <input type="checkbox" className="rounded" />
+                          </th>
+                          <th className="p-3 font-medium">Campaign Name</th>
+                          <th className="p-3 font-medium">Platform</th>
+                          <th className="p-3 font-medium">Service Type</th>
+                          <th className="p-3 font-medium">Target URL</th>
+                          <th className="p-3 font-medium">Progress</th>
+                          <th className="p-3 font-medium">Credits</th>
+                          <th className="p-3 font-medium">Status</th>
+                          <th className="p-3 font-medium">Created</th>
+                          <th className="p-3 font-medium">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {campaigns.map((campaign) => (
+                          <tr key={campaign.id} className="border-b hover:bg-gray-50/50 transition-colors group">
+                            <td className="p-3">
+                              <input 
+                                type="checkbox" 
+                                checked={selectedCampaigns.includes(campaign.id)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedCampaigns([...selectedCampaigns, campaign.id])
+                                  } else {
+                                    setSelectedCampaigns(selectedCampaigns.filter(id => id !== campaign.id))
+                                  }
+                                }}
+                                className="rounded"
+                              />
+                            </td>
+                            <td className="p-3">
+                              <p className="font-medium text-sm">{campaign.name}</p>
+                            </td>
+                            <td className="p-3">
+                              <div className="flex items-center gap-1.5">
+                                {getPlatformIcon(campaign.platform)}
+                                <span className="text-sm capitalize">{campaign.platform}</span>
+                              </div>
+                            </td>
+                            <td className="p-3">
+                              <span className="text-sm bg-gray-100 px-2 py-1 rounded capitalize">{campaign.serviceType.replace('_', ' ')}</span>
+                            </td>
+                            <td className="p-3 max-w-[200px]">
+                              <a href={campaign.targetUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-warm-600 hover:text-warm-700 flex items-center gap-1 truncate" title={campaign.targetUrl}>
+                                <span className="truncate">{campaign.targetUrl.replace(/^https?:\/\/(www\.)?/, '')}</span>
+                                <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                              </a>
+                            </td>
+                            <td className="p-3">
+                              <div className="space-y-1">
+                                <div className="flex justify-between text-xs">
+                                  <span>{campaign.completedCount.toLocaleString()} / {campaign.quantity.toLocaleString()}</span>
+                                  <span>{campaign.progress}%</span>
+                                </div>
+                                <div className="w-24 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                  <div 
+                                    className={`h-full rounded-full ${
+                                      campaign.progress === 100 ? 'bg-green-500' : 'gradient-bg'
+                                    }`}
+                                    style={{ width: `${campaign.progress}%` }}
+                                  ></div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="p-3">
+                              <span className="text-sm font-medium">{campaign.creditsSpent}</span>
+                              <Coins className="w-3 h-3 inline ml-1 text-warm-500" />
+                            </td>
+                            <td className="p-3">
+                              <Badge variant="outline" className={getStatusBadge(campaign.status)}>
+                                {campaign.status}
+                              </Badge>
+                            </td>
+                            <td className="p-3 text-sm text-muted-foreground">
+                              {campaign.createdAt}
+                            </td>
+                            <td className="p-3">
+                              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button 
+                                  onClick={() => handleToggleCampaignStatus(campaign.id)}
+                                  className="p-1.5 hover:bg-gray-100 rounded-lg"
+                                  title={campaign.status === 'active' ? 'Pause' : 'Resume'}
+                                >
+                                  {campaign.status === 'active' ? <Pause className="w-4 h-4" /> : campaign.status === 'paused' ? <PlayCircle className="w-4 h-4" /> : null}
+                                </button>
+                                <button className="p-1.5 hover:bg-gray-100 rounded-lg" title="Edit">
+                                  <Edit3 className="w-4 h-4" />
+                                </button>
+                                <button 
+                                  onClick={() => handleDeleteCampaign(campaign.id)}
+                                  className="p-1.5 hover:bg-red-100 text-red-500 rounded-lg"
+                                  title="Delete"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  
+                  {campaigns.length === 0 && (
+                    <div className="text-center py-12">
+                      <Target className="w-12 h-12 mx-auto text-gray-300 mb-4" />
+                      <p className="text-muted-foreground mb-4">No campaigns yet</p>
+                      <Button onClick={() => setIsNewCampaignOpen(true)} className="gradient-bg text-white border-0">
+                        Create Your First Campaign
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* ANALYTICS TAB */}
+          {activeDashboardTab === 'analytics' && (
+            <div className="space-y-6">
+              <div className="grid lg:grid-cols-2 gap-6">
+                {/* Weekly Performance Chart */}
+                <Card className="border-0 shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="text-base">Weekly Performance by Platform</CardTitle>
+                    <CardDescription>Compare YouTube and Instagram growth</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={chartDataWeekly}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                        <XAxis dataKey="name" axisLine={false} tickLine={false} />
+                        <YAxis axisLine={false} tickLine={false} />
+                        <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
+                        <Legend />
+                        <Bar dataKey="youtube" name="YouTube" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="instagram" name="Instagram" fill="#ec4899" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+
+                {/* Growth Metrics */}
+                <Card className="border-0 shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="text-base">Growth Metrics</CardTitle>
+                    <CardDescription>Your account performance overview</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {[
+                      { label: 'Total Views Delivered', value: '45,230', change: '+23%', positive: true },
+                      { label: 'Followers Gained', value: '3,280', change: '+15%', positive: true },
+                      { label: 'Avg. Engagement Rate', value: '8.7%', change: '+2.3%', positive: true },
+                      { label: 'Credits Used', value: '425 / 1250', change: '-34%', positive: false },
+                    ].map((metric, i) => (
+                      <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
+                        <div>
+                          <p className="text-sm text-muted-foreground">{metric.label}</p>
+                          <p className="text-lg font-semibold">{metric.value}</p>
+                        </div>
+                        <div className={`flex items-center gap-1 text-sm ${metric.positive ? 'text-green-600' : 'text-red-500'}`}>
+                          {metric.positive ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
+                          {metric.change}
+                        </div>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Engagement Timeline */}
+              <Card className="border-0 shadow-sm">
+                <CardHeader>
+                  <CardTitle className="text-base">Engagement Over Time</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={250}>
+                    <LineChart data={chartDataViews}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <XAxis dataKey="date" axisLine={false} tickLine={false} />
+                      <YAxis axisLine={false} tickLine={false} />
+                      <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
+                      <Line type="monotone" dataKey="followers" stroke="#8b5cf6" strokeWidth={3} dot={{ fill: '#8b5cf6', r: 4 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* CREDITS TAB */}
+          {activeDashboardTab === 'credits' && (
+            <div className="space-y-6">
+              <div className="grid md:grid-cols-2 gap-6">
+                <Card className="border-0 shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="text-base">Credit Balance</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="text-center py-6">
+                      <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-br from-warm-100 to-orange-100 mb-4">
+                        <Coins className="w-12 h-12 text-warm-600" />
+                      </div>
+                      <p className="text-5xl font-black gradient-text">{availableCredits.toLocaleString()}</p>
+                      <p className="text-muted-foreground mt-2">credits available</p>
+                    </div>
+
+                    <Separator />
+
+                    <div className="space-y-3">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Starting Balance</span>
+                        <span className="font-medium">{mockUserStats.totalCredits.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Used</span>
+                        <span className="font-medium text-red-500">-{mockUserStats.usedCredits.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between text-sm font-semibold pt-2 border-t">
+                        <span>Remaining</span>
+                        <span className="text-warm-600">{availableCredits.toLocaleString()}</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-0 shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="text-base">Get More Credits</CardTitle>
+                    <CardDescription>Choose a package to continue growing</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {[
+                      { credits: 1000, price: '$9.99', popular: false, savings: '' },
+                      { credits: 5000, price: '$39.99', popular: true, savings: 'Save 20%' },
+                      { credits: 15000, price: '$99.99', popular: false, savings: 'Save 33%' },
+                      { credits: 50000, price: '$299.99', popular: false, savings: 'Save 40%' },
+                    ].map((pkg, i) => (
+                      <div 
+                        key={i} 
+                        className={`relative p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                          pkg.popular 
+                            ? 'border-warm-500 bg-warm-50/50' 
+                            : 'border-gray-200 hover:border-warm-300'
+                        }`}
+                      >
+                        {pkg.popular && (
+                          <Badge className="absolute -top-2 right-2 gradient-bg text-white border-0">Best Value</Badge>
+                        )}
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-2xl font-bold">{pkg.credits.toLocaleString()}</p>
+                            <p className="text-sm text-muted-foreground">credits</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xl font-bold text-warm-600">{pkg.price}</p>
+                            {pkg.savings && <p className="text-xs text-green-600">{pkg.savings}</p>}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    
+                    <Button className="w-full gradient-bg text-white border-0" onClick={() => toast.info('Payment integration coming soon!')}>
+                      Purchase Credits
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Credit History */}
+              <Card className="border-0 shadow-sm">
+                <CardHeader>
+                  <CardTitle className="text-base">Recent Transactions</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {[
+                      { type: 'Spent', amount: -72, desc: 'Product Review Video views campaign', date: 'Today' },
+                      { type: 'Earned', amount: 150, desc: 'Daily engagement bonus', date: 'Today' },
+                      { type: 'Spent', amount: -89, desc: 'Behind the Scenes Reel views campaign', date: 'Yesterday' },
+                      { type: 'Earned', amount: 500, desc: 'Welcome bonus', date: 'Jan 22' },
+                      { type: 'Spent', amount: -250, desc: 'Summer Collection followers campaign', date: 'Jan 18' },
+                    ].map((tx, i) => (
+                      <div key={i} className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                            tx.amount > 0 ? 'bg-green-100' : 'bg-red-100'
+                          }`}>
+                            {tx.amount > 0 
+                              ? <ArrowDownLeft className="w-5 h-5 text-green-600" />
+                              : <ArrowUpRight className="w-5 h-5 text-red-500" />
+                            }
+                          </div>
+                          <div>
+                            <p className="font-medium text-sm">{tx.desc}</p>
+                            <p className="text-xs text-muted-foreground">{tx.date}</p>
+                          </div>
+                        </div>
+                        <span className={`font-semibold ${tx.amount > 0 ? 'text-green-600' : 'text-red-500'}`}>
+                          {tx.amount > 0 ? '+' : ''}{tx.amount}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* SETTINGS TAB */}
+          {activeDashboardTab === 'settings' && (
+            <div className="space-y-6 max-w-2xl">
+              <Card className="border-0 shadow-sm">
+                <CardHeader>
+                  <CardTitle className="text-base">Profile Settings</CardTitle>
+                  <CardDescription>Manage your account information</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center gap-4">
+                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-warm-400 to-warm-600 flex items-center justify-center text-white text-2xl font-bold">
+                      {user.name.charAt(0)}
+                    </div>
+                    <div>
+                      <Button variant="outline" size="sm">Change Avatar</Button>
+                      <p className="text-xs text-muted-foreground mt-1">JPG, PNG or GIF. Max 2MB.</p>
+                    </div>
+                  </div>
+                  <Separator />
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Full Name</Label>
+                      <Input defaultValue={user.name} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Email Address</Label>
+                      <Input defaultValue={user.email} type="email" />
+                    </div>
+                  </div>
+                  <Button className="gradient-bg text-white border-0" onClick={() => toast.success('Profile updated!')}>Save Changes</Button>
+                </CardContent>
+              </Card>
+
+              <Card className="border-0 shadow-sm">
+                <CardHeader>
+                  <CardTitle className="text-base">Notification Preferences</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {[
+                    { label: 'Email notifications for campaign updates', defaultChecked: true },
+                    { label: 'Push notifications for new features', defaultChecked: true },
+                    { label: 'Weekly performance reports', defaultChecked: false },
+                    { label: 'Marketing emails and offers', defaultChecked: false },
+                  ].map((pref, i) => (
+                    <div key={i} className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50">
+                      <span className="text-sm">{pref.label}</span>
+                      <Switch defaultChecked={pref.defaultChecked} />
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+
+              <Card className="border-0 shadow-sm border-destructive/20">
+                <CardHeader>
+                  <CardTitle className="text-base text-destructive">Danger Zone</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground mb-4">Once you delete your account, there is no going back. Please be certain.</p>
+                  <Button variant="destructive" onClick={() => onLogout()}>Delete Account</Button>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </div>
+      </main>
+
+      {/* New Campaign Dialog */}
+      <Dialog open={isNewCampaignOpen} onOpenChange={setIsNewCampaignOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="w-5 h-5 text-warm-600" />
+              Create New Campaign
+            </DialogTitle>
+            <DialogDescription>Set up your campaign to start gaining engagement</DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6 pt-4">
+            {/* Campaign Name */}
+            <div className="space-y-2">
+              <Label>Campaign Name *</Label>
+              <Input 
+                placeholder="e.g., Summer Product Launch Video"
+                value={newCampaign.name}
+                onChange={(e) => setNewCampaign({...newCampaign, name: e.target.value})}
+              />
+            </div>
+
+            {/* Platform & Service Type */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Platform *</Label>
+                <Select 
+                  value={newCampaign.platform} 
+                  onValueChange={(v) => setNewCampaign({...newCampaign, platform: v as 'youtube' | 'instagram'})}
+                >
+                  <SelectTrigger />
+                  <SelectContent>
+                    <SelectItem value="youtube">
+                      <div className="flex items-center gap-2"><Youtube className="w-4 h-4 text-red-500" /> YouTube</div>
+                    </SelectItem>
+                    <SelectItem value="instagram">
+                      <div className="flex items-center gap-2"><Instagram className="w-4 h-4 text-pink-500" /> Instagram</div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Service Type *</Label>
+                <Select 
+                  value={newCampaign.serviceType} 
+                  onValueChange={(v) => setNewCampaign({...newCampaign, serviceType: v})}
+                >
+                  <SelectTrigger />
+                  <SelectContent>
+                    {(newCampaign.platform === 'youtube' ? [
+                      { value: 'views', label: 'Video Views' },
+                      { value: 'subscribers', label: 'Subscribers' },
+                      { value: 'likes', label: 'Video Likes' },
+                      { value: 'comments', label: 'Comments' },
+                    ] : [
+                      { value: 'followers', label: 'Followers' },
+                      { value: 'likes', label: 'Post Likes' },
+                      { value: 'comments', label: 'Comments' },
+                      { value: 'reels_views', label: 'Reels Views' },
+                      { value: 'story_views', label: 'Story Views' },
+                    ]).map(opt => (
+                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Target URL */}
+            <div className="space-y-2">
+              <Label>Target URL *</Label>
+              <Input 
+                placeholder={newCampaign.platform === 'youtube' ? "https://youtube.com/watch?v=..." : "https://instagram.com/p/..."}
+                value={newCampaign.targetUrl}
+                onChange={(e) => setNewCampaign({...newCampaign, targetUrl: e.target.value})}
+              />
+            </div>
+
+            {/* Quantity & Speed */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Quantity * ({Math.ceil(newCampaign.quantity / 100)} credits)</Label>
+                <Input 
+                  type="number"
+                  min={100}
+                  step={100}
+                  value={newCampaign.quantity}
+                  onChange={(e) => setNewCampaign({...newCampaign, quantity: parseInt(e.target.value) || 0})}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Delivery Speed</Label>
+                <Select 
+                  value={newCampaign.speed} 
+                  onValueChange={(v) => setNewCampaign({...newCampaign, speed: v})}
+                >
+                  <SelectTrigger />
+                  <SelectContent>
+                    <SelectItem value="slow">Slow (Natural look)</SelectItem>
+                    <SelectItem value="normal">Normal (Recommended)</SelectItem>
+                    <SelectItem value="fast">Fast (Quick results)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Geo Targeting */}
+            <div className="space-y-2">
+              <Label>Geo Targeting</Label>
+              <Select 
+                value={newCampaign.geoTarget} 
+                onValueChange={(v) => setNewCampaign({...newCampaign, geoTarget: v})}
+              >
+                <SelectTrigger />
+                <SelectContent>
+                  <SelectItem value="all">Worldwide</SelectItem>
+                  <SelectItem value="us">United States</SelectItem>
+                  <SelectItem value="uk">United Kingdom</SelectItem>
+                  <SelectItem value="eu">Europe</SelectItem>
+                  <SelectItem value="asia">Asia Pacific</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Summary */}
+            <div className="p-4 rounded-xl bg-muted/50">
+              <h4 className="font-medium mb-3">Campaign Summary</h4>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Service</span>
+                  <span className="capitalize">{newCampaign.platform} {newCampaign.serviceType.replace('_', ' ')}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Quantity</span>
+                  <span>{newCampaign.quantity.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Speed</span>
+                  <span className="capitalize">{newCampaign.speed}</span>
+                </div>
+                <Separator />
+                <div className="flex justify-between font-semibold">
+                  <span>Total Credits Required</span>
+                  <span className="text-warm-600">{Math.ceil(newCampaign.quantity / 100)}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3">
+              <Button variant="outline" className="flex-1" onClick={() => setIsNewCampaignOpen(false)}>
+                Cancel
+              </Button>
+              <Button 
+                className="flex-1 gradient-bg text-white border-0" 
+                onClick={handleCreateCampaign}
+              >
+                Create Campaign
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}
+
+// ==================== END DASHBOARD COMPONENT ====================
+
 export default function Home() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isSignUpOpen, setIsSignUpOpen] = useState(false)
@@ -406,6 +1606,10 @@ export default function Home() {
   const [selectedService, setSelectedService] = useState<string | null>(null)
   const [newsletterEmail, setNewsletterEmail] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  
+  // Auth State
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [currentUser, setCurrentUser] = useState({ name: '', email: '' })
   
   // Newsletter handler
   const handleNewsletterSubmit = useCallback(async (e: React.FormEvent) => {
@@ -445,6 +1649,9 @@ export default function Home() {
           description: `Welcome aboard, ${name}! You received 500 free credits.`
         })
         setIsSignUpOpen(false)
+        // Set user as logged in
+        setIsLoggedIn(true)
+        setCurrentUser({ name, email })
         setEmail('')
         setPassword('')
         setName('')
@@ -477,6 +1684,12 @@ export default function Home() {
           description: `Logged in as ${data.user.name || data.user.email}`
         })
         setIsSignInOpen(false)
+        // Set user as logged in
+        setIsLoggedIn(true)
+        setCurrentUser({ 
+          name: data.user.name || data.user.email.split('@')[0], 
+          email: data.user.email 
+        })
         setEmail('')
         setPassword('')
       } else {
@@ -486,6 +1699,20 @@ export default function Home() {
       toast.error('Network error. Please try again.')
     }
   }, [email, password])
+
+  // Logout handler
+  const handleLogout = useCallback(() => {
+    setIsLoggedIn(false)
+    setCurrentUser({ name: '', email: '' })
+    toast.success('Logged out successfully')
+  }, [])
+
+  // If logged in, show Dashboard
+  if (isLoggedIn) {
+    return <Dashboard user={currentUser} onLogout={handleLogout} />
+  }
+
+  // Otherwise, show Landing Page
 
   return (
     <div className="min-h-screen flex flex-col bg-background overflow-x-hidden">
