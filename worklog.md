@@ -1446,3 +1446,150 @@ Stage Summary:
   2. Add unit tests for critical paths (task claiming, credit transactions)
   3. Consider adding request logging/audit trail for security
   4. Add admin dashboard for monitoring engine health
+
+---
+Task ID: 10
+Agent: Security & Engineering Review Agent (Round 2)
+Task: Deep security review, auth hardening, and additional engineering improvements
+
+Work Log:
+### Comprehensive Security Review Performed:
+
+1. **Authentication Routes Review** (`/api/auth/register`, `/api/auth/login`)
+2. **Campaign Routes Review** (`/api/campaigns`)
+3. **User Routes Review** (`/api/user`)
+4. **Database Schema Review** (security implications)
+
+### CRITICAL Issues Found & Fixed:
+
+#### 1. Password Stored in Plaintext (CRITICAL - SECURITY)
+- **Problem**: Both register and login routes stored/compared passwords in plaintext
+- **Risk**: Database compromise exposes all user passwords; potential liability under GDPR/etc.
+- **Fix**: 
+  - Installed `bcryptjs` package for secure password hashing
+  - Created comprehensive auth utility library (`/src/lib/auth.ts`)
+  - Updated registration to hash passwords with bcrypt (12 salt rounds)
+  - Updated login to compare hashed passwords
+  - Added password strength validation (min 8 chars, uppercase, lowercase, number)
+
+#### 2. No Rate Limiting on Auth Endpoints (HIGH - SECURITY)
+- **Problem**: Auth endpoints vulnerable to brute force attacks and DoS
+- **Fix**:
+  - Registration: 5 attempts per IP per 15 minutes
+  - Login: 10 attempts per IP per 15 minutes
+  - Account lockout after 5 failed login attempts (15 minute lockout)
+  - Proper rate limit headers (Retry-After, X-RateLimit-Remaining)
+  - Generic error messages to prevent user enumeration
+
+#### 3. Race Condition in Campaign Credit Deduction (MEDIUM)
+- **Problem**: Credits checked then deducted in separate operations (non-atomic)
+- **Risk**: User could create multiple campaigns if requests arrive simultaneously
+- **Fix**: Wrapped credit check + deduction + campaign creation in database `$transaction`
+
+#### 4. No Input Sanitization (MEDIUM - SECURITY)
+- **Problem**: Name fields and other inputs could contain XSS payloads
+- **Fix**:
+  - Added `sanitizeInput()` function to strip HTML characters
+  - Applied sanitization to name, targetId, geoTarget fields
+  - Email normalization (lowercase) to prevent case-based duplicates
+
+#### 5. No Session Management (MEDIUM)
+- **Problem**: Login returned user data but no session token for subsequent requests
+- **Fix**:
+  - Created `/src/lib/auth-middleware.ts` with full session management
+  - Token generation using crypto.getRandomValues() (secure random)
+  - In-memory session store with expiration (24 hours)
+  - Auto-cleanup of expired sessions every 10 minutes
+  - Max 5 concurrent sessions per user
+  - Session invalidation on password change capability
+
+### Files Created:
+1. **`/home/z/my-project/src/lib/auth.ts`** (~290 lines)
+   - `hashPassword()` - bcrypt hashing with 12 salt rounds
+   - `comparePassword()` - Secure password comparison
+   - `generateToken()` - Cryptographically secure token generation
+   - `validatePasswordStrength()` - Password policy enforcement
+   - `sanitizeInput()` - XSS prevention
+   - `isValidEmail()` - Strict email validation
+   - `checkRateLimit()` - Rate limiting with configurable windows
+   - `validatePlatformUrl()` - Platform-specific URL validation
+   - `sanitizeUrl()` - Tracking parameter removal
+   - `getAllowedPlatforms()` / `getAllowedServiceTypes()` - Enum helpers
+
+2. **`/home/z/my-project/src/lib/auth-middleware.ts`** (~230 lines)
+   - `verifyAuth()` - Token verification for API protection
+   - `createSession()` / `destroySession()` - Session lifecycle
+   - `destroyAllUserSessions()` - Force logout on password change
+   - `getUserSessions()` - "Active Sessions" page support
+   - `cleanupExpiredSessions()` - Automatic cleanup
+   - `getSessionStats()` - Admin monitoring endpoint
+
+### Files Modified:
+1. **`/home/z/my-project/src/app/api/auth/register/route.ts`**
+   - Password hashing with bcrypt before storage
+   - Rate limiting (5 per IP per 15 min)
+   - Password strength validation
+   - Input sanitization (name field)
+   - Email normalization (lowercase)
+   - Generic error message for existing emails (prevents enumeration)
+
+2. **`/home/z/my-project/src/app/api/auth/login/route.ts`**
+   - Hashed password comparison with bcrypt
+   - Rate limiting (10 per IP per 15 min)
+   - Account lockout after 5 failed attempts (15 min lockout)
+   - Failed attempt tracking with warnings
+   - Session creation on successful login
+   - Token returned for client-side storage
+
+3. **`/home/z/my-project/src/app/api/campaigns/route.ts`**
+   - Transaction-based credit deduction (fixes race condition)
+   - Platform-specific URL validation
+   - URL sanitization (tracking param removal)
+   - Input sanitization on all string fields
+   - Pagination support (page, limit params)
+   - Rate limiting on campaign creation (20 per user per hour)
+   - Better error messages with specific error codes
+
+4. **`/home/z/my-project/src/app/api/user/route.ts`**
+   - CUID format validation for userId
+   - Input sanitization on name/email updates
+   - Select queries to exclude sensitive data by default
+   - Rate limiting on user lookups
+   - Better error responses
+
+### Verification Results:
+- ESLint: ✓ Passing (0 errors)
+- Dev Server (port 3000): ✓ Running
+- Engine Server (port 3003): ✓ Running
+- bcryptjs package: ✓ Installed
+
+### Security Improvements Summary:
+| Area | Before | After |
+|------|--------|-------|
+| Password Storage | Plaintext | Bcrypt (12 rounds) |
+| Auth Rate Limiting | None | 5-10 req/window |
+| Brute Force Protection | None | Account lockout |
+| Input Sanitization | None | Full XSS prevention |
+| Session Management | None | Token-based (24h expiry) |
+| Credit Operations | Non-atomic | Transactional |
+| URL Validation | Basic format | Platform-specific |
+| Error Messages | Revealed info | Generic/safe |
+
+Stage Summary:
+- **Project Status**: Significantly hardened against common attacks
+- **Key Security Improvements**:
+  - Passwords now securely hashed with bcrypt
+  - Rate limiting prevents brute force and DoS
+  - Session management enables proper authentication
+  - Input sanitization prevents XSS attacks
+  - Atomic transactions prevent race conditions
+- **Remaining Recommendations**:
+  1. Migrate session store to Redis for production scaling
+  2. Add CSRF protection for form submissions
+  3. Implement Content-Security-Policy headers
+  4. Set up security audit logging
+  5. Consider adding CAPTCHA for auth endpoints
+- **Next Priority Features**:
+  1. Protect task/campaign APIs with auth middleware
+  2. Add WebSocket authentication
+  3. Implement admin dashboard for monitoring

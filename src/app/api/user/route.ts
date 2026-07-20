@@ -1,5 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { z } from 'zod'
+import { sanitizeInput, isValidEmail, checkRateLimit } from '@/lib/auth'
+
+// Validation schema for user update
+const updateUserSchema = z.object({
+  userId: z.string().min(1, 'User ID is required'),
+  name: z.string()
+    .min(2, 'Name must be at least 2 characters')
+    .max(50, 'Name must be less than 50 characters')
+    .optional(),
+  email: z.string()
+    .email('Invalid email format')
+    .optional(),
+})
 
 // GET /api/user - Get user profile and stats
 export async function GET(request: NextRequest) {
@@ -9,17 +23,60 @@ export async function GET(request: NextRequest) {
     
     if (!userId) {
       return NextResponse.json(
-        { error: 'User ID is required' },
+        { error: 'User ID is required (use ?id= or ?userId=)' },
         { status: 400 }
+      )
+    }
+    
+    // Basic format validation for CUID
+    if (!/^[a-z0-9]{20,30}$/i.test(userId)) {
+      return NextResponse.json(
+        { error: 'Invalid user ID format' },
+        { status: 400 }
+      )
+    }
+    
+    // Rate limit for user lookups
+    const clientIp = request.headers.get('x-forwarded-for') || 'unknown'
+    const rateLimitResult = checkRateLimit(`user:get:${clientIp}`, 60 * 1000, 100)
+    
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json(
+        { error: 'Too many requests' },
+        { status: 429 }
       )
     }
     
     // Get user with campaign stats
     const user = await db.user.findUnique({
       where: { id: userId },
-      include: {
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        credits: true,
+        plan: true,
+        isActive: true,
+        lastActiveAt: true,
+        totalEarned: true,
+        totalSpent: true,
+        tasksCompleted: true,
+        tasksCreated: true,
+        createdAt: true,
+        updatedAt: true,
         campaigns: {
-          orderBy: { createdAt: 'desc' }
+          select: {
+            id: true,
+            platform: true,
+            serviceType: true,
+            status: true,
+            quantity: true,
+            completedCount: true,
+            creditsSpent: true,
+            createdAt: true
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 10 // Limit campaigns in response
         }
       }
     })
@@ -38,17 +95,17 @@ export async function GET(request: NextRequest) {
     const totalCreditsSpent = user.campaigns.reduce((sum, c) => sum + c.creditsSpent, 0)
     const totalEngagementDelivered = user.campaigns.reduce((sum, c) => sum + c.completedCount, 0)
     
-    // Return user without password
-    const { password: _, ...userWithoutPassword } = user
-    
     return NextResponse.json({
-      user: userWithoutPassword,
+      user,
       stats: {
         totalCampaigns,
         activeCampaigns,
         completedCampaigns,
         totalCreditsSpent,
-        totalEngagementDelivered
+        totalEngagementDelivered,
+        creditBalance: user.credits,
+        totalEarned: user.totalEarned,
+        tasksCompleted: user.tasksCompleted
       }
     })
     
@@ -65,7 +122,21 @@ export async function GET(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json()
-    const { userId, name, email } = body
+    
+    // Validate input
+    const validationResult = updateUserSchema.safeParse(body)
+    
+    if (!validationResult.success) {
+      return NextResponse.json(
+        { 
+          error: 'Validation failed', 
+          details: validationResult.error.flatten().fieldErrors 
+        },
+        { status: 400 }
+      )
+    }
+    
+    const { userId, name, email } = validationResult.data
     
     if (!userId) {
       return NextResponse.json(
@@ -74,9 +145,18 @@ export async function PUT(request: NextRequest) {
       )
     }
     
+    // Basic format validation for CUID
+    if (!/^[a-z0-9]{20,30}$/i.test(userId)) {
+      return NextResponse.json(
+        { error: 'Invalid user ID format' },
+        { status: 400 }
+      )
+    }
+    
     // Check if user exists
     const existingUser = await db.user.findUnique({
-      where: { id: userId }
+      where: { id: userId },
+      select: { id: true, email: true, name: true }
     })
     
     if (!existingUser) {
@@ -86,38 +166,82 @@ export async function PUT(request: NextRequest) {
       )
     }
     
-    // If updating email, check it's not taken
-    if (email && email !== existingUser.email) {
+    // Prepare update data
+    const updateData: Record<string, string> = {}
+    
+    if (name !== undefined) {
+      // Sanitize name input
+      updateData.name = sanitizeInput(name, 50)
+    }
+    
+    if (email !== undefined && email.toLowerCase() !== existingUser.email.toLowerCase()) {
+      // Validate new email format
+      if (!isValidEmail(email)) {
+        return NextResponse.json(
+          { error: 'Invalid email format' },
+          { status: 400 }
+        )
+      }
+      
+      // Check it's not taken
+      const normalizedEmail = email.toLowerCase()
       const emailTaken = await db.user.findUnique({
-        where: { email }
+        where: { email: normalizedEmail },
+        select: { id: true }
       })
       
       if (emailTaken) {
         return NextResponse.json(
-          { error: 'Email is already in use' },
+          { error: 'Email is already in use by another account' },
           { status: 409 }
         )
       }
+      
+      updateData.email = normalizedEmail
+    }
+    
+    // Check if there's anything to update
+    if (Object.keys(updateData).length === 0) {
+      return NextResponse.json(
+        { message: 'No changes to update', user: existingUser },
+        { status: 200 }
+      )
     }
     
     // Update user
     const updatedUser = await db.user.update({
       where: { id: userId },
-      data: {
-        ...(name && { name }),
-        ...(email && { email })
+      data: updateData,
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        credits: true,
+        plan: true,
+        isActive: true,
+        lastActiveAt: true,
+        totalEarned: true,
+        tasksCompleted: true,
+        createdAt: true,
+        updatedAt: true
       }
     })
     
-    const { password: _, ...userWithoutPassword } = updatedUser
-    
     return NextResponse.json({
       message: 'Profile updated successfully',
-      user: userWithoutPassword
+      user: updatedUser
     })
     
   } catch (error) {
     console.error('Error updating user:', error)
+    
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Validation failed', details: error.errors },
+        { status: 400 }
+      )
+    }
+    
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
