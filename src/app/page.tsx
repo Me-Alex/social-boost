@@ -95,7 +95,13 @@ import {
   Trash2,
   Edit3,
   Sun,
-  Moon
+  Moon,
+  Share2,
+  UserPlus,
+  Footprints,
+  ShieldCheck,
+  BadgeCheck,
+  Headphones as HeadphonesIcon
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useTheme } from 'next-themes'
@@ -2756,6 +2762,365 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Referral Program Section */}
+      <section className="py-20 lg:py-28 bg-muted/30">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-16">
+              <Badge variant="secondary" className="mb-4 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                <Gift className="w-3 h-3 mr-1" />
+                Earn Rewards
+              </Badge>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
+                Refer & <span className="gradient-text">Earn Free Credits</span>
+              </h2>
+              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+                Invite friends and earn bonus credits for every successful referral. It's a win-win!
+              </p>
+            </div>
+
+            <div className="grid lg:grid-cols-2 gap-8 items-center">
+              {/* Referral Info Card */}
+              <Card className="border-0 shadow-xl overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-green-500 to-emerald-600"></div>
+                <CardContent className="relative p-8 text-white">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                      <Gift className="w-7 h-7" />
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-bold">Referral Program</h3>
+                      <p className="text-white/80 text-sm">Unlimited earning potential</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4 mb-8">
+                    {[
+                      { step: '1', title: 'Share Your Link', desc: 'Get your unique referral code', icon: Share2, color: 'bg-white/20' },
+                      { step: '2', title: 'Friend Signs Up', desc: 'They get 500 bonus credits', icon: UserPlus, color: 'bg-white/20' },
+                      { step: '3', title: 'You Both Win', desc: 'You earn 250 credits per referral', icon: Coins, color: 'bg-yellow-400/30' }
+                    ].map((item) => (
+                      <div key={item.step} className="flex items-center gap-4 p-3 rounded-xl bg-white/10 backdrop-blur-sm hover:bg-white/15 transition-colors">
+                        <div className={`w-10 h-10 rounded-xl ${item.color} flex items-center justify-center flex-shrink-0`}>
+                          <item.icon className="w-5 h-5" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="font-semibold">{item.title}</div>
+                          <div className="text-sm text-white/70">{item.desc}</div>
+                        </div>
+                        <Badge className="bg-white/20 text-white border-0">Step {item.step}</Badge>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="p-4 rounded-xl bg-white/10 backdrop-blur-sm">
+                    <div className="text-sm text-white/70 mb-2">Your Referral Code (Demo)</div>
+                    <div className="flex gap-2">
+                      <Input 
+                        value="SOCIALBOOST2024" 
+                        readOnly 
+                        className="bg-white/20 border-0 text-white font-mono text-lg"
+                      />
+                      <Button variant="secondary" size="icon" className="bg-white text-green-600 hover:bg-gray-100 shrink-0">
+                        <Copy className="w-5 h-5" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Rewards Stats & Tiers */}
+              <div className="space-y-6">
+                {/* Referral Stats */}
+                <Card className="border-0 shadow-lg overflow-hidden">
+                  <CardContent className="p-6">
+                    <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+                      <TrendingUp className="w-5 h-5 text-green-600" />
+                      Referral Statistics
+                    </h3>
+                    <div className="grid grid-cols-3 gap-4">
+                      {[
+                        { label: 'Total Referrals', value: '24', icon: Users, color: 'text-blue-600', bg: 'bg-blue-100' },
+                        { label: 'Credits Earned', value: '6,000', icon: Coins, color: 'text-warm-600', bg: 'bg-warm-100' },
+                        { label: 'Pending', value: '3', icon: Clock, color: 'text-purple-600', bg: 'bg-purple-100' }
+                      ].map((stat) => (
+                        <div key={stat.label} className="text-center p-3 rounded-xl bg-muted/50">
+                          <div className={`w-10 h-10 rounded-lg ${stat.bg} flex items-center justify-center mx-auto mb-2`}>
+                            <stat.icon className={`w-5 h-5 ${stat.color}`} />
+                          </div>
+                          <div className="text-xl font-bold">{stat.value}</div>
+                          <div className="text-xs text-muted-foreground">{stat.label}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Reward Tiers */}
+                <Card className="border-0 shadow-lg overflow-hidden">
+                  <CardContent className="p-6">
+                    <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+                      <Crown className="w-5 h-5 text-warm-600" />
+                      Reward Tiers
+                    </h3>
+                    <div className="space-y-3">
+                      {[
+                        { tier: 'Bronze', referrals: '1-5', reward: '250 credits', icon: Medal, color: 'from-orange-400 to-orange-600', textColor: 'text-orange-600' },
+                        { tier: 'Silver', referrals: '6-15', reward: '350 credits', icon: Medal, color: 'from-gray-300 to-gray-500', textColor: 'text-gray-600' },
+                        { tier: 'Gold', referrals: '16-50', reward: '500 credits', icon: Trophy, color: 'from-yellow-400 to-yellow-600', textColor: 'text-yellow-600' },
+                        { tier: 'Platinum', referrals: '50+', reward: '750 credits + VIP', icon: Gem, color: 'from-cyan-400 to-blue-600', textColor: 'text-cyan-600' }
+                      ].map((tier) => (
+                        <div key={tier.tier} className="flex items-center gap-4 p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors group">
+                          <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${tier.color} flex items-center justify-center shadow-lg`}>
+                            <tier.icon className="w-6 h-6 text-white" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="font-semibold flex items-center gap-2">
+                              {tier.tier}
+                              <span className="text-xs text-muted-foreground">({tier.referrals} refs)</span>
+                            </div>
+                            <div className={`text-sm font-medium ${tier.textColor}`}>{tier.reward}/referral</div>
+                          </div>
+                          <ArrowRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Achievements / Gamification Section */}
+      <section className="py-20 lg:py-28">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-16">
+              <Badge variant="secondary" className="mb-4 bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
+                <Award className="w-3 h-3 mr-1" />
+                Gamification
+              </Badge>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
+                Unlock <span className="gradient-text">Achievements</span> & Badges
+              </h2>
+              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+                Complete milestones and earn exclusive badges as you grow your social presence.
+              </p>
+            </div>
+
+            {/* Achievement Categories */}
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+              {[
+                {
+                  category: 'First Steps',
+                  icon: Footprints,
+                  achievements: [
+                    { name: 'Welcome Aboard', desc: 'Create an account', unlocked: true, progress: 100 },
+                    { name: 'First Campaign', desc: 'Launch your first campaign', unlocked: true, progress: 100 },
+                    { name: 'Early Bird', desc: 'Sign up in first month', unlocked: false, progress: 75 }
+                  ],
+                  gradient: 'from-blue-500 to-cyan-500'
+                },
+                {
+                  category: 'Growth Master',
+                  icon: Rocket,
+                  achievements: [
+                    { name: 'View Collector', desc: 'Get 10K total views', unlocked: true, progress: 100 },
+                    { name: 'Rising Star', desc: 'Get 100K total views', unlocked: false, progress: 65 },
+                    { name: 'Viral Champion', desc: 'Get 1M total views', unlocked: false, progress: 12 }
+                  ],
+                  gradient: 'from-warm-500 to-orange-500'
+                },
+                {
+                  category: 'Social Butterfly',
+                  icon: Heart,
+                  achievements: [
+                    { name: 'Like Magnet', desc: 'Get 1K likes', unlocked: true, progress: 100 },
+                    { name: 'Engagement Pro', desc: 'Get 10K engagements', unlocked: false, progress: 45 },
+                    { name: 'Community Star', desc: 'Get 100 comments', unlocked: false, progress: 80 }
+                  ],
+                  gradient: 'from-pink-500 to-rose-500'
+                },
+                {
+                  category: 'Referral Hero',
+                  icon: Gift,
+                  achievements: [
+                    { name: 'Sharing is Caring', desc: 'Make first referral', unlocked: true, progress: 100 },
+                    { name: 'Network Builder', desc: 'Refer 10 friends', unlocked: false, progress: 60 },
+                    { name: 'Ambassador', desc: 'Refer 50 friends', unlocked: false, progress: 24 }
+                  ],
+                  gradient: 'from-green-500 to-emerald-500'
+                },
+                {
+                  category: 'Loyal Member',
+                  icon: Calendar,
+                  achievements: [
+                    { name: 'Week Warrior', desc: 'Active for 7 days', unlocked: true, progress: 100 },
+                    { name: 'Monthly Master', desc: 'Active for 30 days', unlocked: false, progress: 85 },
+                    { name: 'Yearly Legend', desc: 'Active for 365 days', unlocked: false, progress: 15 }
+                  ],
+                  gradient: 'from-purple-500 to-violet-500'
+                },
+                {
+                  category: 'Power User',
+                  icon: Zap,
+                  achievements: [
+                    { name: 'Multi-Platform', desc: 'Use both YouTube & Instagram', unlocked: true, progress: 100 },
+                    { name: 'Campaign Pro', desc: 'Run 10 campaigns', unlocked: false, progress: 40 },
+                    { name: 'Credit Millionaire', desc: 'Earn 100K credits', unlocked: false, progress: 8 }
+                  ],
+                  gradient: 'from-amber-500 to-yellow-500'
+                }
+              ].map((category) => (
+                <Card key={category.category} className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 group hover:-translate-y-1 overflow-hidden">
+                  <div className={`h-2 bg-gradient-to-r ${category.gradient}`}></div>
+                  <CardContent className="pt-6 pb-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${category.gradient} flex items-center justify-center`}>
+                        <category.icon className="w-5 h-5 text-white" />
+                      </div>
+                      <h3 className="font-bold text-lg">{category.category}</h3>
+                    </div>
+                    <div className="space-y-3">
+                      {category.achievements.map((achievement) => (
+                        <div key={achievement.name} className="flex items-center gap-3 p-2 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                            achievement.unlocked 
+                              ? `bg-gradient-to-br ${category.gradient}` 
+                              : 'bg-gray-200 dark:bg-gray-700'
+                          }`}>
+                            {achievement.unlocked ? (
+                              <Check className="w-4 h-4 text-white" />
+                            ) : (
+                              <Lock className="w-4 h-4 text-gray-400" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className={`font-medium text-sm ${!achievement.unlocked && 'text-muted-foreground'}`}>
+                              {achievement.name}
+                            </div>
+                            <div className="text-xs text-muted-foreground truncate">{achievement.desc}</div>
+                            {!achievement.unlocked && (
+                              <div className="mt-1 h-1.5 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
+                                <div 
+                                  className={`h-full rounded-full bg-gradient-to-r ${category.gradient}`}
+                                  style={{ width: `${achievement.progress}%` }}
+                                ></div>
+                              </div>
+                            )}
+                          </div>
+                          {achievement.unlocked && (
+                            <Sparkles className="w-4 h-4 text-warm-500 animate-pulse" />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {/* User Level Progress */}
+            <Card className="border-0 shadow-xl overflow-hidden max-w-3xl mx-auto">
+              <CardContent className="p-8">
+                <div className="flex flex-col md:flex-row items-center gap-8">
+                  <div className="relative">
+                    <div className="w-28 h-28 rounded-full bg-gradient-to-br from-purple-500 via-pink-500 to-warm-500 p-1">
+                      <div className="w-full h-full rounded-full bg-background flex items-center justify-center">
+                        <div className="text-center">
+                          <div className="text-3xl font-bold gradient-text">12</div>
+                          <div className="text-xs text-muted-foreground">Level</div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="absolute -top-1 -right-1 w-10 h-10 rounded-full bg-warm-500 flex items-center justify-center text-white text-sm font-bold shadow-lg animate-bounce">
+                      ⭐
+                    </div>
+                  </div>
+                  <div className="flex-1 text-center md:text-left">
+                    <div className="flex items-center justify-center md:justify-start gap-3 mb-2">
+                      <h3 className="text-2xl font-bold">Growth Explorer</h3>
+                      <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0">Pro Tier</Badge>
+                    </div>
+                    <p className="text-muted-foreground mb-4">2,450 / 3,000 XP to next level</p>
+                    <div className="h-4 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
+                      <div 
+                        className="h-full rounded-full bg-gradient-to-r from-purple-500 via-pink-500 to-warm-500 transition-all duration-1000 relative"
+                        style={{ width: '82%' }}
+                      >
+                        <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap justify-center md:justify-start gap-4 mt-4 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <Award className="w-4 h-4 text-warm-500" />
+                        <span>8 Badges Earned</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Users className="w-4 h-4 text-blue-500" />
+                        <span>Top 15%</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Flame className="w-4 h-4 text-orange-500" />
+                        <span>45 Day Streak</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Trust Signals / Security Badges */}
+      <section className="py-16 bg-muted/30 border-y border-border">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
+            {[
+              { icon: ShieldCheck, label: 'SSL Secured', desc: '256-bit encryption' },
+              { icon: BadgeCheck, label: 'GDPR Compliant', desc: 'EU data protection' },
+              { icon: Lock, label: 'No Password Storage', desc: 'Hashed credentials' },
+              { icon: Eye, label: 'Transparent Pricing', desc: 'No hidden fees' },
+              { icon: RefreshCw, label: '99.9% Uptime', desc: 'Reliable service' },
+              { icon: HeadphonesIcon, label: '24/7 Support', desc: 'Always available' }
+            ].map((trust) => (
+              <div key={trust.label} className="flex flex-col items-center text-center p-4 rounded-xl bg-card hover:shadow-md transition-all group">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-green-100 to-emerald-100 dark:from-green-900 dark:to-emerald-900 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                  <trust.icon className="w-7 h-7 text-green-600 dark:text-green-400" />
+                </div>
+                <div className="font-semibold text-sm">{trust.label}</div>
+                <div className="text-xs text-muted-foreground">{trust.desc}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Floating Quick Actions */}
+      <div className="fixed bottom-6 right-6 z-40 flex flex-col gap-3">
+        <Button
+          size="icon"
+          className="w-14 h-14 rounded-full shadow-2xl shadow-warm-500/30 hover:shadow-warm-500/50 bg-gradient-to-r from-warm-500 to-orange-500 hover:from-warm-600 hover:to-orange-600 text-white border-0 group"
+          onClick={() => setIsSignUpOpen(true)}
+        >
+          <Rocket className="w-6 h-6 group-hover:rotate-12 transition-transform" />
+          <span className="sr-only">Get Started</span>
+        </Button>
+        
+        {/* Chat/Help Button */}
+        <Button
+          size="icon"
+          variant="outline"
+          className="w-12 h-12 rounded-full shadow-lg bg-card border-2 border-border hover:border-warm-500 hover:bg-warm-50 dark:hover:bg-warm-950 transition-all group"
+        >
+          <MessageCircle className="w-5 h-5 text-muted-foreground group-hover:text-warm-600 transition-colors" />
+          <span className="sr-only">Help Chat</span>
+        </Button>
+      </div>
+
       {/* Footer */}
       <footer className="bg-foreground text-background py-16 mt-auto">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -2937,6 +3302,43 @@ function TwitterIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
       <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/>
+    </svg>
+  )
+}
+
+// Medal icon for reward tiers
+function Medal(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M7.21 15 2.66 7.14a2 2 0 0 1 .13-2.2L7.21 0"/>
+      <path d="M16.79 15l4.54-7.86a2 2 0 0 0-.13-2.2L16.79 0"/>
+      <circle cx="12" cy="15" r="6"/>
+      <path d="M12 12v3"/>
+    </svg>
+  )
+}
+
+// Trophy icon for Gold tier
+function Trophy(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
+      <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
+      <path d="M4 22h16"/>
+      <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/>
+      <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/>
+      <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
+    </svg>
+  )
+}
+
+// Gem icon for Platinum tier
+function Gem(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M6 3h12l4 6-10 13L2 9Z"/>
+      <path d="M11 3 8 9l4 13 4-13-3-6"/>
+      <path d="M2 9h20"/>
     </svg>
   )
 }

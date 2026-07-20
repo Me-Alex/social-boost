@@ -44,13 +44,13 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <script
-          dangerouslySetInnerHTMLInnerHTML={`
+          dangerouslySetInnerHTML={{ __html: `
             try {
               const theme = localStorage.getItem('theme') || 'light';
               document.documentElement.classList.add('theme-' + theme);
               document.documentElement.setAttribute('data-theme', theme);
             } catch(e) {}
-          `}
+          ` }}
         />
       </head>
       <body
