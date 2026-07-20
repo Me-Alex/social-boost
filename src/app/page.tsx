@@ -63,6 +63,7 @@ import {
   Check,
   Mail,
   ArrowDown,
+  ArrowUp,
   Activity,
   Timer,
   Flame,
@@ -529,6 +530,94 @@ function AnimatedCounter({ value, suffix, duration = 2000 }: { value: number; su
   return (
     <div ref={ref} className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white tabular-nums">
       {Number.isInteger(value) ? Math.floor(count) : count.toFixed(1)}{suffix}
+    </div>
+  )
+}
+
+// Magic Number Card Component for Enhanced Stats Section
+function MagicNumberCard({ 
+  value, 
+  suffix, 
+  label, 
+  icon: Icon, 
+  description,
+  delay = 0
+}: { 
+  value: number; 
+  suffix: string; 
+  label: string; 
+  icon: React.ElementType; 
+  description?: string;
+  delay?: number;
+}) {
+  const [count, setCount] = useState(0)
+  const [isVisible, setIsVisible] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !isVisible) {
+          setIsVisible(true)
+        }
+      },
+      { threshold: 0.3 }
+    )
+
+    if (ref.current) {
+      observer.observe(ref.current)
+    }
+
+    return () => observer.disconnect()
+  }, [isVisible])
+
+  useEffect(() => {
+    if (!isVisible) return
+
+    const startTime = Date.now()
+    const duration = 2500
+    const endTime = startTime + duration
+
+    const animate = () => {
+      const now = Date.now()
+      const progress = Math.min((now - startTime) / duration, 1)
+      const easeOutQuart = 1 - Math.pow(1 - progress, 4)
+      
+      setCount(value * easeOutQuart)
+
+      if (now < endTime) {
+        requestAnimationFrame(animate)
+      }
+    }
+
+    setTimeout(() => {
+      requestAnimationFrame(animate)
+    }, delay)
+  }, [isVisible, value, delay])
+
+  return (
+    <div 
+      ref={ref}
+      className="glass-card rounded-2xl p-6 text-center group hover:-translate-y-2 transition-all duration-500 counter-glow"
+      style={{ animationDelay: `${delay}ms` }}
+    >
+      {/* Icon */}
+      <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-gradient-to-br from-warm-500/20 to-orange-500/20 mb-4 group-hover:scale-110 group-hover:bg-gradient-to-br group-hover:from-warm-500 group-hover:to-orange-500 transition-all duration-300">
+        <Icon className="w-7 h-7 text-warm-500 group-hover:text-white transition-colors" />
+      </div>
+
+      {/* Counter */}
+      <div className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white tabular-nums mb-2">
+        {Number.isInteger(value) ? Math.floor(count) : count.toFixed(1)}<span className="text-warm-400">{suffix}</span>
+      </div>
+
+      {/* Label */}
+      <h4 className="font-semibold text-white/90 mb-1">{label}</h4>
+      
+      {/* Description */}
+      {description && (
+        <p className="text-sm text-gray-500">{description}</p>
+      )}
     </div>
   )
 }
@@ -1681,6 +1770,294 @@ function DemoDashboardButton() {
   )
 }
 
+// ==================== NEW UI COMPONENTS (Defined before Home for proper hoisting) ====================
+
+// Scroll Progress Indicator Component
+function ScrollProgress() {
+  const [scrollProgress, setScrollProgress] = useState(0)
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const totalHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight
+      const progress = (window.scrollY / totalHeight) * 100
+      setScrollProgress(progress)
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  return (
+    <div className="fixed top-0 left-0 right-0 h-1 z-[100] bg-transparent">
+      <div 
+        className="h-full bg-gradient-to-r from-warm-500 via-warm-400 to-yellow-400 shadow-sm scroll-progress"
+        style={{ transform: `scaleX(${scrollProgress / 100})` }}
+      />
+    </div>
+  )
+}
+
+// Notification Bell Dropdown Component
+function NotificationBellDropdown() {
+  const [notifications, setNotifications] = useState([
+    { id: 1, icon: CheckCircle2, title: 'Campaign completed', desc: 'Your YouTube views campaign finished', time: '2 min ago', read: false, color: 'text-green-500' },
+    { id: 2, icon: UserPlus, title: 'New referral joined', desc: 'John D. signed up with your link', time: '15 min ago', read: false, color: 'text-blue-500' },
+    { id: 3, icon: Coins, title: 'Credits earned!', desc: '+250 credits from referral bonus', time: '1 hour ago', read: false, color: 'text-warm-500' },
+    { id: 4, icon: TrendingUp, title: 'Growth milestone reached', desc: 'Your channel gained 10K views', time: '3 hours ago', read: true, color: 'text-purple-500' },
+    { id: 5, icon: Gift, title: 'Daily reward available', desc: 'Claim your free daily credits', time: '5 hours ago', read: true, color: 'text-pink-500' },
+  ])
+
+  const unreadCount = notifications.filter(n => !n.read).length
+
+  const markAllAsRead = () => {
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })))
+  }
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="ghost" size="icon" className="relative hover:bg-muted">
+          <Bell className="w-5 h-5" />
+          {unreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center badge-pulse">
+              {unreadCount}
+            </span>
+          )}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-80 p-0">
+        <div className="flex items-center justify-between px-4 py-3 border-b">
+          <h4 className="font-semibold text-sm">Notifications</h4>
+          {unreadCount > 0 && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={markAllAsRead}
+              className="h-auto p-0 text-xs text-warm-600 hover:text-warm-700"
+            >
+              Mark all as read
+            </Button>
+          )}
+        </div>
+        <div className="max-h-[300px] overflow-y-auto">
+          {notifications.map((notification) => (
+            <div 
+              key={notification.id}
+              className={`flex items-start gap-3 px-4 py-3 hover:bg-muted/50 transition-colors cursor-pointer border-b last:border-b-0 ${
+                !notification.read ? 'bg-warm-50/50 dark:bg-warm-900/10' : ''
+              }`}
+            >
+              <div className={`w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0 ${notification.color}`}>
+                <notification.icon className="w-4 h-4" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">{notification.title}</p>
+                <p className="text-xs text-muted-foreground truncate">{notification.desc}</p>
+                <p className="text-xs text-muted-foreground mt-1">{notification.time}</p>
+              </div>
+              {!notification.read && (
+                <div className="w-2 h-2 rounded-full bg-warm-500 flex-shrink-0 mt-2" />
+              )}
+            </div>
+          ))}
+        </div>
+        <div className="px-4 py-3 border-t">
+          <Button variant="ghost" size="sm" className="w-full text-warm-600 hover:text-warm-700 hover:bg-warm-50">
+            View all notifications
+            <ChevronRight className="w-4 h-4 ml-1" />
+          </Button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  )
+}
+
+// Live Activity Ticker Component
+function LiveActivityTicker() {
+  const activities = [
+    { emoji: '🎉', user: 'John D.', action: 'gained', value: '1,000 YouTube views', color: 'text-red-500' },
+    { emoji: '📈', user: 'Sarah M.', action: 'earned', value: '250 credits', color: 'text-warm-500' },
+    { emoji: '⭐', user: 'Mike T.', action: 'received', value: '89 new followers', color: 'text-pink-500' },
+    { emoji: '🚀', user: 'Emily R.', action: 'boosted', value: 'Instagram post to 5K likes', color: 'text-purple-500' },
+    { emoji: '💰', user: 'Alex K.', action: 'claimed', value: 'referral bonus +150 credits', color: 'text-green-500' },
+    { emoji: '🎯', user: 'Lisa P.', action: 'completed', value: 'campaign milestone', color: 'text-blue-500' },
+    { emoji: '✨', user: 'David L.', action: 'unlocked', value: 'Premium features', color: 'text-indigo-500' },
+    { emoji: '🌟', user: 'Amy W.', action: 'reached', value: '10K subscribers!', color: 'text-orange-500' },
+  ]
+
+  return (
+    <div className="bg-gradient-to-r from-warm-500 via-warm-600 to-orange-500 py-3 overflow-hidden">
+      <div className="relative">
+        {/* Gradient fade edges */}
+        <div className="absolute left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-warm-500 to-transparent z-10 pointer-events-none" />
+        <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-orange-500 to-transparent z-10 pointer-events-none" />
+        
+        <div className="animate-marquee flex whitespace-nowrap">
+          {[...activities, ...activities].map((activity, i) => (
+            <div 
+              key={i} 
+              className="inline-flex items-center gap-3 mx-4 text-white"
+            >
+              <span className="text-lg">{activity.emoji}</span>
+              <span className="font-medium">{activity.user}</span>
+              <span className="opacity-75">{activity.action}</span>
+              <span className={`font-bold ${activity.color}`}>{activity.value}</span>
+              <span className="w-1 h-1 rounded-full bg-white/40" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Testimonials Carousel Component
+function TestimonialsCarousel() {
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [isPaused, setIsPaused] = useState(false)
+  
+  const testimonials = [
+    {
+      name: 'Sarah M.',
+      role: 'YouTuber • 250K subscribers',
+      content: 'SocialBoost helped me grow my channel from 10K to 250K subscribers in just 6 months. The engagement is real and the support is amazing!',
+      rating: 5,
+      avatar: 'S',
+      gradient: 'from-pink-500 to-rose-500'
+    },
+    {
+      name: 'Mike T.',
+      role: 'Instagram Influencer • 1M followers',
+      content: 'I was skeptical at first, but this platform delivers real results. My engagement rates have never been higher. Highly recommend!',
+      rating: 5,
+      avatar: 'M',
+      gradient: 'from-blue-500 to-cyan-500'
+    },
+    {
+      name: 'Emily R.',
+      role: 'Content Creator • Multi-platform',
+      content: 'The best investment for my social media growth. Easy to use, great results, and excellent customer service. 10/10 would recommend!',
+      rating: 5,
+      avatar: 'E',
+      gradient: 'from-purple-500 to-violet-500'
+    },
+    {
+      name: 'Alex K.',
+      role: 'Small Business Owner',
+      content: 'SocialBoost transformed our online presence. We went from zero to hero in just a few months. The ROI is incredible!',
+      rating: 5,
+      avatar: 'A',
+      gradient: 'from-green-500 to-emerald-500'
+    },
+    {
+      name: 'Jessica L.',
+      role: 'Fitness Coach • TikTok Star',
+      content: 'As a fitness coach, visibility is everything. SocialBoost helped me reach thousands of potential clients. Game changer!',
+      rating: 5,
+      avatar: 'J',
+      gradient: 'from-orange-500 to-amber-500'
+    }
+  ]
+
+  // Auto-play functionality
+  useEffect(() => {
+    if (isPaused) return
+    
+    const timer = setInterval(() => {
+      setCurrentIndex(prev => (prev + 1) % Math.ceil(testimonials.length / 3))
+    }, 5000)
+
+    return () => clearInterval(timer)
+  }, [isPaused, testimonials.length])
+
+  const goToSlide = (index: number) => {
+    setCurrentIndex(index)
+  }
+
+  const goToPrev = () => {
+    setCurrentIndex(prev => (prev === 0 ? Math.ceil(testimonials.length / 3) - 1 : prev - 1))
+  }
+
+  const goToNext = () => {
+    setCurrentIndex(prev => (prev + 1) % Math.ceil(testimonials.length / 3))
+  }
+
+  // Calculate which testimonials to show
+  const getVisibleTestimonials = () => {
+    const startIdx = currentIndex * 3
+    return testimonials.slice(startIdx, startIdx + 3)
+  }
+
+  const totalPages = Math.ceil(testimonials.length / 3)
+
+  return (
+    <div 
+      className="relative max-w-5xl mx-auto"
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+    >
+      {/* Navigation Arrows */}
+      <button
+        onClick={goToPrev}
+        className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 md:-translate-x-12 z-10 w-10 h-10 rounded-full bg-white shadow-lg flex items-center justify-center hover:bg-muted transition-colors border border-border"
+        aria-label="Previous testimonial"
+      >
+        <ChevronLeft className="w-5 h-5" />
+      </button>
+      
+      <button
+        onClick={goToNext}
+        className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 md:translate-x-12 z-10 w-10 h-10 rounded-full bg-white shadow-lg flex items-center justify-center hover:bg-muted transition-colors border border-border"
+        aria-label="Next testimonial"
+      >
+        <ChevronRight className="w-5 h-5" />
+      </button>
+
+      {/* Testimonials Grid */}
+      <div className="grid md:grid-cols-3 gap-8">
+        {getVisibleTestimonials().map((testimonial, i) => (
+          <Card key={`${currentIndex}-${i}`} className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group testimonial-enter">
+            <CardContent className="pt-8 pb-8">
+              <div className="flex gap-1 mb-4">
+                {[...Array(testimonial.rating)].map((_, j) => (
+                  <Star key={j} className="w-5 h-5 fill-warm-400 text-warm-400 group-hover:scale-110 transition-transform" />
+                ))}
+              </div>
+              <p className="text-muted-foreground mb-6 italic leading-relaxed">&ldquo;{testimonial.content}&rdquo;</p>
+              <Separator className="mb-6" />
+              <div className="flex items-center gap-3">
+                <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${testimonial.gradient} flex items-center justify-center text-white font-bold text-lg shadow-lg`}>
+                  {testimonial.avatar}
+                </div>
+                <div>
+                  <div className="font-semibold">{testimonial.name}</div>
+                  <div className="text-sm text-muted-foreground">{testimonial.role}</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Navigation Dots */}
+      <div className="flex justify-center gap-2 mt-8">
+        {Array.from({ length: totalPages }).map((_, index) => (
+          <button
+            key={index}
+            onClick={() => goToSlide(index)}
+            className={`w-3 h-3 rounded-full transition-all duration-300 ${
+              index === currentIndex 
+                ? 'bg-warm-500 w-8' 
+                : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
+            }`}
+            aria-label={`Go to slide ${index + 1}`}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function Home() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isSignUpOpen, setIsSignUpOpen] = useState(false)
@@ -2074,6 +2451,75 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Enhanced Magic Numbers / Metrics Section */}
+      <section className="relative py-20 lg:py-28 overflow-hidden border-y border-warm-500/20">
+        {/* Dark gradient background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950"></div>
+        
+        {/* Particle pattern background */}
+        <div className="absolute inset-0 particle-bg opacity-30"></div>
+        
+        {/* Gradient borders */}
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-warm-500 to-transparent"></div>
+        <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-warm-500 to-transparent"></div>
+        
+        {/* Decorative glow orbs */}
+        <div className="absolute -top-40 -left-40 w-80 h-80 bg-warm-500/10 rounded-full blur-3xl"></div>
+        <div className="absolute -bottom-40 -right-40 w-80 h-80 bg-orange-500/10 rounded-full blur-3xl"></div>
+
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          {/* Section Header */}
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <Badge variant="secondary" className="mb-4 bg-warm-900/50 text-warm-200 border-warm-700/50">
+              <TrendingUp className="w-3 h-3 mr-1" />
+              Our Impact
+            </Badge>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-4">
+              Numbers That{' '}
+              <span className="text-glow">Speak Volumes</span>
+            </h2>
+            <p class="text-lg text-gray-400">
+              Track our real-time impact on creators worldwide
+            </p>
+          </div>
+
+          {/* Metrics Grid */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
+            {[
+              { value: 50, suffix: 'M+', label: 'Views Delivered', icon: Eye, description: 'Across all platforms' },
+              { value: 250, suffix: 'K+', label: 'Happy Users', icon: Heart, description: 'Active creators' },
+              { value: 99.9, suffix: '%', label: 'Uptime Guarantee', icon: Shield, description: '99.9% reliability' },
+              { value: 150, suffix: '+', label: 'Countries Served', icon: Globe, description: 'Global reach' }
+            ].map((metric, index) => (
+              <MagicNumberCard 
+                key={index}
+                value={metric.value}
+                suffix={metric.suffix}
+                label={metric.label}
+                icon={metric.icon}
+                description={metric.description}
+                delay={index * 100}
+              />
+            ))}
+          </div>
+
+          {/* Trust Indicators */}
+          <div className="flex flex-wrap justify-center gap-8 mt-14 pt-12 border-t border-white/10">
+            {[
+              { icon: ShieldCheck, text: 'SOC 2 Compliant' },
+              { icon: Lock, text: '256-bit Encryption' },
+              { icon: BadgeCheck, text: 'GDPR Ready' },
+              { icon: HeadphonesIcon, text: '24/7 Support' }
+            ].map((item, i) => (
+              <div key={i} className="flex items-center gap-2 text-gray-400 text-sm">
+                <item.icon className="w-5 h-5 text-green-400" />
+                <span>{item.text}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Live Activity Ticker */}
       <LiveActivityTicker />
 
@@ -2204,76 +2650,143 @@ export default function Home() {
         </div>
       </section>
 
-      {/* How It Works Section */}
-      <section id="how-it-works" className="py-20 lg:py-28 bg-muted/50">
+      {/* How It Works Section - Enhanced */}
+      <section id="how-it-works" className="py-20 lg:py-28 bg-muted/50 relative overflow-hidden">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           {/* Section header */}
           <div className="text-center max-w-3xl mx-auto mb-16">
             <Badge variant="secondary" className="mb-4 bg-warm-100 text-warm-800">
+              <Zap className="w-3 h-3 mr-1" />
               Simple Process
             </Badge>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
               How It <span className="gradient-text">Works</span>
             </h2>
-            <p className="text-lg text-muted-foreground">
+            <p className="text-lg text-muted-foreground mb-6">
               Start growing your social media in just 3 simple steps
             </p>
+
+            {/* Watch Demo Button */}
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="gap-2 border-warm-300 text-warm-700 hover:bg-warm-50 hover:border-warm-400"
+                >
+                  <PlayCircle className="w-4 h-4" />
+                  Watch Demo Video
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-4xl p-0 overflow-hidden border-0 bg-transparent">
+                <div className="video-overlay aspect-video flex items-center justify-center rounded-xl relative">
+                  <div className="absolute inset-0 bg-gradient-to-br from-slate-900/95 to-slate-800/95"></div>
+                  <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(217, 119, 6, 0.3) 0%, transparent 70%)' }}></div>
+                  
+                  {/* Play Button */}
+                  <div className="relative z-10 text-center">
+                    <button className="group cursor-pointer focus:outline-none">
+                      <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center group-hover:bg-warm-500 transition-all duration-300 group-hover:scale-110 shadow-2xl">
+                        <Play className="w-10 h-10 text-white ml-1 group-hover:scale-110 transition-transform" />
+                      </div>
+                      <p className="text-white font-medium text-lg">Click to Play Demo</p>
+                      <p className="text-white/60 text-sm mt-2">See SocialBoost in action</p>
+                    </button>
+                  </div>
+
+                  {/* Close Button */}
+                  <button className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/20 transition-colors z-20">
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
 
           {/* Steps */}
           <div className="max-w-5xl mx-auto">
-            <div className="grid md:grid-cols-3 gap-8 relative">
-              {/* Connection line (desktop only) */}
-              <div className="hidden md:block absolute top-16 left-[20%] right-[20%] h-0.5 bg-gradient-to-r from-warm-300 via-warm-400 to-warm-500"></div>
+            <div className="grid md:grid-cols-3 gap-8 md:gap-12 relative">
+              {/* Animated dashed connection line (desktop only) */}
+              <div className="hidden md:block absolute top-[72px] left-[16%] right-[16%] h-0.5 dashed-line-animate"></div>
 
               {/* Step 1 */}
-              <div className="text-center relative group">
-                <div className="w-32 h-32 mx-auto mb-6 rounded-full gradient-bg flex items-center justify-center text-white shadow-xl shadow-warm-200 relative z-10 group-hover:scale-110 transition-transform duration-300">
-                  <div className="text-center">
-                    <div className="text-4xl font-black">01</div>
-                    <UserIcon className="w-8 h-8 mx-auto mt-1" />
+              <div className="text-center relative group card-3d">
+                {/* Pulse ring container */}
+                <div className="w-32 h-32 mx-auto mb-6 relative">
+                  <div className="absolute inset-0 rounded-full gradient-bg pulse-ring text-warm-500"></div>
+                  <div className="relative z-10 w-32 h-32 rounded-full gradient-bg flex items-center justify-center text-white shadow-xl shadow-warm-200 group-hover:scale-110 transition-transform duration-300">
+                    <div className="text-center float-slow">
+                      <div className="text-4xl font-black">01</div>
+                      <UserIcon className="w-8 h-8 mx-auto mt-1 animate-float" style={{ animationDelay: '0.2s' }} />
+                    </div>
                   </div>
                 </div>
-                <div className="absolute top-12 left-1/2 -translate-x-1/2 w-36 h-36 rounded-full bg-warm-200 opacity-20 group-hover:opacity-40 transition-opacity"></div>
+                
+                <div className="absolute top-10 left-1/2 -translate-x-1/2 w-40 h-40 rounded-full bg-warm-200 opacity-15 group-hover:opacity-30 transition-opacity"></div>
+                
                 <h3 className="text-xl font-semibold mb-3">Create Account</h3>
-                <p className="text-muted-foreground">
+                <p className="text-muted-foreground text-sm leading-relaxed">
                   Sign up for free and receive <span className="text-warm-600 font-semibold">500 bonus credits</span> to start your first campaign instantly.
                 </p>
+                <a href="#" className="inline-flex items-center gap-1 mt-4 text-sm text-warm-600 hover:text-warm-700 font-medium group/link transition-colors">
+                  Learn more 
+                  <ArrowRight className="w-4 h-4 group-hover/link:translate-x-1 transition-transform" />
+                </a>
               </div>
 
               {/* Step 2 */}
-              <div className="text-center relative group">
-                <div className="w-32 h-32 mx-auto mb-6 rounded-full gradient-bg flex items-center justify-center text-white shadow-xl shadow-warm-200 relative z-10 group-hover:scale-110 transition-transform duration-300">
-                  <div className="text-center">
-                    <div className="text-4xl font-black">02</div>
-                    <Target className="w-8 h-8 mx-auto mt-1" />
+              <div className="text-center relative group card-3d">
+                {/* Pulse ring container */}
+                <div className="w-32 h-32 mx-auto mb-6 relative">
+                  <div className="absolute inset-0 rounded-full gradient-bg pulse-ring text-warm-500" style={{ animationDelay: '0.7s' }}></div>
+                  <div className="relative z-10 w-32 h-32 rounded-full gradient-bg flex items-center justify-center text-white shadow-xl shadow-warm-200 group-hover:scale-110 transition-transform duration-300">
+                    <div className="text-center float-slow" style={{ animationDelay: '0.3s' }}>
+                      <div className="text-4xl font-black">02</div>
+                      <Target className="w-8 h-8 mx-auto mt-1 animate-float" style={{ animationDelay: '0.4s' }} />
+                    </div>
                   </div>
                 </div>
-                <div className="absolute top-12 left-1/2 -translate-x-1/2 w-36 h-36 rounded-full bg-warm-200 opacity-20 group-hover:opacity-40 transition-opacity"></div>
+                
+                <div className="absolute top-10 left-1/2 -translate-x-1/2 w-40 h-40 rounded-full bg-warm-200 opacity-15 group-hover:opacity-30 transition-opacity"></div>
+                
                 <h3 className="text-xl font-semibold mb-3">Create Campaign</h3>
-                <p className="text-muted-foreground">
+                <p className="text-muted-foreground text-sm leading-relaxed">
                   Add your video or profile URL, choose your target audience, and configure delivery settings.
                 </p>
+                <a href="#" className="inline-flex items-center gap-1 mt-4 text-sm text-warm-600 hover:text-warm-700 font-medium group/link transition-colors">
+                  Learn more 
+                  <ArrowRight className="w-4 h-4 group-hover/link:translate-x-1 transition-transform" />
+                </a>
               </div>
 
               {/* Step 3 */}
-              <div className="text-center relative group">
-                <div className="w-32 h-32 mx-auto mb-6 rounded-full gradient-bg flex items-center justify-center text-white shadow-xl shadow-warm-200 relative z-10 group-hover:scale-110 transition-transform duration-300">
-                  <div className="text-center">
-                    <div className="text-4xl font-black">03</div>
-                    <TrendingUp className="w-8 h-8 mx-auto mt-1" />
+              <div className="text-center relative group card-3d">
+                {/* Pulse ring container */}
+                <div className="w-32 h-32 mx-auto mb-6 relative">
+                  <div className="absolute inset-0 rounded-full gradient-bg pulse-ring text-warm-500" style={{ animationDelay: '1.4s' }}></div>
+                  <div className="relative z-10 w-32 h-32 rounded-full gradient-bg flex items-center justify-center text-white shadow-xl shadow-warm-200 group-hover:scale-110 transition-transform duration-300">
+                    <div className="text-center float-slow" style={{ animationDelay: '0.6s' }}>
+                      <div className="text-4xl font-black">03</div>
+                      <TrendingUp className="w-8 h-8 mx-auto mt-1 animate-float" style={{ animationDelay: '0.6s' }} />
+                    </div>
                   </div>
                 </div>
-                <div className="absolute top-12 left-1/2 -translate-x-1/2 w-36 h-36 rounded-full bg-warm-200 opacity-20 group-hover:opacity-40 transition-opacity"></div>
+                
+                <div className="absolute top-10 left-1/2 -translate-x-1/2 w-40 h-40 rounded-full bg-warm-200 opacity-15 group-hover:opacity-30 transition-opacity"></div>
+                
                 <h3 className="text-xl font-semibold mb-3">Watch Growth</h3>
-                <p className="text-muted-foreground">
+                <p className="text-muted-foreground text-sm leading-relaxed">
                   Sit back as real users engage with your content. Watch your metrics soar!
                 </p>
+                <a href="#" className="inline-flex items-center gap-1 mt-4 text-sm text-warm-600 hover:text-warm-700 font-medium group/link transition-colors">
+                  Learn more 
+                  <ArrowRight className="w-4 h-4 group-hover/link:translate-x-1 transition-transform" />
+                </a>
               </div>
             </div>
 
-            {/* CTA */}
-            <div className="text-center mt-12">
+            {/* CTA Buttons Row */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-14">
               <Button 
                 size="lg" 
                 className="gradient-bg text-white border-0 hover:opacity-90 px-8 shadow-lg shadow-warm-200 hover:shadow-warm-300 transition-shadow"
@@ -2282,6 +2795,37 @@ export default function Home() {
                 <Rocket className="w-5 h-5 mr-2" />
                 Start Now - It's Free
               </Button>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button 
+                    variant="outline"
+                    size="lg"
+                    className="gap-2 border-2 border-dashed border-warm-300 text-warm-700 hover:border-solid hover:bg-warm-50"
+                  >
+                    <Video className="w-5 h-5" />
+                    See Demo
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-4xl p-0 overflow-hidden border-0 bg-transparent">
+                  <div className="video-overlay aspect-video flex items-center justify-center rounded-xl relative">
+                    <div className="absolute inset-0 bg-gradient-to-br from-slate-900/95 to-slate-800/95"></div>
+                    
+                    <div className="relative z-10 text-center">
+                      <button className="group cursor-pointer focus:outline-none">
+                        <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center group-hover:bg-warm-500 transition-all duration-300 group-hover:scale-110 shadow-2xl">
+                          <Play className="w-10 h-10 text-white ml-1 group-hover:scale-110 transition-transform" />
+                        </div>
+                        <p className="text-white font-medium text-lg">Click to Play Demo</p>
+                        <p className="text-white/60 text-sm mt-2">See SocialBoost in action</p>
+                      </button>
+                    </div>
+
+                    <button className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/20 transition-colors z-20">
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
         </div>
@@ -2555,6 +3099,105 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Competitor Comparison Table Section */}
+      <section id="comparison" className="py-20 lg:py-28 bg-gradient-to-b from-background to-muted/30">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <Badge variant="secondary" className="mb-4 bg-warm-100 text-warm-800">
+              <BarChart3 className="w-3 h-3 mr-1" />
+              Compare & Decide
+            </Badge>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
+              Why Choose SocialBoost{' '}
+              <span className="gradient-text">Over Others?</span>
+            </h2>
+            <p className="text-lg text-muted-foreground">
+              See how we stack up against the competition. The choice is clear!
+            </p>
+          </div>
+
+          <div className="max-w-6xl mx-auto overflow-x-auto">
+            <table className="w-full border-collapse rounded-2xl overflow-hidden shadow-xl">
+              <thead>
+                <tr className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white">
+                  <th className="p-4 md:p-6 text-left font-semibold min-w-[180px]">Feature</th>
+                  <th className="p-4 md:p-6 text-center relative bg-gradient-to-br from-warm-500 to-orange-600">
+                    <div className="flex flex-col items-center gap-1">
+                      <span className="font-bold text-lg">SocialBoost</span>
+                      <Badge className="bg-yellow-400 text-yellow-900 border-0 text-xs font-bold animate-pulse-glow">
+                        ★ Best Value
+                      </Badge>
+                    </div>
+                  </th>
+                  <th className="p-4 md:p-6 text-center font-semibold text-gray-300">ViewGrip</th>
+                  <th className="p-4 md:p-6 text-center font-semibold text-gray-300">SMMPanel</th>
+                  <th className="p-4 md:p-6 text-center font-semibold text-gray-300">BoostHill</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  { feature: 'Real Users (Not Bots)', socialboost: true, viewgrip: false, smmpanel: false, boosthill: true },
+                  { feature: 'Free Credits to Start', socialboost: true, viewgrip: true, smmpanel: false, boosthill: false },
+                  { feature: 'YouTube + Instagram', socialboost: true, viewgrip: true, smmpanel: true, boosthill: false },
+                  { feature: 'Geo-Targeting', socialboost: true, viewgrip: false, smmpanel: false, boosthill: true },
+                  { feature: '24/7 Support', socialboost: true, viewgrip: false, smmpanel: true, boosthill: false },
+                  { feature: 'Referral Program', socialboost: true, viewgrip: false, smmpanel: false, boosthill: false },
+                  { feature: 'Dashboard Analytics', socialboost: true, viewgrip: false, smmpanel: true, boosthill: false },
+                  { feature: 'API Access', socialboost: true, viewgrip: false, smmpanel: true, boosthill: false }
+                ].map((row, index) => (
+                  <tr 
+                    key={index} 
+                    className={`comparison-row border-b border-border/50 ${
+                      index % 2 === 0 ? 'bg-card' : 'bg-background'
+                    }`}
+                  >
+                    <td className="p-4 md:p-5 font-medium">{row.feature}</td>
+                    <td className="p-4 md:p-5 text-center bg-warm-50/50 dark:bg-warm-900/10">
+                      {row.socialboost && (
+                        <Check className="w-6 h-6 mx-auto text-green-500" />
+                      )}
+                    </td>
+                    <td className="p-4 md:p-5 text-center">
+                      {row.viewgrip ? (
+                        <Check className="w-6 h-6 mx-auto text-green-500" />
+                      ) : (
+                        <X className="w-6 h-6 mx-auto text-red-400 opacity-50" />
+                      )}
+                    </td>
+                    <td className="p-4 md:p-5 text-center">
+                      {row.smmpanel ? (
+                        <Check className="w-6 h-6 mx-auto text-green-500" />
+                      ) : (
+                        <X className="w-6 h-6 mx-auto text-red-400 opacity-50" />
+                      )}
+                    </td>
+                    <td className="p-4 md:p-5 text-center">
+                      {row.boosthill ? (
+                        <Check className="w-6 h-6 mx-auto text-green-500" />
+                      ) : (
+                        <X className="w-6 h-6 mx-auto text-red-400 opacity-50" />
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="text-center mt-8">
+            <Button 
+              size="lg"
+              className="gradient-bg text-white border-0 hover:opacity-90 px-8 shadow-lg shadow-warm-200"
+              onClick={() => setIsSignUpOpen(true)}
+            >
+              <Rocket className="w-5 h-5 mr-2" />
+              Start with the Best
+              <ArrowRight className="w-5 h-5 ml-2" />
+            </Button>
+          </div>
+        </div>
+      </section>
+
       {/* Testimonials/Social Proof */}
       <section className="py-20 lg:py-28 bg-muted/50">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -2569,6 +3212,75 @@ export default function Home() {
           </div>
 
           <TestimonialsCarousel />
+        </div>
+      </section>
+
+      {/* Social Proof / As Featured In Section */}
+      <section className="py-16 bg-gradient-to-b from-muted/50 to-background overflow-hidden border-y border-border/50">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-10">
+            <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+              Trusted Worldwide
+            </p>
+            <h3 className="text-2xl md:text-3xl font-bold">
+              Trusted by <span className="gradient-text">100,000+</span> Creators Worldwide
+            </h3>
+          </div>
+
+          {/* Logo Marquee */}
+          <div className="relative">
+            <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-background to-transparent z-10"></div>
+            <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-background to-transparent z-10"></div>
+            
+            <div className="flex animate-marquee hover:[animation-play-state:paused]">
+              {[
+                { name: 'TechCrunch', style: { fontFamily: 'system-ui', fontWeight: 800, color: '#1a1a1a' } },
+                { name: 'Forbes', style: { fontFamily: 'Georgia, serif', fontWeight: 700, fontStyle: 'italic' } },
+                { name: 'Mashable', style: { fontFamily: 'system-ui', fontWeight: 900 } },
+                { name: 'The Verge', style: { fontFamily: 'system-ui', fontWeight: 800 } },
+                { name: 'WIRED', style: { fontFamily: 'system-ui', fontWeight: 700, letterSpacing: '-0.05em' } },
+                { name: 'Entrepreneur', style: { fontFamily: 'system-ui', fontWeight: 600, fontStyle: 'italic' } },
+                { name: 'Inc.', style: { fontFamily: 'Georgia, serif', fontWeight: 700 } },
+                { name: 'Fast Company', style: { fontFamily: 'system-ui', fontWeight: 600, color: '#0033a0' } }
+              ].map((logo, i) => (
+                <div
+                  key={i}
+                  className="featured-logo flex items-center justify-center min-w-[180px] px-8 py-4 mx-4"
+                >
+                  <span 
+                    className="text-xl md:text-2xl text-muted-foreground select-none cursor-default"
+                    style={logo.style as React.CSSProperties}
+                  >
+                    {logo.name}
+                  </span>
+                </div>
+              ))}
+              
+              {/* Duplicate for seamless loop */}
+              {[
+                { name: 'TechCrunch', style: { fontFamily: 'system-ui', fontWeight: 800, color: '#1a1a1a' } },
+                { name: 'Forbes', style: { fontFamily: 'Georgia, serif', fontWeight: 700, fontStyle: 'italic' } },
+                { name: 'Mashable', style: { fontFamily: 'system-ui', fontWeight: 900 } },
+                { name: 'The Verge', style: { fontFamily: 'system-ui', fontWeight: 800 } },
+                { name: 'WIRED', style: { fontFamily: 'system-ui', fontWeight: 700, letterSpacing: '-0.05em' } },
+                { name: 'Entrepreneur', style: { fontFamily: 'system-ui', fontWeight: 600, fontStyle: 'italic' } },
+                { name: 'Inc.', style: { fontFamily: 'Georgia, serif', fontWeight: 700 } },
+                { name: 'Fast Company', style: { fontFamily: 'system-ui', fontWeight: 600, color: '#0033a0' } }
+              ].map((logo, i) => (
+                <div
+                  key={`dup-${i}`}
+                  className="featured-logo flex items-center justify-center min-w-[180px] px-8 py-4 mx-4"
+                >
+                  <span 
+                    className="text-xl md:text-2xl text-muted-foreground select-none cursor-default"
+                    style={logo.style as React.CSSProperties}
+                  >
+                    {logo.name}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
@@ -3215,6 +3927,9 @@ export default function Home() {
           </div>
         </div>
       </footer>
+
+      {/* Back to Top Button */}
+      <BackToTopButton />
     </div>
   )
 }
@@ -3304,290 +4019,55 @@ function Gem(props: React.SVGProps<SVGSVGElement>) {
   )
 }
 
-// ==================== NEW UI COMPONENTS ====================
+// Components moved before Home function for proper hoisting
 
-// Scroll Progress Indicator Component
-function ScrollProgress() {
-  const [scrollProgress, setScrollProgress] = useState(0)
+// Back to Top Button Component
+function BackToTopButton() {
+  const [isVisible, setIsVisible] = useState(false)
+  const [isAnimating, setIsAnimating] = useState<'enter' | 'exit' | null>(null)
 
   useEffect(() => {
     const handleScroll = () => {
-      const totalHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight
-      const progress = (window.scrollY / totalHeight) * 100
-      setScrollProgress(progress)
+      const shouldShow = window.scrollY > 500
+      if (shouldShow !== isVisible) {
+        if (shouldShow) {
+          setIsAnimating('enter')
+          setIsVisible(true)
+        } else {
+          setIsAnimating('exit')
+          setTimeout(() => {
+            setIsVisible(false)
+            setIsAnimating(null)
+          }, 300)
+        }
+      }
     }
 
     window.addEventListener('scroll', handleScroll, { passive: true })
     return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
+  }, [isVisible])
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  if (!isVisible && !isAnimating) return null
 
   return (
-    <div className="fixed top-0 left-0 right-0 h-1 z-[100] bg-transparent">
-      <div 
-        className="h-full bg-gradient-to-r from-warm-500 via-warm-400 to-yellow-400 shadow-sm scroll-progress"
-        style={{ transform: `scaleX(${scrollProgress / 100})` }}
-      />
-    </div>
-  )
-}
-
-// Notification Bell Dropdown Component
-function NotificationBellDropdown() {
-  const [notifications, setNotifications] = useState([
-    { id: 1, icon: CheckCircle2, title: 'Campaign completed', desc: 'Your YouTube views campaign finished', time: '2 min ago', read: false, color: 'text-green-500' },
-    { id: 2, icon: UserPlus, title: 'New referral joined', desc: 'John D. signed up with your link', time: '15 min ago', read: false, color: 'text-blue-500' },
-    { id: 3, icon: Coins, title: 'Credits earned!', desc: '+250 credits from referral bonus', time: '1 hour ago', read: false, color: 'text-warm-500' },
-    { id: 4, icon: TrendingUp, title: 'Growth milestone reached', desc: 'Your channel gained 10K views', time: '3 hours ago', read: true, color: 'text-purple-500' },
-    { id: 5, icon: Gift, title: 'Daily reward available', desc: 'Claim your free daily credits', time: '5 hours ago', read: true, color: 'text-pink-500' },
-  ])
-
-  const unreadCount = notifications.filter(n => !n.read).length
-
-  const markAllAsRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })))
-  }
-
-  return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative hover:bg-muted">
-          <Bell className="w-5 h-5" />
-          {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center badge-pulse">
-              {unreadCount}
-            </span>
-          )}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent align="end" className="w-80 p-0">
-        <div className="flex items-center justify-between px-4 py-3 border-b">
-          <h4 className="font-semibold text-sm">Notifications</h4>
-          {unreadCount > 0 && (
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={markAllAsRead}
-              className="h-auto p-0 text-xs text-warm-600 hover:text-warm-700"
-            >
-              Mark all as read
-            </Button>
-          )}
-        </div>
-        <div className="max-h-[300px] overflow-y-auto">
-          {notifications.map((notification) => (
-            <div 
-              key={notification.id}
-              className={`flex items-start gap-3 px-4 py-3 hover:bg-muted/50 transition-colors cursor-pointer border-b last:border-b-0 ${
-                !notification.read ? 'bg-warm-50/50 dark:bg-warm-900/10' : ''
-              }`}
-            >
-              <div className={`w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0 ${notification.color}`}>
-                <notification.icon className="w-4 h-4" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{notification.title}</p>
-                <p className="text-xs text-muted-foreground truncate">{notification.desc}</p>
-                <p className="text-xs text-muted-foreground mt-1">{notification.time}</p>
-              </div>
-              {!notification.read && (
-                <div className="w-2 h-2 rounded-full bg-warm-500 flex-shrink-0 mt-2" />
-              )}
-            </div>
-          ))}
-        </div>
-        <div className="px-4 py-3 border-t">
-          <Button variant="ghost" size="sm" className="w-full text-warm-600 hover:text-warm-700 hover:bg-warm-50">
-            View all notifications
-            <ChevronRight className="w-4 h-4 ml-1" />
-          </Button>
-        </div>
-      </PopoverContent>
-    </Popover>
-  )
-}
-
-// Live Activity Ticker Component
-function LiveActivityTicker() {
-  const activities = [
-    { emoji: '🎉', user: 'John D.', action: 'gained', value: '1,000 YouTube views', color: 'text-red-500' },
-    { emoji: '📈', user: 'Sarah M.', action: 'earned', value: '250 credits', color: 'text-warm-500' },
-    { emoji: '⭐', user: 'Mike T.', action: 'received', value: '89 new followers', color: 'text-pink-500' },
-    { emoji: '🚀', user: 'Emily R.', action: 'boosted', value: 'Instagram post to 5K likes', color: 'text-purple-500' },
-    { emoji: '💰', user: 'Alex K.', action: 'claimed', value: 'referral bonus +150 credits', color: 'text-green-500' },
-    { emoji: '🎯', user: 'Lisa P.', action: 'completed', value: 'campaign milestone', color: 'text-blue-500' },
-    { emoji: '✨', user: 'David L.', action: 'unlocked', value: 'Premium features', color: 'text-indigo-500' },
-    { emoji: '🌟', user: 'Amy W.', action: 'reached', value: '10K subscribers!', color: 'text-orange-500' },
-  ]
-
-  return (
-    <div className="bg-gradient-to-r from-warm-500 via-warm-600 to-orange-500 py-3 overflow-hidden">
-      <div className="relative">
-        {/* Gradient fade edges */}
-        <div className="absolute left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-warm-500 to-transparent z-10 pointer-events-none" />
-        <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-orange-500 to-transparent z-10 pointer-events-none" />
-        
-        <div className="animate-marquee flex whitespace-nowrap">
-          {[...activities, ...activities].map((activity, i) => (
-            <div 
-              key={i} 
-              className="inline-flex items-center gap-3 mx-4 text-white"
-            >
-              <span className="text-lg">{activity.emoji}</span>
-              <span className="font-medium">{activity.user}</span>
-              <span className="opacity-75">{activity.action}</span>
-              <span className={`font-bold ${activity.color}`}>{activity.value}</span>
-              <span className="w-1 h-1 rounded-full bg-white/40" />
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// Testimonials Carousel Component
-function TestimonialsCarousel() {
-  const [currentIndex, setCurrentIndex] = useState(0)
-  const [isPaused, setIsPaused] = useState(false)
-  
-  const testimonials = [
-    {
-      name: 'Sarah M.',
-      role: 'YouTuber • 250K subscribers',
-      content: 'SocialBoost helped me grow my channel from 10K to 250K subscribers in just 6 months. The engagement is real and the support is amazing!',
-      rating: 5,
-      avatar: 'S',
-      gradient: 'from-pink-500 to-rose-500'
-    },
-    {
-      name: 'Mike T.',
-      role: 'Instagram Influencer • 1M followers',
-      content: 'I was skeptical at first, but this platform delivers real results. My engagement rates have never been higher. Highly recommend!',
-      rating: 5,
-      avatar: 'M',
-      gradient: 'from-blue-500 to-cyan-500'
-    },
-    {
-      name: 'Emily R.',
-      role: 'Content Creator • Multi-platform',
-      content: 'The best investment for my social media growth. Easy to use, great results, and excellent customer service. 10/10 would recommend!',
-      rating: 5,
-      avatar: 'E',
-      gradient: 'from-purple-500 to-violet-500'
-    },
-    {
-      name: 'Alex K.',
-      role: 'Small Business Owner',
-      content: 'SocialBoost transformed our online presence. We went from zero to hero in just a few months. The ROI is incredible!',
-      rating: 5,
-      avatar: 'A',
-      gradient: 'from-green-500 to-emerald-500'
-    },
-    {
-      name: 'Jessica L.',
-      role: 'Fitness Coach • TikTok Star',
-      content: 'As a fitness coach, visibility is everything. SocialBoost helped me reach thousands of potential clients. Game changer!',
-      rating: 5,
-      avatar: 'J',
-      gradient: 'from-orange-500 to-amber-500'
-    }
-  ]
-
-  // Auto-play functionality
-  useEffect(() => {
-    if (isPaused) return
-    
-    const timer = setInterval(() => {
-      setCurrentIndex(prev => (prev + 1) % Math.ceil(testimonials.length / 3))
-    }, 5000)
-
-    return () => clearInterval(timer)
-  }, [isPaused, testimonials.length])
-
-  const goToSlide = (index: number) => {
-    setCurrentIndex(index)
-  }
-
-  const goToPrev = () => {
-    setCurrentIndex(prev => (prev === 0 ? Math.ceil(testimonials.length / 3) - 1 : prev - 1))
-  }
-
-  const goToNext = () => {
-    setCurrentIndex(prev => (prev + 1) % Math.ceil(testimonials.length / 3))
-  }
-
-  // Calculate which testimonials to show
-  const getVisibleTestimonials = () => {
-    const startIdx = currentIndex * 3
-    return testimonials.slice(startIdx, startIdx + 3)
-  }
-
-  const totalPages = Math.ceil(testimonials.length / 3)
-
-  return (
-    <div 
-      className="relative max-w-5xl mx-auto"
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
+    <button
+      onClick={scrollToTop}
+      className={`fixed bottom-24 left-6 z-50 w-12 h-12 rounded-full gradient-bg text-white shadow-lg shadow-warm-300/30 flex items-center justify-center hover:shadow-xl hover:shadow-warm-400/40 transition-all duration-300 group ${
+        isAnimating === 'enter' ? 'back-to-top-enter' : 
+        isAnimating === 'exit' ? 'back-to-top-exit' : ''
+      }`}
+      aria-label="Back to top"
     >
-      {/* Navigation Arrows */}
-      <button
-        onClick={goToPrev}
-        className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 md:-translate-x-12 z-10 w-10 h-10 rounded-full bg-white shadow-lg flex items-center justify-center hover:bg-muted transition-colors border border-border"
-        aria-label="Previous testimonial"
-      >
-        <ChevronLeft className="w-5 h-5" />
-      </button>
+      <ArrowUp className="w-5 h-5 group-hover:-translate-y-1 transition-transform duration-200" />
       
-      <button
-        onClick={goToNext}
-        className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 md:translate-x-12 z-10 w-10 h-10 rounded-full bg-white shadow-lg flex items-center justify-center hover:bg-muted transition-colors border border-border"
-        aria-label="Next testimonial"
-      >
-        <ChevronRight className="w-5 h-5" />
-      </button>
-
-      {/* Testimonials Grid */}
-      <div className="grid md:grid-cols-3 gap-8">
-        {getVisibleTestimonials().map((testimonial, i) => (
-          <Card key={`${currentIndex}-${i}`} className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group testimonial-enter">
-            <CardContent className="pt-8 pb-8">
-              <div className="flex gap-1 mb-4">
-                {[...Array(testimonial.rating)].map((_, j) => (
-                  <Star key={j} className="w-5 h-5 fill-warm-400 text-warm-400 group-hover:scale-110 transition-transform" />
-                ))}
-              </div>
-              <p className="text-muted-foreground mb-6 italic leading-relaxed">&ldquo;{testimonial.content}&rdquo;</p>
-              <Separator className="mb-6" />
-              <div className="flex items-center gap-3">
-                <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${testimonial.gradient} flex items-center justify-center text-white font-bold text-lg shadow-lg`}>
-                  {testimonial.avatar}
-                </div>
-                <div>
-                  <div className="font-semibold">{testimonial.name}</div>
-                  <div className="text-sm text-muted-foreground">{testimonial.role}</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* Navigation Dots */}
-      <div className="flex justify-center gap-2 mt-8">
-        {Array.from({ length: totalPages }).map((_, index) => (
-          <button
-            key={index}
-            onClick={() => goToSlide(index)}
-            className={`w-3 h-3 rounded-full transition-all duration-300 ${
-              index === currentIndex 
-                ? 'bg-warm-500 w-8' 
-                : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
-            }`}
-            aria-label={`Go to slide ${index + 1}`}
-          />
-        ))}
-      </div>
-    </div>
+      {/* Tooltip */}
+      <span className="absolute left-full ml-3 px-2 py-1 bg-slate-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+        Back to top
+      </span>
+    </button>
   )
 }
