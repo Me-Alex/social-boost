@@ -93,9 +93,13 @@ import {
   ExternalLink,
   Copy,
   Trash2,
-  Edit3
+  Edit3,
+  Sun,
+  Moon
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { useTheme } from 'next-themes'
+import { cn } from '@/lib/utils'
 
 // Types
 interface Service {
@@ -1595,6 +1599,80 @@ function Dashboard({ user, onLogout }: DashboardProps) {
 
 // ==================== END DASHBOARD COMPONENT ====================
 
+// Theme Toggle Component
+function ThemeToggle() {
+  const { theme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+
+  // Set mounted state after first render (not in effect)
+  if (!mounted && typeof window !== 'undefined') {
+    setTimeout(() => setMounted(true), 0)
+  }
+
+  return (
+    <button
+      onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+      className={cn(
+        "relative w-9 h-9 rounded-lg border transition-all duration-300",
+        "border-border hover:border-warm-400 hover:bg-muted flex items-center justify-center"
+      )}
+      aria-label="Toggle theme"
+    >
+      {theme === 'dark' ? (
+        <Sun className="w-4 h-4 text-yellow-500" />
+      ) : (
+        <Moon className="w-4 h-4 text-slate-500" />
+      )}
+      <span className="sr-only">Toggle theme</span>
+    </button>
+  )
+}
+
+// Demo Dashboard Preview Button
+function DemoDashboardButton() {
+  const [showDashboard, setShowDashboard] = useState(false)
+
+  return (
+    <>
+      <Button 
+        variant="outline" 
+        size="sm" 
+        className="gap-2 text-warm-600 border-warm-200 hover:bg-warm-50"
+        onClick={() => setShowDashboard(true)}
+      >
+        <LayoutDashboard className="w-4 h-4" />
+        Preview Dashboard
+      </Button>
+      
+      <Dialog open={showDashboard} onOpenChange={setShowDashboard}>
+        <DialogContent className="max-w-6xl w-[95vw] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <div className="flex items-center justify-between">
+              <DialogTitle className="flex items-center gap-2">
+                <LayoutDashboard className="w-5 h-5 text-warm-600" />
+                SocialBoost Dashboard - Preview
+              </DialogTitle>
+              <Badge variant="secondary" className="bg-warm-100 text-warm-700">
+                Demo Mode
+              </Badge>
+            </div>
+            <DialogDescription>
+              This is a preview of what your dashboard looks like after signing up.
+              All data shown is for demonstration purposes.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {/* Mini Dashboard Preview */}
+          <Dashboard 
+            user={{ name: 'Demo User', email: 'demo@socialboost.app' }} 
+            onLogout={() => setShowDashboard(false)} 
+          />
+        </DialogContent>
+      </Dialog>
+    </>
+  )
+}
+
 export default function Home() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isSignUpOpen, setIsSignUpOpen] = useState(false)
@@ -1743,6 +1821,8 @@ export default function Home() {
 
             {/* Auth Buttons */}
             <div className="hidden md:flex items-center gap-3">
+              <DemoDashboardButton />
+              <ThemeToggle />
               <Dialog open={isSignInOpen} onOpenChange={setIsSignInOpen}>
                 <DialogTrigger asChild>
                   <Button variant="ghost" size="sm" className="hover:bg-muted">Sign In</Button>
@@ -2791,6 +2871,21 @@ export default function Home() {
                 <span>for creators</span>
               </div>
             </div>
+
+            {/* Live Stats Banner */}
+            <div className="mt-6 pt-6 border-t border-gray-800">
+              <div className="flex flex-wrap items-center justify-center gap-8 text-sm">
+                <LiveUserCounter />
+                <div className="text-center">
+                  <p className="font-bold text-lg text-white">12.8K+</p>
+                  <p className="text-xs opacity-60">Active Users</p>
+                </div>
+                <div className="text-center hidden sm:block">
+                  <p className="font-bold text-lg text-white">50M+</p>
+                  <p className="text-xs opacity-60">Delivered</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </footer>
@@ -2805,6 +2900,35 @@ function UserIcon(props: React.SVGProps<SVGSVGElement>) {
       <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
       <circle cx="12" cy="7" r="4" />
     </svg>
+  )
+}
+
+// Live User Counter Component
+function LiveUserCounter() {
+  const [count, setCount] = useState(12847)
+  const [isCounting, setIsCounting] = useState(false)
+
+  useEffect(() => {
+    // Simulate live counter updates
+    const interval = setInterval(() => {
+      setIsCounting(true)
+      setCount(prev => prev + Math.floor(Math.random() * 3) + 1)
+      setTimeout(() => setIsCounting(false), 2000)
+    }, 5000)
+
+    return () => clearInterval(interval)
+  }, [])
+
+  return (
+    <div className="text-center">
+      <p className="flex items-center justify-center gap-1">
+        <Users className={`w-4 h-4 ${isCounting ? 'text-green-400 animate-pulse' : 'text-green-500'}`} />
+        <span className={isCounting ? 'text-green-400' : 'text-green-500'}>
+          {count.toLocaleString()}
+        </span>
+      </p>
+      <p className="text-xs opacity-60">Online Now</p>
+    </div>
   )
 }
 

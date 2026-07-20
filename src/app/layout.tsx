@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
+import { ThemeProvider } from "next-themes";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -24,7 +25,6 @@ export const metadata: Metadata = {
   openGraph: {
     title: "SocialBoost - Free YouTube & Instagram Growth Platform",
     description: "Get free YouTube views, Instagram followers, likes, and comments from real users. Start growing today!",
-    url: "https://socialboost.app",
     siteName: "SocialBoost",
     type: "website",
   },
@@ -42,11 +42,29 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTMLInnerHTML={`
+            try {
+              const theme = localStorage.getItem('theme') || 'light';
+              document.documentElement.classList.add('theme-' + theme);
+              document.documentElement.setAttribute('data-theme', theme);
+            } catch(e) {}
+          `}
+        />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
-        {children}
-        <Toaster />
+        <ThemeProvider 
+          attribute="class" 
+          defaultTheme="light"
+          enableSystem
+          disableTransitionOnChange={false}
+        >
+          {children}
+          <Toaster />
+        </ThemeProvider>
       </body>
     </html>
   );
