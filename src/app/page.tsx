@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useRef, useCallback } from 'react'
+import { io, Socket } from 'socket.io-client'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -123,7 +124,13 @@ import {
   // Round 9 New Icons
   Linkedin,
   Phone,
-  Clock as ClockIcon
+  Clock as ClockIcon,
+  // Engine Icons
+  Zap as ZapIcon,
+  Radio,
+  Wifi,
+  Power,
+  CircleDot
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useTheme } from 'next-themes'
@@ -1535,6 +1542,7 @@ function Dashboard({ user, onLogout }: DashboardProps) {
             { icon: <Target />, label: 'Campaigns', id: 'campaigns' },
             { icon: <BarChart3 />, label: 'Analytics', id: 'analytics' },
             { icon: <Coins />, label: 'Credits', id: 'credits' },
+            { icon: <ZapIcon />, label: 'Earn Credits', id: 'earn' },
             { icon: <Settings />, label: 'Settings', id: 'settings' },
           ].map((item) => (
             <button
@@ -2205,6 +2213,13 @@ function Dashboard({ user, onLogout }: DashboardProps) {
                 </CardContent>
               </Card>
             </div>
+          )}
+
+          {/* EARN CREDITS TAB - Engine Integration */}
+          {activeDashboardTab === 'earn' && (
+            <EarnCreditsPanel user={user} onCreditsUpdate={(credits) => {
+              setUser(prev => ({ ...prev, credits }))
+            }} />
           )}
 
           {/* SETTINGS TAB */}
@@ -4448,6 +4463,590 @@ function PlatformStatsWidget() {
           </CardContent>
         </Card>
       ))}
+    </div>
+  )
+}
+
+// ============================================================================
+// EARN CREDITS PANEL - Real-time Task Exchange Engine Integration
+// ============================================================================
+
+interface EarnCreditsProps {
+  user: { id?: string; name: string; email: string; credits: number }
+  onCreditsUpdate: (credits: number) => void
+}
+
+function EarnCreditsPanel({ user, onCreditsUpdate }: EarnCreditsProps) {
+  const socketRef = useRef<Socket | null>(null)
+  const [isConnected, setIsConnected] = useState(false)
+  const [currentTask, setCurrentTask] = useState<any>(null)
+  const [isWorking, setIsWorking] = useState(false)
+  const [taskStartTime, setTaskStartTime] = useState<Date | null>(null)
+  const [elapsedTime, setElapsedTime] = useState(0)
+  const [queueStats, setQueueStats] = useState<any>(null)
+  const [selectedPlatform, setSelectedPlatform] = useState<string>('all')
+  const [tasksCompleted, setTasksCompleted] = useState(0)
+  const [totalEarned, setTotalEarned] = useState(0)
+  const [recentActivity, setRecentActivity] = useState<any[]>([])
+  const [verificationCode, setVerificationCode] = useState('')
+  
+  // Engine stats
+  const [engineOnline, setEngineOnline] = useState(0)
+  const [tasksInQueue, setTasksInQueue] = useState(0)
+
+  // Initialize Socket.io connection
+  useEffect(() => {
+    if (!user.id) return
+
+    const newSocket = io('/', {
+      query: { XTransformPort: '3003' },
+      transports: ['websocket', 'polling']
+    })
+
+    newSocket.on('connect', () => {
+      console.log('[EarnCredits] Connected to engine')
+      setIsConnected(true)
+      
+      // Register as worker
+      newSocket.emit('worker:register', { userId: user.id })
+    })
+
+    newSocket.on('disconnect', () => {
+      console.log('[EarnCredits] Disconnected from engine')
+      setIsConnected(false)
+      setIsWorking(false)
+      setCurrentTask(null)
+    })
+
+    // Handle registration success
+    newSocket.on('worker:registered', (data: any) => {
+      if (data.success) {
+        toast.success('Connected to task engine!', {
+          description: `Queue: ${data.stats?.queueLength || 0} tasks available`
+        })
+        setQueueStats(data.stats)
+      }
+    })
+
+    // Handle task assignment
+    newSocket.on('task:assigned', (task: any) => {
+      console.log('[EarnCredits] Task assigned:', task)
+      setCurrentTask(task)
+      setIsWorking(true)
+      setTaskStartTime(new Date())
+      setElapsedTime(0)
+      setVerificationCode(task.verificationCode || '')
+      toast.info('New task assigned!', {
+        description: `${task.platform}/${task.serviceType} - +${task.rewardCredits} credits`
+      })
+    })
+
+    // Handle task completion
+    newSocket.on('task:completed', (data: any) => {
+      console.log('[EarnCredits] Task completed:', data)
+      setIsWorking(false)
+      setCurrentTask(null)
+      setTaskStartTime(null)
+      setElapsedTime(0)
+      setTasksCompleted(prev => prev + 1)
+      setTotalEarned(prev => prev + (data.creditsEarned || 1))
+      onCreditsUpdate(user.credits + (data.creditsEarned || 1))
+      
+      // Add to recent activity
+      setRecentActivity(prev => [{
+        type: 'completed',
+        credits: data.creditsEarned || 1,
+        timestamp: new Date(),
+        message: data.message || 'Task completed!'
+      }, ...prev.slice(0, 9)])
+      
+      toast.success(data.message || 'Task completed! Credits earned!')
+    })
+
+    // Handle empty queue
+    newSocket.on('task:empty', (data: any) => {
+      toast.info(data.message || 'No tasks available right now')
+    })
+
+    // Handle errors
+    newSocket.on('error', (error: any) => {
+      console.error('[EarnCredits] Error:', error)
+      toast.error(error.message || 'An error occurred')
+    })
+
+    // Handle queue updates
+    newSocket.on('stats:online', (data: any) => {
+      setEngineOnline(data.count)
+    })
+
+    newSocket.on('stats:update', (data: any) => {
+      setTasksInQueue(data.queueLength || 0)
+    })
+
+    newSocket.on('task:available', (data: any) => {
+      setTasksInQueue(data.queueLength || 0)
+    })
+
+    socketRef.current = newSocket
+
+    return () => {
+      newSocket.disconnect()
+      socketRef.current = null
+    }
+  }, [user.id])
+
+  // Timer for elapsed time
+  useEffect(() => {
+    let interval: NodeJS.Timeout
+    if (isWorking && taskStartTime) {
+      interval = setInterval(() => {
+        setElapsedTime(Math.floor((Date.now() - taskStartTime.getTime()) / 1000))
+      }, 1000)
+    }
+    return () => clearInterval(interval)
+  }, [isWorking, taskStartTime])
+
+  // Request a new task
+  const handleRequestTask = useCallback(() => {
+    const socket = socketRef.current
+    if (!socket || !isConnected || !user.id) {
+      toast.error('Not connected to engine')
+      return
+    }
+    
+    if (isWorking) {
+      toast.error('Complete current task first')
+      return
+    }
+
+    socket.emit('task:request', { 
+      userId: user.id,
+      platform: selectedPlatform !== 'all' ? selectedPlatform : undefined
+    })
+  }, [isConnected, isWorking, user.id, selectedPlatform])
+
+  // Complete current task
+  const handleCompleteTask = useCallback(() => {
+    const socket = socketRef.current
+    if (!socket || !currentTask || !user.id) return
+    
+    socket.emit('task:complete', {
+      userId: user.id,
+      taskId: currentTask.id,
+      timeSpentMs: elapsedTime * 1000
+    })
+  }, [currentTask, user.id, elapsedTime])
+
+  // Abandon current task
+  const handleAbandonTask = useCallback(() => {
+    const socket = socketRef.current
+    if (!socket || !currentTask || !user.id) return
+    
+    socket.emit('task:abandon', {
+      userId: user.id,
+      taskId: currentTask.id
+    })
+    
+    setIsWorking(false)
+    setCurrentTask(null)
+    setTaskStartTime(null)
+    toast.info('Task abandoned')
+  }, [currentTask, user.id])
+
+  // Get queue info
+  const handleGetQueueInfo = useCallback(() => {
+    const socket = socketRef.current
+    if (!socket || !isConnected) return
+    socket.emit('queue:info')
+  }, [isConnected])
+
+  // Format elapsed time
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+  }
+
+  // Platform icons
+  const getPlatformIcon = (platform: string) => {
+    switch (platform) {
+      case 'youtube': return <Youtube className="w-5 h-5 text-red-500" />
+      case 'instagram': return <Instagram className="w-5 h-5 text-pink-500" />
+      case 'tiktok': return <Radio className="w-5 h-5 text-black dark:text-white" />
+      case 'twitter': return <Twitter className="w-5 h-5 text-blue-400" />
+      default: return <Globe className="w-5 h-5 text-gray-500" />
+    }
+  }
+
+  const getServiceIcon = (serviceType: string) => {
+    switch (serviceType) {
+      case 'views': return <Eye className="w-4 h-4" />
+      case 'likes': return <Heart className="w-4 h-4" />
+      case 'followers': case 'subscribers': return <Users className="w-4 h-4" />
+      case 'comments': return <MessageCircle className="w-4 h-4" />
+      default: return <Zap className="w-4 h-4" />
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {/* Connection Status */}
+        <Card className={`border-0 shadow-sm ${isConnected ? 'border-l-4 border-l-green-500' : 'border-l-4 border-l-red-500'}`}>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Engine Status</p>
+                <p className={`text-lg font-bold ${isConnected ? 'text-green-600' : 'text-red-500'}`}>
+                  {isConnected ? 'Connected' : 'Disconnected'}
+                </p>
+              </div>
+              <div className={`p-3 rounded-full ${isConnected ? 'bg-green-100' : 'bg-red-100'}`}>
+                <Wifi className={`w-6 h-6 ${isConnected ? 'text-green-600' : 'text-red-500'}`} />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Online Workers */}
+        <Card className="border-0 shadow-sm border-l-4 border-l-blue-500">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Workers Online</p>
+                <p className="text-lg font-bold">{engineOnline || '-'}</p>
+              </div>
+              <div className="p-3 rounded-full bg-blue-100">
+                <Users className="w-6 h-6 text-blue-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Tasks in Queue */}
+        <Card className="border-0 shadow-sm border-l-4 border-l-amber-500">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Tasks Available</p>
+                <p className="text-lg font-bold">{tasksInQueue || queueStats?.queueLength || 0}</p>
+              </div>
+              <div className="p-3 rounded-full bg-amber-100">
+                <Target className="w-6 h-6 text-amber-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Your Earnings */}
+        <Card className="border-0 shadow-sm border-l-4 border-l-purple-500">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Session Earnings</p>
+                <p className="text-lg font-bold text-green-600">+{totalEarned}</p>
+              </div>
+              <div className="p-3 rounded-full bg-purple-100">
+                <Coins className="w-6 h-6 text-purple-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid lg:grid-cols-3 gap-6">
+        {/* Main Work Panel */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Current Task Card */}
+          <Card className="border-0 shadow-sm overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-warm-500 to-warm-600 text-white pb-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-white/20 rounded-lg">
+                    <ZapIcon className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">
+                      {isWorking ? 'Current Task' : 'Ready to Work'}
+                    </CardTitle>
+                    <CardDescription className="text-white/80">
+                      {isWorking 
+                        ? 'Complete the task below to earn credits'
+                        : 'Click "Get Task" to start earning credits'
+                      }
+                    </CardDescription>
+                  </div>
+                </div>
+                <div className="text-right">
+                  {isWorking && (
+                    <div className="text-2xl font-mono font-bold">{formatTime(elapsedTime)}</div>
+                  )}
+                  <Badge variant="secondary" className={cn(
+                    "mt-1",
+                    isWorking ? "bg-green-500/20 text-green-200" : "bg-gray-500/20 text-gray-200"
+                  )}>
+                    {isWorking ? 'In Progress' : 'Idle'}
+                  </Badge>
+                </div>
+              </div>
+            </CardHeader>
+
+            <CardContent className="p-6">
+              {!isWorking ? (
+                /* Idle State */
+                <div className="text-center py-8 space-y-6">
+                  <div className="mx-auto w-24 h-24 rounded-full bg-gradient-to-br from-warm-100 to-warm-200 flex items-center justify-center">
+                    <Power className="w-12 h-12 text-warm-500" />
+                  </div>
+                  
+                  <div>
+                    <h3 className="text-xl font-semibold mb-2">Ready to Earn Credits</h3>
+                    <p className="text-muted-foreground max-w-md mx-auto">
+                      Complete social media engagement tasks to earn free credits. 
+                      Watch videos, like posts, follow accounts - each task rewards you with credits!
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-center gap-4">
+                    <Select value={selectedPlatform} onValueChange={setSelectedPlatform}>
+                      <SelectTrigger className="w-40">
+                        <SelectValue placeholder="All Platforms" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Platforms</SelectItem>
+                        <SelectItem value="youtube">YouTube Only</SelectItem>
+                        <SelectItem value="instagram">Instagram Only</SelectItem>
+                        <SelectItem value="tiktok">TikTok Only</SelectItem>
+                        <SelectItem value="twitter">Twitter Only</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    
+                    <Button 
+                      onClick={handleRequestTask}
+                      disabled={!isConnected}
+                      size="lg"
+                      className="gradient-bg text-white gap-2 px-8"
+                    >
+                      <ZapIcon className="w-5 h-5" />
+                      Get Task
+                    </Button>
+                  </div>
+
+                  {!isConnected && (
+                    <p className="text-sm text-red-500 flex items-center justify-center gap-1">
+                      <AlertCircle className="w-4 h-4" />
+                      Connecting to engine...
+                    </p>
+                  )}
+                </div>
+              ) : (
+                /* Working State */
+                <div className="space-y-6">
+                  {/* Task Details */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-4 bg-gray-50 rounded-lg space-y-2">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Globe className="w-4 h-4" /> Platform
+                      </div>
+                      <div className="flex items-center gap-2 font-semibold">
+                        {getPlatformIcon(currentTask?.platform)}
+                        <span className="capitalize">{currentTask?.platform}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="p-4 bg-gray-50 rounded-lg space-y-2">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Target className="w-4 h-4" /> Task Type
+                      </div>
+                      <div className="flex items-center gap-2 font-semibold capitalize">
+                        {getServiceIcon(currentTask?.serviceType)}
+                        {currentTask?.serviceType?.replace('_', ' ')}
+                      </div>
+                    </div>
+                    
+                    <div className="p-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg space-y-2 col-span-2">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="flex items-center gap-2 text-sm text-green-700">
+                            <Coins className="w-4 h-4" /> Reward
+                          </div>
+                          <div className="text-2xl font-bold text-green-600">
+                            +{currentTask?.rewardCredits || 1} Credits
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-sm text-green-700">Verification Code</div>
+                          <div className="font-mono text-lg font-bold tracking-wider text-green-800 bg-white px-3 py-1 rounded">
+                            {verificationCode || '----'}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Target URL */}
+                  <div className="space-y-2">
+                    <Label>Target URL</Label>
+                    <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+                      <ExternalLink className="w-4 h-4 text-muted-foreground" />
+                      <code className="text-sm flex-1 truncate">{currentTask?.targetUrl}</code>
+                      <Button variant="outline" size="sm" asChild>
+                        <a href={currentTask?.targetUrl} target="_blank" rel="noopener noreferrer">
+                          Open
+                        </a>
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex items-center gap-4 pt-4">
+                    <Button 
+                      onClick={handleCompleteTask}
+                      size="lg"
+                      className="flex-1 gradient-bg text-white gap-2"
+                    >
+                      <CheckCircle2 className="w-5 h-5" />
+                      Complete & Earn Credits
+                    </Button>
+                    
+                    <Button 
+                      onClick={handleAbandonTask}
+                      variant="outline"
+                      size="lg"
+                      className="gap-2 text-red-500 hover:text-red-600 hover:bg-red-50"
+                    >
+                      <X className="w-5 h-5" />
+                      Skip
+                    </Button>
+                  </div>
+
+                  <p className="text-xs text-center text-muted-foreground">
+                    Click "Complete" after you've engaged with the content. The system will verify your action.
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Recent Activity */}
+          <Card className="border-0 shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Activity className="w-5 h-5" />
+                Session Activity
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {recentActivity.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Clock className="w-10 h-10 mx-auto mb-2 opacity-50" />
+                  <p>No activity yet. Start completing tasks!</p>
+                </div>
+              ) : (
+                <div className="space-y-3 max-h-64 overflow-y-auto">
+                  {recentActivity.map((activity, i) => (
+                    <div key={i} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                      <div className={`p-2 rounded-full ${
+                        activity.type === 'completed' ? 'bg-green-100' : 'bg-blue-100'
+                      }`}>
+                        {activity.type === 'completed' 
+                          ? <CheckCircle2 className="w-4 h-4 text-green-600" />
+                          : <Clock className="w-4 h-4 text-blue-600" />
+                        }
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">{activity.message}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(activity.timestamp).toLocaleTimeString()}
+                        </p>
+                      </div>
+                      <span className="font-semibold text-green-600">
+                        +{activity.credits}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Sidebar - Quick Info */}
+        <div className="space-y-6">
+          {/* How It Works */}
+          <Card className="border-0 shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-base">How It Works</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {[
+                { step: 1, title: 'Get a Task', desc: 'Click "Get Task" to receive an available task', icon: <ZapIcon className="w-5 h-5" /> },
+                { step: 2, title: 'Complete Action', desc: 'Engage with the content (watch, like, follow)', icon: <ExternalLink className="w-5 h-5" /> },
+                { step: 3, title: 'Earn Credits', desc: 'Receive instant credits upon verification', icon: <Coins className="w-5 h-5" /> },
+              ].map((item) => (
+                <div key={item.step} className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-full bg-warm-100 flex items-center justify-center flex-shrink-0 text-warm-600">
+                    {item.icon}
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm">{item.title}</p>
+                    <p className="text-xs text-muted-foreground">{item.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          {/* Session Stats */}
+          <Card className="border-0 shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-base">Your Session</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <span className="text-sm">Tasks Completed</span>
+                <span className="font-bold text-lg">{tasksCompleted}</span>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                <span className="text-sm text-green-700">Total Earned</span>
+                <span className="font-bold text-lg text-green-600">+{totalEarned} 🪙</span>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                <span className="text-sm text-blue-700">Current Balance</span>
+                <span className="font-bold text-lg text-blue-600">{user.credits} 🪙</span>
+              </div>
+              
+              <Separator />
+              
+              <Button 
+                variant="outline" 
+                className="w-full gap-2"
+                onClick={handleGetQueueInfo}
+              >
+                <RefreshCw className="w-4 h-4" />
+                Refresh Queue Info
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Tips Card */}
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-warm-50 to-orange-50">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <Sparkles className="w-5 h-5 text-warm-500 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-medium text-sm text-warm-800">Pro Tip</p>
+                  <p className="text-xs text-warm-700 mt-1">
+                    Stay active and complete tasks quickly for bonus multipliers! 
+                    The faster you work, the more you earn.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   )
 }

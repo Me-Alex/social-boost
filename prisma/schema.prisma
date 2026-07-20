@@ -1,4 +1,5 @@
 // SocialBoost - Social Media Growth Platform Schema
+// With Engine Support for Real-time Task Exchange
 
 generator client {
   provider = "prisma-client-js"
@@ -10,42 +11,125 @@ datasource db {
 }
 
 model User {
-  id            String       @id @default(cuid())
-  email         String       @unique
-  name          String?
-  password      String?
-  credits       Int          @default(100)
-  plan          String       @default("free")
-  isActive      Boolean      @default(true)
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-  campaigns     Campaign[]
+  id              String       @id @default(cuid())
+  email           String       @unique
+  name            String?
+  password        String?
+  credits         Int          @default(100)
+  plan            String       @default("free")
+  isActive        Boolean      @default(true)
+  lastActiveAt    DateTime     @default(now())
+  totalEarned     Int          @default(0)
+  totalSpent      Int          @default(0)
+  tasksCompleted  Int          @default(0)
+  tasksCreated    Int          @default(0)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  campaigns       Campaign[]
+  createdTasks    Task[]       @relation("CreatedTasks")
+  completedTasks  Task[]       @relation("CompletedTasks")
+  sessions        Session[]
 }
 
 model Campaign {
   id              String          @id @default(cuid())
   userId          String
   user            User            @relation(fields: [userId], references: [id])
-  platform        Platform        // youtube or instagram
-  serviceType     ServiceType     // views, subscribers, likes, comments, followers
+  platform        Platform
+  serviceType     ServiceType
   targetUrl       String
-  targetId        String          // video ID, post URL, etc.
+  targetId        String
   quantity        Int             @default(0)
   completedCount  Int             @default(0)
   status          String          @default("pending")
-  speed          String          @default("normal") // slow, normal, fast
-  geoTarget       String?         // country code targeting
-  dailyLimit      Int?            // daily delivery limit
+  speed           String          @default("normal")
+  geoTarget       String?
+  dailyLimit      Int?
   creditsSpent    Int             @default(0)
   startedAt       DateTime?
   completedAt     DateTime?
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
+  tasks           Task[]
+}
+
+model Task {
+  id              String       @id @default(cuid())
+  campaignId      String?
+  campaign        Campaign?    @relation(fields: [campaignId], references: [id])
+  creatorId       String
+  creator         User         @relation("CreatedTasks", fields: [creatorId], references: [id])
+  completerId     String?
+  completer       User?        @relation("CompletedTasks", fields: [completerId], references: [id])
+  
+  // Task Details
+  platform        Platform
+  serviceType     ServiceType
+  targetUrl       String
+  targetId        String
+  rewardCredits   Int          @default(1)
+  
+  // Status Tracking
+  status          String       @default("pending")
+  priority        Int          @default(0)
+  
+  // Timing
+  claimedAt       DateTime?
+  startedAt       DateTime?
+  completedAt     DateTime?
+  expiresAt       DateTime?
+  
+  // Verification
+  verificationCode     String?   @unique()
+  verifiedAt           DateTime?
+  verificationMethod   String?
+  
+  // Anti-fraud
+  workerIp        String?
+  workerFingerprint String?
+  timeSpentMs     Int?
+  
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+}
+
+model Session {
+  id              String       @id @default(cuid())
+  userId          String
+  user            User         @relation(fields: [userId], references: [id])
+  socketId        String?      @unique()
+  isActive        Boolean      @default(true)
+  lastHeartbeat   DateTime     @default(now())
+  currentTaskId   String?
+  ipAddress       String?
+  userAgent       String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime    @updatedAt
+}
+
+model EngineStats {
+  id                  String   @id @default(cuid())
+  date                DateTime @unique()
+  tasksCreated        Int      @default(0)
+  tasksCompleted      Int      @default(0)
+  tasksExpired        Int      @default(0)
+  creditsExchanged    Int      @default(0)
+  youtubeTasks        Int      @default(0)
+  instagramTasks      Int      @default(0)
+  peakOnlineUsers     Int      @default(0)
+  totalActiveUsers    Int      @default(0)
+  fraudAttempts       Int      @default(0)
+  blockedIps          Int      @default(0)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 }
 
 enum Platform {
   youtube
   instagram
+  tiktok
+  twitter
+  facebook
 }
 
 enum ServiceType {
@@ -56,13 +140,6 @@ enum ServiceType {
   followers
   reels_views
   story_views
-}
-
-enum CampaignStatus {
-  pending
-  active
-  paused
-  completed
-  cancelled
-  failed
+  shares
+  retweets
 }

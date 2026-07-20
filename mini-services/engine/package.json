@@ -1,0 +1,1 @@
+{"name": "socialboost-engine", "version": "1.0.0", "description": "SocialBoost Real-time Task Exchange Engine", "main": "index.ts", "scripts": {"dev": "bun --hot index.ts", "start": "bun index.ts"}, "dependencies": {"socket.io": "^4.7.5", "@prisma/client": "^6.19.2"}}
