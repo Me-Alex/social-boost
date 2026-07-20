@@ -14,24 +14,24 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Z.ai Code Scaffold - AI-Powered Development",
-  description: "Modern Next.js scaffold optimized for AI-powered development with Z.ai. Built with TypeScript, Tailwind CSS, and shadcn/ui.",
-  keywords: ["Z.ai", "Next.js", "TypeScript", "Tailwind CSS", "shadcn/ui", "AI development", "React"],
-  authors: [{ name: "Z.ai Team" }],
+  title: "SocialBoost - Free YouTube & Instagram Growth Platform | Real Views, Followers & Engagement",
+  description: "Get free YouTube views, Instagram followers, likes, and comments from real users. Boost your social media presence with our safe and effective growth platform.",
+  keywords: ["social media growth", "YouTube views", "Instagram followers", "free subscribers", "social media marketing", "engagement booster", "views generator"],
+  authors: [{ name: "SocialBoost Team" }],
   icons: {
-    icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
+    icon: "/logo.svg",
   },
   openGraph: {
-    title: "Z.ai Code Scaffold",
-    description: "AI-powered development with modern React stack",
-    url: "https://chat.z.ai",
-    siteName: "Z.ai",
+    title: "SocialBoost - Free YouTube & Instagram Growth Platform",
+    description: "Get free YouTube views, Instagram followers, likes, and comments from real users. Start growing today!",
+    url: "https://socialboost.app",
+    siteName: "SocialBoost",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Z.ai Code Scaffold",
-    description: "AI-powered development with modern React stack",
+    title: "SocialBoost - Free YouTube & Instagram Growth",
+    description: "Get free YouTube views, Instagram followers, likes, and comments from real users.",
   },
 };
 
