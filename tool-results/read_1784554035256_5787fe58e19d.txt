@@ -1,0 +1,1024 @@
+     1→     1→'use client'
+     2→     2→
+     3→     3→import React, { useState } from 'react'
+     4→     4→import { Button } from '@/components/ui/button'
+     5→     5→import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+     6→     6→import { Input } from '@/components/ui/input'
+     7→     7→import { Label } from '@/components/ui/label'
+     8→     8→import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+     9→     9→import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
+    10→    10→import { Badge } from '@/components/ui/badge'
+    11→    11→import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+    12→    12→import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+    13→    13→import { Slider } from '@/components/ui/slider'
+    14→    14→import { Switch } from '@/components/ui/switch'
+    15→    15→import { Separator } from '@/components/ui/separator'
+    16→    16→import { 
+    17→    17→  Play, 
+    18→    18→  Users, 
+    19→    19→  Heart, 
+    20→    20→  MessageCircle, 
+    21→    21→  Eye, 
+    22→    22→  Instagram, 
+    23→    23→  Youtube,
+    24→    24→  Zap,
+    25→    25→  Shield,
+    26→    26→  Globe,
+    27→    27→  TrendingUp,
+    28→    28→  Clock,
+    29→    29→  CheckCircle2,
+    30→    30→  ArrowRight,
+    31→    31→  Star,
+    32→    32→  BarChart3,
+    33→    33→  Target,
+    34→    34→  Lock,
+    35→    35→  Rocket,
+    36→    36→  ChevronRight,
+    37→    37→  Menu,
+    38→    38→  X,
+    39→    39→  Sparkles,
+    40→    40→  Gift,
+    41→    41→  Award,
+    42→    42→  Headphones
+    43→    43→} from 'lucide-react'
+    44→    44→
+    45→    45→// Types
+    46→    46→interface Service {
+    47→    47→  id: string
+    48→    48→  name: string
+    49→    49→  description: string
+    50→    50→  icon: React.ReactNode
+    51→    51→  platform: 'youtube' | 'instagram'
+    52→    52→  price: number
+    53→    53→  popular?: boolean
+    54→    54→}
+    55→    55→
+    56→    56→interface FAQ {
+    57→    57→  question: string
+    58→    58→  answer: string
+    59→    59→}
+    60→    60→
+    61→    61→// Data
+    62→    62→const youtubeServices: Service[] = [
+    63→    63→  {
+    64→    64→    id: 'views',
+    65→    65→    name: 'Video Views',
+    66→    66→    description: 'Boost your video watch count with real user views. Improve your video ranking and visibility.',
+    67→    67→    icon: <Eye className="w-6 h-6" />,
+    68→    68→    platform: 'youtube',
+    69→    69→    price: 1,
+    70→    70→    popular: true
+    71→    71→  },
+    72→    72→  {
+    73→    73→    id: 'subscribers',
+    74→    74→    name: 'Subscribers',
+    75→    75→    description: 'Grow your channel with genuine subscribers who engage with your content.',
+    76→    76→    icon: <Users className="w-6 h-6" />,
+    77→    77→    platform: 'youtube',
+    78→    78→    price: 5
+    79→    79→  },
+    80→    80→  {
+    81→    81→    id: 'likes',
+    82→    82→    name: 'Video Likes',
+    83→    83→    description: 'Increase engagement signals with authentic likes from real users.',
+    84→    84→    icon: <Heart className="w-6 h-6" />,
+    85→    85→    platform: 'youtube',
+    86→    86→    price: 2
+    87→    87→  },
+    88→    88→  {
+    89→    89→    id: 'comments',
+    90→    90→    name: 'Comments',
+    91→    91→    description: 'Spark conversations and boost engagement with meaningful comments.',
+    92→    92→    icon: <MessageCircle className="w-6 h-6" />,
+    93→    93→    platform: 'youtube',
+    94→    94→    price: 3
+    95→    95→  }
+    96→    96→]
+    97→    97→
+    98→    98→const instagramServices: Service[] = [
+    99→    99→  {
+   100→   100→    id: 'followers',
+   101→   101→    name: 'Followers',
+   102→   102→    description: 'Expand your Instagram presence with real, active followers.',
+   103→   103→    icon: <Users className="w-6 h-6" />,
+   104→   104→    platform: 'instagram',
+   105→   105→    price: 5,
+   106→   106→    popular: true
+   107→   107→  },
+   108→   108→  {
+   109→   109→    id: 'likes',
+   110→   110→    name: 'Post Likes',
+   111→   111→    description: 'Increase your post engagement and reach more users.',
+   112→   112→    icon: <Heart className="w-6 h-6" />,
+   113→   113→    platform: 'instagram',
+   114→   114→    price: 2
+   115→   115→  },
+   116→   116→  {
+   117→   117→    id: 'comments',
+   118→   118→    name: 'Comments',
+   119→   119→    description: 'Drive authentic conversations on your posts.',
+   120→   120→    icon: <MessageCircle className="w-6 h-6" />,
+   121→   121→    platform: 'instagram',
+   122→   122→    price: 3
+   123→   123→  },
+   124→   124→  {
+   125→   125→    id: 'reels_views',
+   126→   126→    name: 'Reels Views',
+   127→   127→    description: 'Boost your Reels visibility and reach the Explore page.',
+   128→   128→    icon: <Play className="w-6 h-6" />,
+   129→   129→    platform: 'instagram',
+   130→   130→    price: 1
+   131→   131→  },
+   132→   132→  {
+   133→   133→    id: 'story_views',
+   134→   134→    name: 'Story Views',
+   135→   135→    description: 'Get more eyes on your Stories for better engagement.',
+   136→   136→    icon: <Eye className="w-6 h-6" />,
+   137→   137→    platform: 'instagram',
+   138→   138→    price: 1
+   139→   139→  }
+   140→   140→]
+   141→   141→
+   142→   142→const faqs: FAQ[] = [
+   143→   143→  {
+   144→   144→    question: "How can I get free YouTube or Instagram growth?",
+   145→   145→    answer: "Simply sign up for a free account and you'll receive complimentary credits to start promoting your content. You can earn more credits by engaging with other users' content through our exchange system."
+   146→   146→  },
+   147→   147→  {
+   148→   148→    question: "Are the followers and engagement real?",
+   149→   149→    answer: "Yes! All engagement comes from real, active users in our community. We use advanced verification systems to ensure authenticity and maintain high-quality interactions."
+   150→   150→  },
+   151→   151→  {
+   152→   152→    question: "Is it safe to use this platform?",
+   153→   153→    answer: "Absolutely. We use industry-standard security measures including anti-bot detection, traffic validation, and encrypted connections. Your account safety is our top priority."
+   154→   154→  },
+   155→   155→  {
+   156→   156→    question: "Why does engagement improve visibility?",
+   157→   157→    answer: "Social media algorithms prioritize content with high engagement. When your posts receive more likes, comments, and views, platforms recognize it as valuable content and show it to more people."
+   158→   158→  },
+   159→   159→  {
+   160→   160→    question: "Do I need to pay to start?",
+   161→   161→    answer: "No! Our platform is free to use. You get bonus credits upon signup and can earn more by participating in our community. Premium plans are available for faster results."
+   162→   162→  },
+   163→   163→  {
+   164→   164→    question: "How fast can I see results?",
+   165→   165→    answer: "Results begin within hours of starting a campaign. Delivery speed depends on your chosen settings and current network activity. Most campaigns show significant progress within 24-48 hours."
+   166→   166→  },
+   167→   167→  {
+   168→   168→    question: "What targeting options are available?",
+   169→   169→    answer: "We offer geo-targeting to specific countries, delivery speed controls (slow/normal/fast), daily limits, and quality filters to ensure you reach your ideal audience."
+   170→   170→  },
+   171→   171→  {
+   172→   172→    question: "Can I run multiple campaigns at once?",
+   173→   173→    answer: "Yes! You can run multiple campaigns across different platforms and services simultaneously. Your dashboard gives you full control over all active campaigns."
+   174→   174→  }
+   175→   175→]
+   176→   176→
+   177→   177→const features = [
+   178→   178→  {
+   179→   179→    icon: <Globe className="w-8 h-8 text-warm-600" />,
+   180→   180→    title: "Geo-Targeted Traffic",
+   181→   181→    description: "Reach audiences from specific regions based on your content strategy."
+   182→   182→  },
+   183→   183→  {
+   184→   184→    icon: <Shield className="w-8 h-8 text-warm-600" />,
+   185→   185→    title: "Quality & Trust",
+   186→   186→    description: "Multiple verification systems ensure authentic engagement."
+   187→   187→  },
+   188→   188→  {
+   189→   189→    icon: <Zap className="w-8 h-8 text-warm-600" />,
+   190→   190→    title: "Instant Start",
+   191→   191→    description: "Campaigns begin processing immediately after creation."
+   192→   192→  },
+   193→   193→  {
+   194→   194→    icon: <Headphones className="w-8 h-8 text-warm-600" />,
+   195→   195→    title: "24/7 Support",
+   196→   196→    description: "Our team is always here to help you succeed."
+   197→   197→  },
+   198→   198→  {
+   199→   199→    icon: <Gift className="w-8 h-8 text-warm-600" />,
+   200→   200→    title: "Free Credits",
+   201→   201→    description: "Start with bonus credits - no payment required."
+   202→   202→  },
+   203→   203→  {
+   204→   204→    icon: <TrendingUp className="w-8 h-8 text-warm-600" />,
+   205→   205→    title: "Real Growth",
+   206→   206→    description: "Organic-looking growth that algorithms love."
+   207→   207→  }
+   208→   208→]
+   209→   209→
+   210→   210→const stats = [
+   211→   211→  { value: "50M+", label: "Views Delivered", suffix: "" },
+   212→   212→  { value: "5M+", label: "Followers Gained", suffix: "" },
+   213→   213→  { value: "100K+", label: "Happy Creators", suffix: "" },
+   214→   214→  { value: "99.9%", label: "Uptime", suffix: "" }
+   215→   215→]
+   216→   216→
+   217→   217→export default function Home() {
+   218→   218→  const [isMenuOpen, setIsMenuOpen] = useState(false)
+   219→   219→  const [isSignUpOpen, setIsSignUpOpen] = useState(false)
+   220→   220→  const [isSignInOpen, setIsSignInOpen] = useState(false)
+   221→   221→  const [activeTab, setActiveTab] = useState('youtube')
+   222→   222→  const [email, setEmail] = useState('')
+   223→   223→  const [password, setPassword] = useState('')
+   224→   224→  const [name, setName] = useState('')
+   225→   225→  const [selectedService, setSelectedService] = useState<string | null>(null)
+   226→   226→  const [campaignUrl, setCampaignUrl] = useState('')
+   227→   227→  const [quantity, setQuantity] = useState([1000])
+   228→   228→  const [speed, setSpeed] = useState('normal')
+   229→   229→  const [geoTarget, setGeoTarget] = useState('all')
+   230→   230→
+   231→   231→  // State for animations (initialized as true)
+   232→   232→  const isVisible = true
+   233→   233→
+   234→   234→  return (
+   235→   235→    <div className="min-h-screen flex flex-col bg-background">
+   236→   236→      {/* Header / Navigation */}
+   237→   237→      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+   238→   238→        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+   239→   239→          <div className="flex h-16 items-center justify-between">
+   240→   240→            {/* Logo */}
+   241→   241→            <div className="flex items-center gap-2">
+   242→   242→              <div className="w-10 h-10 rounded-xl gradient-bg flex items-center justify-center">
+   243→   243→                <Rocket className="w-6 h-6 text-white" />
+   244→   244→              </div>
+   245→   245→              <span className="text-xl font-bold gradient-text">SocialBoost</span>
+   246→   246→            </div>
+   247→   247→
+   248→   248→            {/* Desktop Navigation */}
+   249→   249→            <nav className="hidden md:flex items-center gap-6">
+   250→   250→              <a href="#services" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Services</a>
+   251→   251→              <a href="#how-it-works" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">How It Works</a>
+   252→   252→              <a href="#features" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Features</a>
+   253→   253→              <a href="#faq" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">FAQ</a>
+   254→   254→            </nav>
+   255→   255→
+   256→   256→            {/* Auth Buttons */}
+   257→   257→            <div className="hidden md:flex items-center gap-3">
+   258→   258→              <Dialog open={isSignInOpen} onOpenChange={setIsSignInOpen}>
+   259→   259→                <DialogTrigger asChild>
+   260→   260→                  <Button variant="ghost" size="sm">Sign In</Button>
+   261→   261→                </DialogTrigger>
+   262→   262→                <DialogContent className="sm:max-w-md">
+   263→   263→                  <DialogHeader>
+   264→   264→                    <DialogTitle>Welcome Back</DialogTitle>
+   265→   265→                    <DialogDescription>Sign in to manage your campaigns</DialogDescription>
+   266→   266→                  </DialogHeader>
+   267→   267→                  <div className="space-y-4 pt-4">
+   268→   268→                    <div className="space-y-2">
+   269→   269→                      <Label htmlFor="signin-email">Email</Label>
+   270→   270→                      <Input 
+   271→   271→                        id="signin-email" 
+   272→   272→                        type="email" 
+   273→   273→                        placeholder="you@example.com"
+   274→   274→                        value={email}
+   275→   275→                        onChange={(e) => setEmail(e.target.value)}
+   276→   276→                      />
+   277→   277→                    </div>
+   278→   278→                    <div className="space-y-2">
+   279→   279→                      <Label htmlFor="signin-password">Password</Label>
+   280→   280→                      <Input 
+   281→   281→                        id="signin-password" 
+   282→   282→                        type="password" 
+   283→   283→                        placeholder="••••••••"
+   284→   284→                        value={password}
+   285→   285→                        onChange={(e) => setPassword(e.target.value)}
+   286→   286→                      />
+   287→   287→                    </div>
+   288→   288→                    <Button className="w-full" onClick={() => {
+   289→   289→                      // Handle sign in
+   290→   290→                      alert('Sign in functionality would connect to backend API')
+   291→   291→                      setIsSignInOpen(false)
+   292→   292→                    }}>
+   293→   293→                      Sign In
+   294→   294→                    </Button>
+   295→   295→                  </div>
+   296→   296→                </DialogContent>
+   297→   297→              </Dialog>
+   298→   298→
+   299→   299→              <Dialog open={isSignUpOpen} onOpenChange={setIsSignUpOpen}>
+   300→   300→                <DialogTrigger asChild>
+   301→   301→                  <Button size="sm" className="gradient-bg text-white border-0 hover:opacity-90">
+   302→   302→                    Get Started Free
+   303→   303→                  </Button>
+   304→   304→                </DialogTrigger>
+   305→   305→                <DialogContent className="sm:max-w-md">
+   306→   306→                  <DialogHeader>
+   307→   307→                    <DialogTitle>Create Account</DialogTitle>
+   308→   308→                    <DialogDescription>Start growing your social media today</DialogDescription>
+   309→   309→                  </DialogHeader>
+   310→   310→                  <div className="space-y-4 pt-4">
+   311→   311→                    <div className="space-y-2">
+   312→   312→                      <Label htmlFor="signup-name">Name</Label>
+   313→   313→                      <Input 
+   314→   314→                        id="signup-name" 
+   315→   315→                        placeholder="Your name"
+   316→   316→                        value={name}
+   317→   317→                        onChange={(e) => setName(e.target.value)}
+   318→   318→                      />
+   319→   319→                    </div>
+   320→   320→                    <div className="space-y-2">
+   321→   321→                      <Label htmlFor="signup-email">Email</Label>
+   322→   322→                      <Input 
+   323→   323→                        id="signup-email" 
+   324→   324→                        type="email" 
+   325→   325→                        placeholder="you@example.com"
+   326→   326→                        value={email}
+   327→   327→                        onChange={(e) => setEmail(e.target.value)}
+   328→   328→                      />
+   329→   329→                    </div>
+   330→   330→                    <div className="space-y-2">
+   331→   331→                      <Label htmlFor="signup-password">Password</Label>
+   332→   332→                      <Input 
+   333→   333→                        id="signup-password" 
+   334→   334→                        type="password" 
+   335→   335→                        placeholder="••••••••"
+   336→   336→                        value={password}
+   337→   337→                        onChange={(e) => setPassword(e.target.value)}
+   338→   338→                      />
+   339→   339→                    </div>
+   340→   340→                    <Button className="w-full gradient-bg text-white border-0 hover:opacity-90" onClick={() => {
+   341→   341→                      // Handle sign up
+   342→   342→                      alert('Sign up functionality would connect to backend API')
+   343→   343→                      setIsSignUpOpen(false)
+   344→   344→                    }}>
+   345→   345→                      Create Account
+   346→   346→                    </Button>
+   347→   347→                    <p className="text-xs text-center text-muted-foreground">
+   348→   348→                      Get 500 free credits upon signup!
+   349→   349→                    </p>
+   350→   350→                  </div>
+   351→   351→                </DialogContent>
+   352→   352→              </Dialog>
+   353→   353→            </div>
+   354→   354→
+   355→   355→            {/* Mobile menu button */}
+   356→   356→            <button 
+   357→   357→              className="md:hidden p-2"
+   358→   358→              onClick={() => setIsMenuOpen(!isMenuOpen)}
+   359→   359→            >
+   360→   360→              {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+   361→   361→            </button>
+   362→   362→          </div>
+   363→   363→
+   364→   364→          {/* Mobile Navigation */}
+   365→   365→          {isMenuOpen && (
+   366→   366→            <div className="md:hidden py-4 border-t">
+   367→   367→              <nav className="flex flex-col gap-4">
+   368→   368→                <a href="#services" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Services</a>
+   369→   369→                <a href="#how-it-works" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">How It Works</a>
+   370→   370→                <a href="#features" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Features</a>
+   371→   371→                <a href="#faq" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">FAQ</a>
+   372→   372→                <Separator />
+   373→   373→                <div className="flex gap-3">
+   374→   374→                  <Button variant="outline" className="flex-1" onClick={() => setIsSignInOpen(true)}>Sign In</Button>
+   375→   375→                  <Button className="flex-1 gradient-bg text-white border-0" onClick={() => setIsSignUpOpen(true)}>Get Started</Button>
+   376→   376→                </div>
+   377→   377→              </nav>
+   378→   378→            </div>
+   379→   379→          )}
+   380→   380→        </div>
+   381→   381→      </header>
+   382→   382→
+   383→   383→      {/* Hero Section */}
+   384→   384→      <section className="relative overflow-hidden py-20 lg:py-32">
+   385→   385→        {/* Background decorations */}
+   386→   386→        <div className="absolute inset-0 -z-10">
+   387→   387→          <div className="absolute top-20 left-10 w-72 h-72 bg-warm-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-float"></div>
+   388→   388→          <div className="absolute bottom-20 right-10 w-72 h-72 bg-warm-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-float" style={{ animationDelay: '1s' }}></div>
+   389→   389→          <div className="absolute top-40 right-1/4 w-72 h-72 bg-warm-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-float" style={{ animationDelay: '2s' }}></div>
+   390→   390→        </div>
+   391→   391→
+   392→   392→        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+   393→   393→          <div className="max-w-4xl mx-auto text-center">
+   394→   394→            {/* Badge */}
+   395→   395→            <Badge variant="secondary" className="mb-6 px-4 py-2 text-sm font-medium bg-warm-100 text-warm-800 hover:bg-warm-200">
+   396→   396→              <Sparkles className="w-4 h-4 mr-2" />
+   397→   397→              #1 Social Media Growth Platform
+   398→   398→            </Badge>
+   399→   399→
+   400→   400→            {/* Main heading */}
+   401→   401→            <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold tracking-tight mb-6">
+   402→   402→              Get Free{' '}
+   403→   403→              <span className="gradient-text">YouTube & Instagram</span>{' '}
+   404→   404→              Growth from Real Users
+   405→   405→            </h1>
+   406→   406→
+   407→   407→            {/* Subheading */}
+   408→   408→            <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-8 leading-relaxed">
+   409→   409→              Boost your social media presence with authentic views, followers, likes, and comments. 
+   410→   410→              Our platform connects your content with real users who actively engage.
+   411→   411→            </p>
+   412→   412→
+   413→   413→            {/* CTA Buttons */}
+   414→   414→            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
+   415→   415→              <Button 
+   416→   416→                size="lg" 
+   417→   417→                className="gradient-bg text-white border-0 hover:opacity-90 text-lg px-8 py-6 h-auto animate-pulse-glow"
+   418→   418→                onClick={() => setIsSignUpOpen(true)}
+   419→   419→              >
+   420→   420→                <Rocket className="w-5 h-5 mr-2" />
+   421→   421→                Start Growing Free
+   422→   422→                <ArrowRight className="w-5 h-5 ml-2" />
+   423→   423→              </Button>
+   424→   424→              <Button 
+   425→   425→                size="lg" 
+   426→   426→                variant="outline" 
+   427→   427→                className="text-lg px-8 py-6 h-auto"
+   428→   428→                onClick={() => document.getElementById('services')?.scrollIntoView({ behavior: 'smooth' })}
+   429→   429→              >
+   430→   430→                View Services
+   431→   431→                <ChevronRight className="w-5 h-5 ml-2" />
+   432→   432→              </Button>
+   433→   433→            </div>
+   434→   434→
+   435→   435→            {/* Trust indicators */}
+   436→   436→            <div className="flex flex-wrap justify-center items-center gap-6 text-sm text-muted-foreground">
+   437→   437→              <div className="flex items-center gap-2">
+   438→   438→                <CheckCircle2 className="w-5 h-5 text-success" />
+   439→   439→                <span>No credit card required</span>
+   440→   440→              </div>
+   441→   441→              <div className="flex items-center gap-2">
+   442→   442→                <Shield className="w-5 h-5 text-success" />
+   443→   443→                <span>100% safe & secure</span>
+   444→   444→              </div>
+   445→   445→              <div className="flex items-center gap-2">
+   446→   446→                <Users className="w-5 h-5 text-success" />
+   447→   447→                <span>100K+ happy creators</span>
+   448→   448→              </div>
+   449→   449→            </div>
+   450→   450→          </div>
+   451→   451→        </div>
+   452→   452→      </section>
+   453→   453→
+   454→   454→      {/* Stats Section */}
+   455→   455→      <section className="py-16 bg-gradient-to-r from-warm-600 via-warm-500 to-warm-400">
+   456→   456→        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+   457→   457→          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+   458→   458→            {stats.map((stat, index) => (
+   459→   459→              <div key={index} className="text-center">
+   460→   460→                <div className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-2">
+   461→   461→                  {stat.value}
+   462→   462→                </div>
+   463→   463→                <div className="text-warm-100 text-sm sm:text-base">{stat.label}</div>
+   464→   464→              </div>
+   465→   465→            ))}
+   466→   466→          </div>
+   467→   467→        </div>
+   468→   468→      </section>
+   469→   469→
+   470→   470→      {/* Services Section */}
+   471→   471→      <section id="services" className="py-20 lg:py-28">
+   472→   472→        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+   473→   473→          {/* Section header */}
+   474→   474→          <div className="text-center max-w-3xl mx-auto mb-16">
+   475→   475→            <Badge variant="secondary" className="mb-4 bg-warm-100 text-warm-800">
+   476→   476→              Our Services
+   477→   477→            </Badge>
+   478→   478→            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
+   479→   479→              Choose Your <span className="gradient-text">Growth Platform</span>
+   480→   480→            </h2>
+   481→   481→            <p className="text-lg text-muted-foreground">
+   482→   482→              Select from our comprehensive range of services designed to boost your social media presence
+   483→   483→            </p>
+   484→   484→          </div>
+   485→   485→
+   486→   486→          {/* Platform Tabs */}
+   487→   487→          <Tabs value={activeTab} onValueChange={setActiveTab} className="max-w-6xl mx-auto">
+   488→   488→            <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-12">
+   489→   489→              <TabsTrigger value="youtube" className="gap-2 data-[state=active]:bg-red-600 data-[state=active]:text-white">
+   490→   490→                <Youtube className="w-5 h-5" />
+   491→   491→                YouTube
+   492→   492→              </TabsTrigger>
+   493→   493→              <TabsTrigger value="instagram" className="gap-2 data-[state=active]:bg-pink-600 data-[state=active]:text-white">
+   494→   494→                <Instagram className="w-5 h-5" />
+   495→   495→                Instagram
+   496→   496→              </TabsTrigger>
+   497→   497→            </TabsList>
+   498→   498→
+   499→   499→            {/* YouTube Services */}
+   500→   500→            <TabsContent value="youtube">
+   501→   501→              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+   502→   502→                {youtubeServices.map((service) => (
+   503→   503→                  <Card 
+   504→   504→                    key={service.id} 
+   505→   505→                    className={`relative cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${service.popular ? 'ring-2 ring-red-500' : ''}`}
+   506→   506→                    onClick={() => setSelectedService(service.id)}
+   507→   507→                  >
+   508→   508→                    {service.popular && (
+   509→   509→                      <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+   510→   510→                        <Badge className="bg-red-500 text-white"><Star className="w-3 h-3 mr-1" /> Popular</Badge>
+   511→   511→                      </div>
+   512→   512→                    )}
+   513→   513→                    <CardHeader className="text-center pb-4">
+   514→   514→                      <div className="mx-auto w-14 h-14 rounded-xl bg-red-100 flex items-center justify-center text-red-600 mb-3">
+   515→   515→                        {service.icon}
+   516→   516→                      </div>
+   517→   517→                      <CardTitle className="text-lg">{service.name}</CardTitle>
+   518→   518→                    </CardHeader>
+   519→   519→                    <CardContent>
+   520→   520→                      <CardDescription className="text-center mb-4">
+   521→   521→                        {service.description}
+   522→   522→                      </CardDescription>
+   523→   523→                      <div className="text-center">
+   524→   524→                        <span className="text-2xl font-bold text-red-600">Free</span>
+   525→   525→                        <p className="text-xs text-muted-foreground mt-1">with credits</p>
+   526→   526→                      </div>
+   527→   527→                      <Button 
+   528→   528→                        className="w-full mt-4 bg-red-500 hover:bg-red-600 text-white"
+   529→   529→                        onClick={() => setIsSignUpOpen(true)}
+   530→   530→                      >
+   531→   531→                        Get Started
+   532→   532→                      </Button>
+   533→   533→                    </CardContent>
+   534→   534→                  </Card>
+   535→   535→                ))}
+   536→   536→              </div>
+   537→   537→            </TabsContent>
+   538→   538→
+   539→   539→            {/* Instagram Services */}
+   540→   540→            <TabsContent value="instagram">
+   541→   541→              <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+   542→   542→                {instagramServices.map((service) => (
+   543→   543→                  <Card 
+   544→   544→                    key={service.id} 
+   545→   545→                    className={`relative cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${service.popular ? 'ring-2 ring-pink-500' : ''}`}
+   546→   546→                    onClick={() => setSelectedService(service.id)}
+   547→   547→                  >
+   548→   548→                    {service.popular && (
+   549→   549→                      <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+   550→   550→                        <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white"><Star className="w-3 h-3 mr-1" /> Popular</Badge>
+   551→   551→                      </div>
+   552→   552→                    )}
+   553→   553→                    <CardHeader className="text-center pb-4">
+   554→   554→                      <div className="mx-auto w-14 h-14 rounded-xl bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center bg-gradient-to-br text-transparent bg-clip-text mb-3" style={{ background: 'linear-gradient(135deg, #8B5CF6, #EC4899)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+   555→   555→                        <div className="text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg, #8B5CF6, #EC4899)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+   556→   556→                          {React.cloneElement(service.icon, { className: "w-6 h-6", style: { color: '#EC4899' } })}
+   557→   557→                        </div>
+   558→   558→                      </div>
+   559→   559→                      <CardTitle className="text-lg">{service.name}</CardTitle>
+   560→   560→                    </CardHeader>
+   561→   561→                    <CardContent>
+   562→   562→                      <CardDescription className="text-center mb-4">
+   563→   563→                        {service.description}
+   564→   564→                      </CardDescription>
+   565→   565→                      <div className="text-center">
+   566→   566→                        <span className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">Free</span>
+   567→   567→                        <p className="text-xs text-muted-foreground mt-1">with credits</p>
+   568→   568→                      </div>
+   569→   569→                      <Button 
+   570→   570→                        className="w-full mt-4 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0"
+   571→   571→                        onClick={() => setIsSignUpOpen(true)}
+   572→   572→                      >
+   573→   573→                        Get Started
+   574→   574→                      </Button>
+   575→   575→                    </CardContent>
+   576→   576→                  </Card>
+   577→   577→                ))}
+   578→   578→              </div>
+   579→   579→            </TabsContent>
+   580→   580→          </Tabs>
+   581→   581→        </div>
+   582→   582→      </section>
+   583→   583→
+   584→   584→      {/* How It Works Section */}
+   585→   585→      <section id="how-it-works" className="py-20 lg:py-28 bg-muted/50">
+   586→   586→        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+   587→   587→          {/* Section header */}
+   588→   588→          <div className="text-center max-w-3xl mx-auto mb-16">
+   589→   589→            <Badge variant="secondary" className="mb-4 bg-warm-100 text-warm-800">
+   590→   590→              Simple Process
+   591→   591→            </Badge>
+   592→   592→            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
+   593→   593→              How It <span className="gradient-text">Works</span>
+   594→   594→            </h2>
+   595→   595→            <p className="text-lg text-muted-foreground">
+   596→   596→              Start growing your social media in just 3 simple steps
+   597→   597→            </p>
+   598→   598→          </div>
+   599→   599→
+   600→   600→          {/* Steps */}
+   601→   601→          <div className="max-w-5xl mx-auto">
+   602→   602→            <div className="grid md:grid-cols-3 gap-8 relative">
+   603→   603→              {/* Connection line (desktop only) */}
+   604→   604→              <div className="hidden md:block absolute top-16 left-1/4 right-1/4 h-0.5 bg-gradient-to-r from-warm-300 via-warm-400 to-warm-500"></div>
+   605→   605→
+   606→   606→              {/* Step 1 */}
+   607→   607→              <div className="text-center relative">
+   608→   608→                <div className="w-32 h-32 mx-auto mb-6 rounded-full gradient-bg flex items-center justify-center text-white shadow-lg shadow-warm-200 relative z-10">
+   609→   609→                  <div className="text-center">
+   610→   610→                    <div className="text-3xl font-bold">01</div>
+   611→   611→                    <UserIcon className="w-8 h-8 mx-auto mt-1" />
+   612→   612→                  </div>
+   613→   613→                </div>
+   614→   614→                <h3 className="text-xl font-semibold mb-3">Create Account</h3>
+   615→   615→                <p className="text-muted-foreground">
+   616→   616→                  Sign up for free and receive 500 bonus credits to start your first campaign instantly.
+   617→   617→                </p>
+   618→   618→              </div>
+   619→   619→
+   620→   620→              {/* Step 2 */}
+   621→   621→              <div className="text-center relative">
+   622→   622→                <div className="w-32 h-32 mx-auto mb-6 rounded-full gradient-bg flex items-center justify-center text-white shadow-lg shadow-warm-200 relative z-10">
+   623→   623→                  <div className="text-center">
+   624→   624→                    <div className="text-3xl font-bold">02</div>
+   625→   625→                    <Target className="w-8 h-8 mx-auto mt-1" />
+   626→   626→                  </div>
+   627→   627→                </div>
+   628→   628→                <h3 className="text-xl font-semibold mb-3">Create Campaign</h3>
+   629→   629→                <p className="text-muted-foreground">
+   630→   630→                  Add your video or profile URL, choose your target audience, and configure delivery settings.
+   631→   631→                </p>
+   632→   632→              </div>
+   633→   633→
+   634→   634→              {/* Step 3 */}
+   635→   635→              <div className="text-center relative">
+   636→   636→                <div className="w-32 h-32 mx-auto mb-6 rounded-full gradient-bg flex items-center justify-center text-white shadow-lg shadow-warm-200 relative z-10">
+   637→   637→                  <div className="text-center">
+   638→   638→                    <div className="text-3xl font-bold">03</div>
+   639→   639→                    <TrendingUp className="w-8 h-8 mx-auto mt-1" />
+   640→   640→                  </div>
+   641→   641→                </div>
+   642→   642→                <h3 className="text-xl font-semibold mb-3">Watch Growth</h3>
+   643→   643→                <p className="text-muted-foreground">
+   644→   644→                  Sit back as real users engage with your content. Watch your metrics soar!
+   645→   645→                </p>
+   646→   646→              </div>
+   647→   647→            </div>
+   648→   648→
+   649→   649→            {/* CTA */}
+   650→   650→            <div className="text-center mt-12">
+   651→   651→              <Button 
+   652→   652→                size="lg" 
+   653→   653→                className="gradient-bg text-white border-0 hover:opacity-90 px-8"
+   654→   654→                onClick={() => setIsSignUpOpen(true)}
+   655→   655→              >
+   656→   656→                <Rocket className="w-5 h-5 mr-2" />
+   657→   657→                Start Now - It's Free
+   658→   658→              </Button>
+   659→   659→            </div>
+   660→   660→          </div>
+   661→   661→        </div>
+   662→   662→      </section>
+   663→   663→
+   664→   664→      {/* Features Section */}
+   665→   665→      <section id="features" className="py-20 lg:py-28">
+   666→   666→        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+   667→   667→          {/* Section header */}
+   668→   668→          <div className="text-center max-w-3xl mx-auto mb-16">
+   669→   669→            <Badge variant="secondary" className="mb-4 bg-warm-100 text-warm-800">
+   670→   670→              Why Choose Us
+   671→   671→            </Badge>
+   672→   672→            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
+   673→   673→              Features That <span className="gradient-text">Set Us Apart</span>
+   674→   674→            </h2>
+   675→   675→            <p className="text-lg text-muted-foreground">
+   676→   676→              Advanced tools and security measures for optimal growth
+   677→   677→            </p>
+   678→   678→          </div>
+   679→   679→
+   680→   680→          {/* Features Grid */}
+   681→   681→          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+   682→   682→            {features.map((feature, index) => (
+   683→   683→              <Card key={index} className="border-0 shadow-lg hover:shadow-xl transition-shadow bg-card">
+   684→   684→                <CardContent className="pt-6">
+   685→   685→                  <div className="w-16 h-16 rounded-2xl bg-warm-100 flex items-center justify-center mb-4">
+   686→   686→                    {feature.icon}
+   687→   687→                  </div>
+   688→   688→                  <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
+   689→   689→                  <p className="text-muted-foreground">{feature.description}</p>
+   690→   690→                </CardContent>
+   691→   691→              </Card>
+   692→   692→            ))}
+   693→   693→          </div>
+   694→   694→
+   695→   695→          {/* Additional Features Banner */}
+   696→   696→          <div className="mt-16 max-w-4xl mx-auto">
+   697→   697→            <Card className="border-0 bg-gradient-to-r from-warm-500 to-warm-400 text-white overflow-hidden">
+   698→   698→              <CardContent className="p-8 md:p-12">
+   699→   699→                <div className="grid md:grid-cols-2 gap-8 items-center">
+   700→   700→                  <div>
+   701→   701→                    <h3 className="text-2xl md:text-3xl font-bold mb-4">
+   702→   702→                      Advanced Campaign Controls
+   703→   703→                    </h3>
+   704→   704→                    <ul className="space-y-3">
+   705→   705→                      {[
+   706→   706→                        'Variable watch duration for natural patterns',
+   707→   707→                        'Delivery speed control (slow/normal/fast)',
+   708→   708→                        'Traffic quality filtering',
+   709→   709→                        'Daily limit management',
+   710→   710→                        'Geo-targeting by country'
+   711→   711→                      ].map((item, i) => (
+   712→   712→                        <li key={i} className="flex items-center gap-2">
+   713→   713→                          <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
+   714→   714→                          <span>{item}</span>
+   715→   715→                        </li>
+   716→   716→                      ))}
+   717→   717→                    </ul>
+   718→   718→                  </div>
+   719→   719→                  <div className="hidden md:flex justify-center">
+   720→   720→                    <div className="w-48 h-48 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm">
+   721→   721→                      <BarChart3 className="w-24 h-24" />
+   722→   722→                    </div>
+   723→   723→                  </div>
+   724→   724→                </div>
+   725→   725→              </CardContent>
+   726→   726→            </Card>
+   727→   727→          </div>
+   728→   728→        </div>
+   729→   729→      </section>
+   730→   730→
+   731→   731→      {/* Security Section */}
+   732→   732→      <section className="py-20 lg:py-28 bg-muted/50">
+   733→   733→        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+   734→   734→          <div className="max-w-6xl mx-auto">
+   735→   735→            <div className="grid lg:grid-cols-2 gap-12 items-center">
+   736→   736→              <div>
+   737→   737→                <Badge variant="secondary" className="mb-4 bg-green-100 text-green-800">
+   738→   738→                  <Lock className="w-3 h-3 mr-1" />
+   739→   739→                  Security First
+   740→   740→                </Badge>
+   741→   741→                <h2 className="text-3xl sm:text-4xl font-bold mb-6">
+   742→   742→                  Traffic Quality &{' '}
+   743→   743→                  <span className="gradient-text">Security</span>
+   744→   744→                </h2>
+   745→   745→                <p className="text-lg text-muted-foreground mb-8">
+   746→   746→                  Multiple verification systems ensure interactions come from real users 
+   747→   747→                  and maintain authentic engagement signals.
+   748→   748→                </p>
+   749→   749→
+   750→   750→                <div className="space-y-4">
+   751→   751→                  {[
+   752→   752→                    { icon: <Shield />, title: 'Anti-Bot Detection', desc: 'Blocks automated and non-human traffic' },
+   753→   753→                    { icon: <Globe />, title: 'Connection Filtering', desc: 'Restricts suspicious or low-quality sources' },
+   754→   754→                    { icon: <Eye />, title: 'Traffic Validation', desc: 'Ensures realistic viewing behavior patterns' },
+   755→   755→                    { icon: <Lock />, title: 'Device Verification', desc: 'Confirms unique user sessions' }
+   756→   756→                  ].map((item, i) => (
+   757→   757→                    <div key={i} className="flex gap-4 p-4 rounded-xl bg-card shadow-sm">
+   758→   758→                      <div className="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center text-green-600 flex-shrink-0">
+   759→   759→                        {item.icon}
+   760→   760→                      </div>
+   761→   761→                      <div>
+   762→   762→                        <h4 className="font-semibold">{item.title}</h4>
+   763→   763→                        <p className="text-sm text-muted-foreground">{item.desc}</p>
+   764→   764→                      </div>
+   765→   765→                    </div>
+   766→   766→                  ))}
+   767→   767→                </div>
+   768→   768→              </div>
+   769→   769→
+   770→   770→              <div className="relative">
+   771→   771→                <div className="aspect-square max-w-md mx-auto">
+   772→   772→                  <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-warm-200 to-warm-300 opacity-20 blur-3xl"></div>
+   773→   773→                  <div className="relative h-full rounded-3xl bg-gradient-to-br from-warm-50 to-warm-100 border border-warm-200 p-8 flex flex-col justify-center">
+   774→   774→                    <div className="space-y-6">
+   775→   775→                      {[
+   776→   776→                        { label: 'Active Users Online', value: '12,847', color: 'text-green-600' },
+   777→   777→                        { label: 'Campaigns Running', value: '3,291', color: 'text-blue-600' },
+   778→   778→                        { label: 'Success Rate', value: '99.9%', color: 'text-warm-600' },
+   779→   779→                        { label: 'Avg. Response Time', value: '< 2s', color: 'text-purple-600' }
+   780→   780→                      ].map((stat, i) => (
+   781→   781→                        <div key={i} className="flex justify-between items-center p-4 rounded-xl bg-white shadow-sm">
+   782→   782→                          <span className="text-muted-foreground">{stat.label}</span>
+   783→   783→                          <span className={`text-2xl font-bold ${stat.color}`}>{stat.value}</span>
+   784→   784→                        </div>
+   785→   785→                      ))}
+   786→   786→                    </div>
+   787→   787→                  </div>
+   788→   788→                </div>
+   789→   789→              </div>
+   790→   790→            </div>
+   791→   791→          </div>
+   792→   792→        </div>
+   793→   793→      </section>
+   794→   794→
+   795→   795→      {/* Testimonials/Social Proof */}
+   796→   796→      <section className="py-20 lg:py-28">
+   797→   797→        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+   798→   798→          <div className="text-center max-w-3xl mx-auto mb-16">
+   799→   799→            <Badge variant="secondary" className="mb-4 bg-warm-100 text-warm-800">
+   800→   800→              <Award className="w-3 h-3 mr-1" />
+   801→   801→              Trusted by Creators
+   802→   802→            </Badge>
+   803→   803→            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
+   804→   804→              What Our <span className="gradient-text">Users Say</span>
+   805→   805→            </h2>
+   806→   806→          </div>
+   807→   807→
+   808→   808→          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+   809→   809→            {[
+   810→   810→              {
+   811→   811→                name: 'Sarah M.',
+   812→   812→                role: 'YouTuber • 250K subscribers',
+   813→   813→                content: 'SocialBoost helped me grow my channel from 10K to 250K subscribers in just 6 months. The engagement is real and the support is amazing!',
+   814→   814→                rating: 5
+   815→   815→              },
+   816→   816→              {
+   817→   817→                name: 'Mike T.',
+   818→   818→                role: 'Instagram Influencer • 1M followers',
+   819→   819→                content: 'I was skeptical at first, but this platform delivers real results. My engagement rates have never been higher. Highly recommend!',
+   820→   820→                rating: 5
+   821→   821→              },
+   822→   822→              {
+   823→   823→                name: 'Emily R.',
+   824→   824→                role: 'Content Creator • Multi-platform',
+   825→   825→                content: 'The best investment for my social media growth. Easy to use, great results, and excellent customer service. 10/10 would recommend!',
+   826→   826→                rating: 5
+   827→   827→              }
+   828→   828→            ].map((testimonial, i) => (
+   829→   829→              <Card key={i} className="border-0 shadow-lg">
+   830→   830→                <CardContent className="pt-6">
+   831→   831→                  <div className="flex gap-1 mb-4">
+   832→   832→                    {[...Array(testimonial.rating)].map((_, j) => (
+   833→   833→                      <Star key={j} className="w-5 h-5 fill-warm-400 text-warm-400" />
+   834→   834→                    ))}
+   835→   835→                  </div>
+   836→   836→                  <p className="text-muted-foreground mb-6 italic">"{testimonial.content}"</p>
+   837→   837→                  <div className="flex items-center gap-3">
+   838→   838→                    <div className="w-10 h-10 rounded-full gradient-bg flex items-center justify-center text-white font-semibold">
+   839→   839→                      {testimonial.name[0]}
+   840→   840→                    </div>
+   841→   841→                    <div>
+   842→   842→                      <div className="font-semibold">{testimonial.name}</div>
+   843→   843→                      <div className="text-sm text-muted-foreground">{testimonial.role}</div>
+   844→   844→                    </div>
+   845→   845→                  </div>
+   846→   846→                </CardContent>
+   847→   847→              </Card>
+   848→   848→            ))}
+   849→   849→          </div>
+   850→   850→        </div>
+   851→   851→      </section>
+   852→   852→
+   853→   853→      {/* FAQ Section */}
+   854→   854→      <section id="faq" className="py-20 lg:py-28 bg-muted/50">
+   855→   855→        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+   856→   856→          <div className="max-w-3xl mx-auto">
+   857→   857→            {/* Section header */}
+   858→   858→            <div className="text-center mb-16">
+   859→   859→              <Badge variant="secondary" className="mb-4 bg-warm-100 text-warm-800">
+   860→   860→                Got Questions?
+   861→   861→              </Badge>
+   862→   862→              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
+   863→   863→                Frequently Asked <span className="gradient-text">Questions</span>
+   864→   864→              </h2>
+   865→   865→              <p className="text-lg text-muted-foreground">
+   866→   866→                Everything you need to know about our platform
+   867→   867→              </p>
+   868→   868→            </div>
+   869→   869→
+   870→   870→            {/* FAQ Accordion */}
+   871→   871→            <Accordion type="single" collapsible className="space-y-4">
+   872→   872→              {faqs.map((faq, index) => (
+   873→   873→                <AccordionItem 
+   874→   874→                  key={index} 
+   875→   875→                  value={`faq-${index}`}
+   876→   876→                  className="bg-card rounded-xl px-6 shadow-sm border-0"
+   877→   877→                >
+   878→   878→                  <AccordionTrigger className="text-left font-semibold hover:no-underline">
+   879→   879→                    {faq.question}
+   880→   880→                  </AccordionTrigger>
+   881→   881→                  <AccordionContent className="text-muted-foreground">
+   882→   882→                    {faq.answer}
+   883→   883→                  </AccordionContent>
+   884→   884→                </AccordionItem>
+   885→   885→              ))}
+   886→   886→            </Accordion>
+   887→   887→          </div>
+   888→   888→        </div>
+   889→   889→      </section>
+   890→   890→
+   891→   891→      {/* CTA Section */}
+   892→   892→      <section className="py-20 lg:py-28">
+   893→   893→        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+   894→   894→          <Card className="border-0 overflow-hidden">
+   895→   895→            <div className="absolute inset-0 bg-gradient-to-r from-warm-500 via-warm-400 to-warm-500"></div>
+   896→   896→            <CardContent className="relative p-8 md:p-16 text-center text-white">
+   897→   897→              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6">
+   898→   898→                Ready to Grow Your Social Media?
+   899→   899→              </h2>
+   900→   900→              <p className="text-lg opacity-90 max-w-2xl mx-auto mb-8">
+   901→   901→                Join over 100,000 creators who are already using SocialBoost to accelerate their growth. 
+   902→   902→                Start for free today!
+   903→   903→              </p>
+   904→   904→              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+   905→   905→                <Button 
+   906→   906→                  size="lg" 
+   907→   907→                  className="bg-white text-warm-600 hover:bg-gray-100 border-0 text-lg px-8 py-6 h-auto"
+   908→   908→                  onClick={() => setIsSignUpOpen(true)}
+   909→   909→                >
+   910→   910→                  <Rocket className="w-5 h-5 mr-2" />
+   911→   911→                  Get Started Free
+   912→   912→                </Button>
+   913→   913→                <Button 
+   914→   914→                  size="lg" 
+   915→   915→                  variant="outline" 
+   916→   916→                  className="border-white text-white hover:bg-white/10 text-lg px-8 py-6 h-auto"
+   917→   917→                >
+   918→   918→                  <Headphones className="w-5 h-5 mr-2" />
+   919→   919→                  Contact Sales
+   920→   920→                </Button>
+   921→   921→              </div>
+   922→   922→              <p className="mt-6 text-sm opacity-75">
+   923→   923→                No credit card required • 500 free credits • Cancel anytime
+   924→   924→              </p>
+   925→   925→            </CardContent>
+   926→   926→          </Card>
+   927→   927→        </div>
+   928→   928→      </section>
+   929→   929→
+   930→   930→      {/* Footer */}
+   931→   931→      <footer className="bg-foreground text-background py-16 mt-auto">
+   932→   932→        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+   933→   933→          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 mb-12">
+   934→   934→            {/* Brand */}
+   935→   935→            <div className="col-span-2 md:col-span-4 lg:col-span-1">
+   936→   936→              <div className="flex items-center gap-2 mb-4">
+   937→   937→                <div className="w-10 h-10 rounded-xl bg-warm-500 flex items-center justify-center">
+   938→   938→                  <Rocket className="w-6 h-6 text-white" />
+   939→   939→                </div>
+   940→   940→                <span className="text-xl font-bold text-background">SocialBoost</span>
+   941→   941→              </div>
+   942→   942→              <p className="text-gray-400 text-sm mb-4">
+   943→   943→                The #1 platform for organic social media growth with real user engagement.
+   944→   944→              </p>
+   945→   945→              <div className="flex gap-4">
+   946→   946→                <a href="#" className="text-gray-400 hover:text-white transition-colors">
+   947→   947→                  <Youtube className="w-5 h-5" />
+   948→   948→                </a>
+   949→   949→                <a href="#" className="text-gray-400 hover:text-white transition-colors">
+   950→   950→                  <Instagram className="w-5 h-5" />
+   951→   951→                </a>
+   952→   952→              </div>
+   953→   953→            </div>
+   954→   954→
+   955→   955→            {/* Services */}
+   956→   956→            <div>
+   957→   957→              <h4 className="font-semibold mb-4">YouTube Services</h4>
+   958→   958→              <ul className="space-y-2 text-sm text-gray-400">
+   959→   959→                <li><a href="#" className="hover:text-white transition-colors">YouTube Views</a></li>
+   960→   960→                <li><a href="#" className="hover:text-white transition-colors">YouTube Subscribers</a></li>
+   961→   961→                <li><a href="#" className="hover:text-white transition-colors">YouTube Likes</a></li>
+   962→   962→                <li><a href="#" className="hover:text-white transition-colors">YouTube Comments</a></li>
+   963→   963→              </ul>
+   964→   964→            </div>
+   965→   965→
+   966→   966→            {/* Instagram Services */}
+   967→   967→            <div>
+   968→   968→              <h4 className="font-semibold mb-4">Instagram Services</h4>
+   969→   969→              <ul className="space-y-2 text-sm text-gray-400">
+   970→   970→                <li><a href="#" className="hover:text-white transition-colors">Instagram Followers</a></li>
+   971→   971→                <li><a href="#" className="hover:text-white transition-colors">Instagram Likes</a></li>
+   972→   972→                <li><a href="#" className="hover:text-white transition-colors">Instagram Comments</a></li>
+   973→   973→                <li><a href="#" className="hover:text-white transition-colors">Reels Views</a></li>
+   974→   974→              </ul>
+   975→   975→            </div>
+   976→   976→
+   977→   977→            {/* Company */}
+   978→   978→            <div>
+   979→   979→              <h4 className="font-semibold mb-4">Company</h4>
+   980→   980→              <ul className="space-y-2 text-sm text-gray-400">
+   981→   981→                <li><a href="#" className="hover:text-white transition-colors">About Us</a></li>
+   982→   982→                <li><a href="#" className="hover:text-white transition-colors">Blog</a></li>
+   983→   983→                <li><a href="#" className="hover:text-white transition-colors">Careers</a></li>
+   984→   984→                <li><a href="#" className="hover:text-white transition-colors">Contact</a></li>
+   985→   985→              </ul>
+   986→   986→            </div>
+   987→   987→
+   988→   988→            {/* Legal */}
+   989→   989→            <div>
+   990→   990→              <h4 className="font-semibold mb-4">Legal</h4>
+   991→   991→              <ul className="space-y-2 text-sm text-gray-400">
+   992→   992→                <li><a href="#" className="hover:text-white transition-colors">Terms of Service</a></li>
+   993→   993→                <li><a href="#" className="hover:text-white transition-colors">Privacy Policy</a></li>
+   994→   994→                <li><a href="#" className="hover:text-white transition-colors">Cookie Policy</a></li>
+   995→   995→                <li><a href="#" className="hover:text-white transition-colors">Refund Policy</a></li>
+   996→   996→              </ul>
+   997→   997→            </div>
+   998→   998→          </div>
+   999→   999→
+  1000→  1000→          <Separator className="bg-gray-700 mb-8" />
+  1001→  1001→
+  1002→  1002→          <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-gray-400">
+  1003→  1003→            <p>© 2024 SocialBoost. All rights reserved.</p>
+  1004→  1004→            <div className="flex items-center gap-2">
+  1005→  1005→              <Globe className="w-4 h-4" />
+  1006→  1006→              <span>English (US)</span>
+  1007→  1007→            </div>
+  1008→  1008→          </div>
+  1009→  1009→        </div>
+  1010→  1010→      </footer>
+  1011→  1011→    </div>
+  1012→  1012→  )
+  1013→  1013→}
+  1014→  1014→
+  1015→  1015→// Helper component for User icon in steps
+  1016→  1016→function UserIcon(props: React.SVGProps<SVGSVGElement>) {
+  1017→  1017→  return (
+  1018→  1018→    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+  1019→  1019→      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+  1020→  1020→      <circle cx="12" cy="7" r="4" />
+  1021→  1021→    </svg>
+  1022→  1022→  )
+  1023→  1023→}
+  1024→  1024→
