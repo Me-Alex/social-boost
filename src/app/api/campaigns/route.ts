@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { z } from 'zod'
 import { sanitizeInput, checkRateLimit, validatePlatformUrl, sanitizeUrl } from '@/lib/auth'
+import { requireAuth, createSuccessResponse, createErrorResponse, createTimer, logAccess, getUserId, isValidCuid } from '@/lib/api-utils'
+import { logDataEvent, logSecurityEvent } from '@/lib/audit-log'
 
 // Validation schema for creating a campaign
 const createCampaignSchema = z.object({
-  userId: z.string().min(1, 'User ID is required'),
   platform: z.enum(['youtube', 'instagram', 'tiktok', 'twitter', 'facebook'], { 
     required_error: 'Platform is required' 
   }),
@@ -45,29 +46,54 @@ function isValidPlatformUrl(url: string, platform: string): boolean {
 
 // GET /api/campaigns - Get all campaigns (or filter by user)
 export async function GET(request: NextRequest) {
+  const timer = createTimer()
+  
+  // Optional auth - allows public viewing of campaigns with enhanced data for authenticated users
+  const authResult = await requireAuth(request)
+  let userId: string | undefined
+  
+  // If not authenticated, still allow access but with limited functionality
+  if (!authResult.authenticated) {
+    // Continue without auth for GET requests (public endpoint)
+    // But check if this should be auth-required based on query params
+    const { searchParams } = new URL(request.url)
+    const requestedUserId = searchParams.get('userId')
+    
+    // If requesting specific user's campaigns, require auth
+    if (requestedUserId) {
+      return authResult.errorResponse!
+    }
+  } else {
+    userId = authResult.session?.userId
+  }
+  
   try {
     const { searchParams } = new URL(request.url)
-    const userId = searchParams.get('userId')
+    const requestedUserId = searchParams.get('userId') || userId
     const status = searchParams.get('status')
     const platform = searchParams.get('platform')
     
     // Validate userId format if provided
-    if (userId && !/^[a-z0-9]{20,30}$/i.test(userId)) {
-      return NextResponse.json(
-        { error: 'Invalid user ID format' },
-        { status: 400 }
+    if (requestedUserId && !isValidCuid(requestedUserId)) {
+      return createErrorResponse(
+        'Invalid user ID format',
+        400,
+        { code: 'INVALID_USER_ID' },
+        authResult.requestId
       )
     }
     
     // Build where clause with type safety
     const where: Record<string, unknown> = {}
-    if (userId) where.userId = userId
+    if (requestedUserId) where.userId = requestedUserId
     if (status) {
       const validStatuses = ['pending', 'active', 'paused', 'completed', 'cancelled']
       if (!validStatuses.includes(status)) {
-        return NextResponse.json(
-          { error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` },
-          { status: 400 }
+        return createErrorResponse(
+          `Invalid status. Must be one of: ${validStatuses.join(', ')}`,
+          400,
+          { code: 'INVALID_STATUS' },
+          authResult.requestId
         )
       }
       where.status = status
@@ -75,9 +101,11 @@ export async function GET(request: NextRequest) {
     if (platform) {
       const validPlatforms = Object.keys(PLATFORM_URL_PATTERNS)
       if (!validPlatforms.includes(platform)) {
-        return NextResponse.json(
-          { error: `Invalid platform. Must be one of: ${validPlatforms.join(', ')}` },
-          { status: 400 }
+        return createErrorResponse(
+          `Invalid platform. Must be one of: ${validPlatforms.join(', ')}`,
+          400,
+          { code: 'INVALID_PLATFORM' },
+          authResult.requestId
         )
       }
       where.platform = platform
@@ -99,7 +127,6 @@ export async function GET(request: NextRequest) {
             select: {
               id: true,
               name: true,
-              // Don't expose email in list view
             }
           },
           _count: {
@@ -110,27 +137,58 @@ export async function GET(request: NextRequest) {
       db.campaign.count({ where })
     ])
     
-    return NextResponse.json({ 
-      campaigns,
-      pagination: {
-        page,
-        limit,
-        total: totalCount,
-        pages: Math.ceil(totalCount / limit)
-      }
+    const response = createSuccessResponse(
+      { 
+        campaigns,
+        pagination: {
+          page,
+          limit,
+          total: totalCount,
+          pages: Math.ceil(totalCount / limit)
+        }
+      },
+      200,
+      undefined,
+      authResult.requestId
+    )
+    
+    // Log access
+    logAccess({
+      request,
+      statusCode: 200,
+      durationMs: timer.elapsed(),
+      userId,
+      requestId: authResult.requestId,
+      details: { count: campaigns.length }
     })
     
+    return response
+    
   } catch (error) {
-    console.error('Error fetching campaigns:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+    console.error('[Campaigns API] Error fetching campaigns:', error)
+    
+    return createErrorResponse(
+      'Internal server error',
+      500,
+      { code: 'INTERNAL_ERROR' },
+      authResult.requestId
     )
   }
 }
 
-// POST /api/campaigns - Create a new campaign
+// POST /api/campaigns - Create a new campaign (REQUIRES AUTHENTICATION)
 export async function POST(request: NextRequest) {
+  const timer = createTimer()
+  
+  // REQUIRE authentication for creating campaigns
+  const authResult = await requireAuth(request)
+  
+  if (!authResult.authenticated) {
+    return authResult.errorResponse!
+  }
+  
+  const userId = authResult.session!.userId
+  
   try {
     const body = await request.json()
     
@@ -138,12 +196,14 @@ export async function POST(request: NextRequest) {
     const validationResult = createCampaignSchema.safeParse(body)
     
     if (!validationResult.success) {
-      return NextResponse.json(
+      return createErrorResponse(
+        'Validation failed',
+        400,
         { 
-          error: 'Validation failed', 
+          code: 'VALIDATION_ERROR',
           details: validationResult.error.flatten().fieldErrors 
         },
-        { status: 400 }
+        authResult.requestId
       )
     }
     
@@ -151,20 +211,26 @@ export async function POST(request: NextRequest) {
     
     // Rate limiting per user
     const rateLimitResult = checkRateLimit(
-      `campaign:create:${validatedData.userId}`,
+      `campaign:create:${userId}`,
       CAMPAIGN_WINDOW_MS,
       CAMPAIGN_MAX_ATTEMPTS
     )
     
     if (!rateLimitResult.allowed) {
-      return NextResponse.json(
-        { 
-          error: 'Too many campaigns created. Please wait before creating more.',
-          retryAfter: rateLimitResult.retryAfter 
-        },
-        { status: 429,
-          headers: { 'Retry-After': String(rateLimitResult.retryAfter) }
-        }
+      logSecurityEvent({
+        action: 'rate_limit_exceeded',
+        severity: 'warning',
+        userId,
+        requestId: authResult.requestId,
+        details: { endpoint: 'POST /api/campaigns', maxAttempts: CAMPAIGN_MAX_ATTEMPTS },
+        request,
+      })
+      
+      return createErrorResponse(
+        'Too many campaigns created. Please wait before creating more.',
+        429,
+        { code: 'RATE_LIMITED', retryAfter: rateLimitResult.retryAfter },
+        authResult.requestId
       )
     }
     
@@ -175,11 +241,11 @@ export async function POST(request: NextRequest) {
     // Validate and sanitize URL
     const sanitizedUrl = sanitizeUrl(validatedData.targetUrl)
     if (!isValidPlatformUrl(sanitizedUrl, validatedData.platform)) {
-      return NextResponse.json(
-        { 
-          error: `Invalid ${validatedData.platform} URL. Please provide a valid ${validatedData.platform} link.` 
-        },
-        { status: 400 }
+      return createErrorResponse(
+        `Invalid ${validatedData.platform} URL. Please provide a valid ${validatedData.platform} link.`,
+        400,
+        { code: 'INVALID_URL' },
+        authResult.requestId
       )
     }
     
@@ -187,7 +253,7 @@ export async function POST(request: NextRequest) {
     const result = await db.$transaction(async (tx) => {
       // Get user WITHIN transaction (locks row)
       const user = await tx.user.findUnique({
-        where: { id: validatedData.userId },
+        where: { id: userId },
         select: {
           id: true,
           credits: true,
@@ -212,7 +278,7 @@ export async function POST(request: NextRequest) {
       
       // Deduct credits first (atomic operation within transaction)
       await tx.user.update({
-        where: { id: validatedData.userId },
+        where: { id: userId },
         data: {
           credits: { decrement: creditsNeeded },
           totalSpent: { increment: creditsNeeded }
@@ -222,7 +288,7 @@ export async function POST(request: NextRequest) {
       // Then create campaign
       const campaign = await tx.campaign.create({
         data: {
-          userId: validatedData.userId,
+          userId,
           platform: validatedData.platform,
           serviceType: validatedData.serviceType,
           targetUrl: sanitizedUrl,
@@ -239,20 +305,66 @@ export async function POST(request: NextRequest) {
       return { campaign, creditsNeeded, remainingCredits: user.credits - creditsNeeded }
     })
     
-    return NextResponse.json({
-      message: 'Campaign created successfully',
-      campaign: result.campaign,
-      creditsDeducted: result.creditsNeeded,
-      remainingCredits: result.remainingCredits
-    }, { status: 201 })
+    // Log successful creation
+    logDataEvent({
+      action: 'create',
+      entity: 'campaign',
+      entityId: result.campaign.id,
+      userId,
+      success: true,
+      requestId: authResult.requestId,
+      details: {
+        platform: result.campaign.platform,
+        serviceType: result.campaign.serviceType,
+        quantity: result.campaign.quantity,
+        creditsSpent: result.creditsNeeded,
+      },
+      request,
+    })
+    
+    const response = createSuccessResponse(
+      {
+        message: 'Campaign created successfully',
+        campaign: result.campaign,
+        creditsDeducted: result.creditsNeeded,
+        remainingCredits: result.remainingCredits
+      },
+      201,
+      undefined,
+      authResult.requestId
+    )
+    
+    logAccess({
+      request,
+      statusCode: 201,
+      durationMs: timer.elapsed(),
+      userId,
+      requestId: authResult.requestId,
+      details: { campaignId: result.campaign.id }
+    })
+    
+    return response
     
   } catch (error) {
-    console.error('Error creating campaign:', error)
+    console.error('[Campaigns API] Error creating campaign:', error)
+    
+    // Log failed attempt
+    logDataEvent({
+      action: 'create',
+      entity: 'campaign',
+      userId,
+      success: false,
+      requestId: authResult.requestId,
+      details: { error: error instanceof Error ? error.message : 'Unknown error' },
+      request,
+    })
     
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Validation failed', details: error.errors },
-        { status: 400 }
+      return createErrorResponse(
+        'Validation failed',
+        400,
+        { code: 'VALIDATION_ERROR', details: error.errors },
+        authResult.requestId
       )
     }
     
@@ -261,36 +373,34 @@ export async function POST(request: NextRequest) {
       const errorMessage = error.message
       
       if (errorMessage === 'USER_NOT_FOUND') {
-        return NextResponse.json(
-          { error: 'User not found' },
-          { status: 404 }
-        )
+        return createErrorResponse('User not found', 404, { code: 'USER_NOT_FOUND' }, authResult.requestId)
       }
       
       if (errorMessage === 'ACCOUNT_INACTIVE') {
-        return NextResponse.json(
-          { error: 'Account is deactivated' },
-          { status: 403 }
-        )
+        return createErrorResponse('Account is deactivated', 403, { code: 'ACCOUNT_INACTIVE' }, authResult.requestId)
       }
       
       if (errorMessage.startsWith('INSUFFICIENT_CREDITS')) {
         const [, needed, current] = errorMessage.split(':')
-        return NextResponse.json(
+        return createErrorResponse(
+          'Insufficient credits', 
+          400,
           { 
-            error: 'Insufficient credits', 
+            code: 'INSUFFICIENT_CREDITS',
             required: parseInt(needed), 
             current: parseInt(current),
             shortfall: parseInt(needed) - parseInt(current)
           },
-          { status: 400 }
+          authResult.requestId
         )
       }
     }
     
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+    return createErrorResponse(
+      'Internal server error',
+      500,
+      { code: 'INTERNAL_ERROR' },
+      authResult.requestId
     )
   }
 }

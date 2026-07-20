@@ -1327,3 +1327,411 @@
   1327→3. Set up CI/CD pipeline
   1328→4. Configure production monitoring (Sentry, etc.)
   1329→
+  1330→---
+  1331→Task ID: 9
+  1332→Agent: Code Review & Engineering Improvement Agent
+  1333→Task: Review codebase, troubleshoot issues, and improve engineering details
+  1334→
+  1335→Work Log:
+  1336→### Code Review Performed:
+  1337→1. **ESLint Check**: Passed with no errors ✓
+  1338→2. **Engine Service Review** (`/home/z/my-project/mini-services/engine/index.ts`):
+  1339→   - Reviewed all Socket.io event handlers
+  1340→   - Analyzed task queue management logic
+  1341→   - Checked race condition potential in task claiming
+  1342→   - Identified duplicate code patterns (re-queue logic)
+  1343→3. **API Routes Review** (`/home/z/my-project/src/app/api/tasks/`):
+  1344→   - Reviewed input validation with Zod schemas
+  1345→   - Checked rate limiting implementation
+  1346→   - Analyzed transaction handling for credit operations
+  1347→4. **Frontend Review** (`EarnCreditsPanel` component):
+  1348→   - Reviewed WebSocket connection handling
+  1349→   - Checked state management for reconnection scenarios
+  1350→
+  1351→### Issues Identified & Fixed:
+  1352→
+  1353→#### 1. Race Condition in Task Claiming (HIGH)
+  1354→- **Problem**: `getNextTask()` returned a task but didn't remove it from queue, allowing double-assignment
+  1355→- **Fix**: Created `getNextTaskAndRemove()` that atomically finds AND removes task from queue
+  1356→- **Additional Fix**: Added retry logic (MAX_RETRIES=2) when API claim fails due to status conflicts
+  1357→
+  1358→#### 2. Duplicate Re-queue Code (MEDIUM)
+  1359→- **Problem**: Same ~30 lines of re-queue logic repeated in 3 places (disconnect, abandon, task:abandon)
+  1360→- **Fix**: Extracted unified helper functions:
+  1361→  - `reQueueTask(taskId)` - Fetches task from API and re-adds to queue if pending
+  1362→  - `clearWorkerTask(worker, socketId, shouldReQueue)` - Handles full cleanup workflow
+  1363→
+  1364→#### 3. Stale Worker Detection Too Aggressive (MEDIUM)
+  1365→- **Problem**: Workers disconnected after exactly 2 minutes of no heartbeat
+  1366→- **Fix**: Implemented progressive warning system:
+  1367→  - Warning 1 at 2 minutes (with socket notification)
+  1368→  - Warning 2 at 3 minutes
+  1369→  - Disconnect at 4 minutes
+  1370→  - Uses `workerWarnings` Map to track per-worker state
+  1371→
+  1372→#### 4. Missing Graceful Shutdown (LOW)
+  1373→- **Problem**: Engine had no SIGTERM/SIGINT handling, could lose in-memory queue data
+  1374→- **Fix**: Added comprehensive shutdown handler:
+  1375→  - Properly closes Socket.io connections
+  1376→  - Closes HTTP server
+  1377→  - Logs final statistics
+  1378→  - 10-second forced shutdown timeout
+  1379→  - Handlers for uncaughtException and unhandledRejection
+  1380→
+  1381→#### 5. Insufficient URL Validation (MEDIUM)
+  1382→- **Problem**: Only checked basic URL format, no platform-specific validation
+  1383→- **Fix**: Added platform-specific URL pattern validation:
+  1384→  - YouTube: youtube.com, youtu.be
+  1385→  - Instagram: instagram.com, instagr.am
+  1386→  - TikTok: tiktok.com
+  1387→  - Twitter: twitter.com, x.com
+  1388→  - Facebook: facebook.com, fb.com
+  1389→- **Additional**: Added URL sanitization to remove tracking params (utm_*, fbclid, gclid)
+  1390→
+  1391→#### 6. No WebSocket Reconnection Logic (MEDIUM)
+  1392→- **Problem**: Frontend disconnected silently with no auto-reconnect
+  1393→- **Fix**: Implemented exponential backoff reconnection:
+  1394→  - Base delay: 1s, max: 16s
+  1395→  - Jitter: ±25% random variation
+  1396→  - Max attempts: 5
+  1397→  - Visual feedback: spinning loader, attempt counter
+  1398→  - Toast notifications on reconnect success/failure
+  1399→  - New `setupSocketHandlers()` unified handler function
+  1400→
+  1401→### Files Modified:
+  1402→1. `/home/z/my-project/mini-services/engine/index.ts`
+  1403→   - Added `reQueueTask()` helper function (~30 lines)
+  1404→   - Added `clearWorkerTask()` helper function (~25 lines)
+  1405→   - Refactored `getNextTask()` → `getNextTaskAndRemove()` with atomic removal
+  1406→   - Enhanced `task:request` handler with retry logic (~40 lines new)
+  1407→   - Refactored `task:abandon` to use helpers
+  1408→   - Refactored `disconnect` handler to use helpers
+  1409→   - Enhanced stale worker detection with progressive warnings
+  1410→   - Added graceful shutdown handling (~50 lines)
+  1411→
+  1412→2. `/home/z/my-project/src/app/api/tasks/route.ts`
+  1413→   - Added platform-specific URL validation patterns (~20 lines)
+  1414→   - Added `validatePlatformUrl()` function
+  1415→   - Added `sanitizeUrl()` function (removes tracking params)
+  1416→   - Added `sanitizeString()` function (XSS prevention)
+  1417→   - Updated POST handler to validate/sanitize URLs before creating tasks
+  1418→
+  1419→3. `/home/z/my-project/src/app/page.tsx`
+  1420→   - Added reconnection state variables (reconnectAttempt, isReconnecting)
+  1421→   - Added `getReconnectDelay()` with exponential backoff + jitter
+  1422→   - Added `attemptReconnect()` recursive reconnection function
+  1423→   - Added `setupSocketHandlers()` unified event handler setup
+  1424→   - Updated connection status card to show reconnection state
+  1425→   - Added warning event handler for engine stale connection warnings
+  1426→
+  1427→### Verification Results:
+  1428→- ESLint: ✓ Passing (0 errors)
+  1429→- Dev Server (port 3000): ✓ Running
+  1430→- Engine Server (port 3003): ✓ Running
+  1431→- Health Check: ✓ {"status":"ok","service":"socialboost-engine"}
+  1432→
+  1433→Stage Summary:
+  1434→- **Project Status**: Engineering improvements complete, production readiness improved
+  1435→- **Key Improvements**:
+  1436→  - Race condition protection for task assignment
+  1437→  - Code deduplication (removed ~60 lines of duplicate code)
+  1438→  - Resilient WebSocket connection with automatic reconnection
+  1439→  - Platform-specific URL validation and sanitization
+  1440→  - Graceful server shutdown with statistics logging
+  1441→- **Remaining Risks**:
+  1442→  - In-memory queue lost on engine restart (acceptable for MVP, Redis needed for production)
+  1443→  - Browser dependencies not installed for agent-browser QA testing
+  1444→- **Recommendations for Next Phase**:
+  1445→  1. Implement proper authentication (NextAuth.js) for session persistence
+  1446→  2. Add unit tests for critical paths (task claiming, credit transactions)
+  1447→  3. Consider adding request logging/audit trail for security
+  1448→  4. Add admin dashboard for monitoring engine health
+  1449→
+  1450→---
+  1451→Task ID: 10
+  1452→Agent: Security & Engineering Review Agent (Round 2)
+  1453→Task: Deep security review, auth hardening, and additional engineering improvements
+  1454→
+  1455→Work Log:
+  1456→### Comprehensive Security Review Performed:
+  1457→
+  1458→1. **Authentication Routes Review** (`/api/auth/register`, `/api/auth/login`)
+  1459→2. **Campaign Routes Review** (`/api/campaigns`)
+  1460→3. **User Routes Review** (`/api/user`)
+  1461→4. **Database Schema Review** (security implications)
+  1462→
+  1463→### CRITICAL Issues Found & Fixed:
+  1464→
+  1465→#### 1. Password Stored in Plaintext (CRITICAL - SECURITY)
+  1466→- **Problem**: Both register and login routes stored/compared passwords in plaintext
+  1467→- **Risk**: Database compromise exposes all user passwords; potential liability under GDPR/etc.
+  1468→- **Fix**: 
+  1469→  - Installed `bcryptjs` package for secure password hashing
+  1470→  - Created comprehensive auth utility library (`/src/lib/auth.ts`)
+  1471→  - Updated registration to hash passwords with bcrypt (12 salt rounds)
+  1472→  - Updated login to compare hashed passwords
+  1473→  - Added password strength validation (min 8 chars, uppercase, lowercase, number)
+  1474→
+  1475→#### 2. No Rate Limiting on Auth Endpoints (HIGH - SECURITY)
+  1476→- **Problem**: Auth endpoints vulnerable to brute force attacks and DoS
+  1477→- **Fix**:
+  1478→  - Registration: 5 attempts per IP per 15 minutes
+  1479→  - Login: 10 attempts per IP per 15 minutes
+  1480→  - Account lockout after 5 failed login attempts (15 minute lockout)
+  1481→  - Proper rate limit headers (Retry-After, X-RateLimit-Remaining)
+  1482→  - Generic error messages to prevent user enumeration
+  1483→
+  1484→#### 3. Race Condition in Campaign Credit Deduction (MEDIUM)
+  1485→- **Problem**: Credits checked then deducted in separate operations (non-atomic)
+  1486→- **Risk**: User could create multiple campaigns if requests arrive simultaneously
+  1487→- **Fix**: Wrapped credit check + deduction + campaign creation in database `$transaction`
+  1488→
+  1489→#### 4. No Input Sanitization (MEDIUM - SECURITY)
+  1490→- **Problem**: Name fields and other inputs could contain XSS payloads
+  1491→- **Fix**:
+  1492→  - Added `sanitizeInput()` function to strip HTML characters
+  1493→  - Applied sanitization to name, targetId, geoTarget fields
+  1494→  - Email normalization (lowercase) to prevent case-based duplicates
+  1495→
+  1496→#### 5. No Session Management (MEDIUM)
+  1497→- **Problem**: Login returned user data but no session token for subsequent requests
+  1498→- **Fix**:
+  1499→  - Created `/src/lib/auth-middleware.ts` with full session management
+  1500→  - Token generation using crypto.getRandomValues() (secure random)
+  1501→  - In-memory session store with expiration (24 hours)
+  1502→  - Auto-cleanup of expired sessions every 10 minutes
+  1503→  - Max 5 concurrent sessions per user
+  1504→  - Session invalidation on password change capability
+  1505→
+  1506→### Files Created:
+  1507→1. **`/home/z/my-project/src/lib/auth.ts`** (~290 lines)
+  1508→   - `hashPassword()` - bcrypt hashing with 12 salt rounds
+  1509→   - `comparePassword()` - Secure password comparison
+  1510→   - `generateToken()` - Cryptographically secure token generation
+  1511→   - `validatePasswordStrength()` - Password policy enforcement
+  1512→   - `sanitizeInput()` - XSS prevention
+  1513→   - `isValidEmail()` - Strict email validation
+  1514→   - `checkRateLimit()` - Rate limiting with configurable windows
+  1515→   - `validatePlatformUrl()` - Platform-specific URL validation
+  1516→   - `sanitizeUrl()` - Tracking parameter removal
+  1517→   - `getAllowedPlatforms()` / `getAllowedServiceTypes()` - Enum helpers
+  1518→
+  1519→2. **`/home/z/my-project/src/lib/auth-middleware.ts`** (~230 lines)
+  1520→   - `verifyAuth()` - Token verification for API protection
+  1521→   - `createSession()` / `destroySession()` - Session lifecycle
+  1522→   - `destroyAllUserSessions()` - Force logout on password change
+  1523→   - `getUserSessions()` - "Active Sessions" page support
+  1524→   - `cleanupExpiredSessions()` - Automatic cleanup
+  1525→   - `getSessionStats()` - Admin monitoring endpoint
+  1526→
+  1527→### Files Modified:
+  1528→1. **`/home/z/my-project/src/app/api/auth/register/route.ts`**
+  1529→   - Password hashing with bcrypt before storage
+  1530→   - Rate limiting (5 per IP per 15 min)
+  1531→   - Password strength validation
+  1532→   - Input sanitization (name field)
+  1533→   - Email normalization (lowercase)
+  1534→   - Generic error message for existing emails (prevents enumeration)
+  1535→
+  1536→2. **`/home/z/my-project/src/app/api/auth/login/route.ts`**
+  1537→   - Hashed password comparison with bcrypt
+  1538→   - Rate limiting (10 per IP per 15 min)
+  1539→   - Account lockout after 5 failed attempts (15 min lockout)
+  1540→   - Failed attempt tracking with warnings
+  1541→   - Session creation on successful login
+  1542→   - Token returned for client-side storage
+  1543→
+  1544→3. **`/home/z/my-project/src/app/api/campaigns/route.ts`**
+  1545→   - Transaction-based credit deduction (fixes race condition)
+  1546→   - Platform-specific URL validation
+  1547→   - URL sanitization (tracking param removal)
+  1548→   - Input sanitization on all string fields
+  1549→   - Pagination support (page, limit params)
+  1550→   - Rate limiting on campaign creation (20 per user per hour)
+  1551→   - Better error messages with specific error codes
+  1552→
+  1553→4. **`/home/z/my-project/src/app/api/user/route.ts`**
+  1554→   - CUID format validation for userId
+  1555→   - Input sanitization on name/email updates
+  1556→   - Select queries to exclude sensitive data by default
+  1557→   - Rate limiting on user lookups
+  1558→   - Better error responses
+  1559→
+  1560→### Verification Results:
+  1561→- ESLint: ✓ Passing (0 errors)
+  1562→- Dev Server (port 3000): ✓ Running
+  1563→- Engine Server (port 3003): ✓ Running
+  1564→- bcryptjs package: ✓ Installed
+  1565→
+  1566→### Security Improvements Summary:
+  1567→| Area | Before | After |
+  1568→|------|--------|-------|
+  1569→| Password Storage | Plaintext | Bcrypt (12 rounds) |
+  1570→| Auth Rate Limiting | None | 5-10 req/window |
+  1571→| Brute Force Protection | None | Account lockout |
+  1572→| Input Sanitization | None | Full XSS prevention |
+  1573→| Session Management | None | Token-based (24h expiry) |
+  1574→| Credit Operations | Non-atomic | Transactional |
+  1575→| URL Validation | Basic format | Platform-specific |
+  1576→| Error Messages | Revealed info | Generic/safe |
+  1577→
+  1578→Stage Summary:
+  1579→- **Project Status**: Significantly hardened against common attacks
+  1580→- **Key Security Improvements**:
+  1581→  - Passwords now securely hashed with bcrypt
+  1582→  - Rate limiting prevents brute force and DoS
+  1583→  - Session management enables proper authentication
+  1584→  - Input sanitization prevents XSS attacks
+  1585→  - Atomic transactions prevent race conditions
+  1586→- **Remaining Recommendations**:
+  1587→  1. Migrate session store to Redis for production scaling
+  1588→  2. Add CSRF protection for form submissions
+  1589→  3. Implement Content-Security-Policy headers
+  1590→  4. Set up security audit logging
+  1591→  5. Consider adding CAPTCHA for auth endpoints
+  1592→- **Next Priority Features**:
+  1593→  1. Protect task/campaign APIs with auth middleware
+  1594→  2. Add WebSocket authentication
+  1595→  3. Implement admin dashboard for monitoring
+  1596→
+  1597→---
+  1598→Task ID: 11
+  1599→Agent: Engineering Review Agent (Round 3)
+  1600→Task: Deep engineering review - Engine hardening, validation, anti-fraud
+  1601→
+  1602→Work Log:
+  1603→### Comprehensive Engineering Review Performed:
+  1604→
+  1605→1. **Engine Service Deep Review** (`/mini-services/engine/index.ts`)
+  1606→2. **Frontend Stability Check** (EarnCreditsPanel hooks)
+  1607→3. **API Endpoint Consistency** (Error format standardization)
+  1608→
+  1609→### Issues Identified & Fixed:
+  1610→
+  1611→#### 1. No Input Validation on Socket Events (HIGH)
+  1612→- **Problem**: Engine accepted any data from clients without validation
+  1613→- **Risk**: Injection attacks, malformed data causing crashes
+  1614→- **Fix**: Added comprehensive validation:
+  1615→  - `isValidUserId()` - CUID format validation
+  1616→  - `isValidPlatform()` / `isValidServiceType()` - Enum validation
+  1617→  - `sanitize()` - XSS prevention for string inputs
+  1618→  - Applied to worker:register, task:request, task:complete handlers
+  1619→
+  1620→#### 2. No Rate Limiting per Worker (MEDIUM)
+  1621→- **Problem**: Workers could spam task requests/completions
+  1622→- **Risk**: DoS potential, server overload
+  1623→- **Fix**: Implemented per-worker rate limiting:
+  1624→  - Task requests: 10/minute per worker
+  1625→  - Task completions: 30/minute per worker
+  1626→  - Automatic cleanup of stale entries every 2 minutes
+  1627→  - Proper retry-after responses with countdown
+  1628→
+  1629→#### 3. No Anti-Fraud Detection (MEDIUM)
+  1630→- **Problem**: Bots could complete tasks instantly for free credits
+  1631→- **Risk**: Credit farming, platform abuse
+  1632→- **Fix**: Implemented anti-fraud system:
+  1633→  - Minimum completion time check (3 seconds)
+  1634→  - Session task limit (100 tasks max)
+  1635→  - Fraud alert recording and tracking
+  1636→  - Suspicious activity blocking
+  1637→  - Admin monitoring endpoints
+  1638→
+  1639→#### 4. Duplicate Connection Handling (LOW)
+  1640→- **Problem**: Same user could connect multiple times
+  1641→- **Risk**: Race conditions, double task assignment
+  1642→- **Fix**: Detect duplicate connections, disconnect old session
+  1643→
+  1644→#### 5. Limited Monitoring Endpoints (LOW)
+  1645→- **Problem**: Only basic health endpoint available
+  1646→- **Fix**: Added admin endpoints:
+  1647→  - `/health` - Enhanced with stats summary
+  1648→  - `/admin/fraud-alerts` - Fraud alert monitoring
+  1649→  - `/admin/stats` - Detailed engine statistics
+  1650→
+  1651→### Files Modified:
+  1652→
+  1653→**`/home/z/my-project/mini-services/engine/index.ts`** (~150 lines added)
+  1654→- Configuration object (`CONFIG`) for all tunable parameters
+  1655→- Rate limiting store (`workerRateLimits`) with cleanup
+  1656→- Anti-fraud system (`fraudAlerts`, `recordFraudAlert()`, `checkCompletionSpeed()`)
+  1657→- Validation functions (`isValidUserId`, `isValidPlatform`, `isValidServiceType`, `sanitize`)
+  1658→- Rate limiting function (`checkWorkerRateLimit()` with retry-after)
+  1659→- Updated `worker:register` handler with input validation + duplicate detection
+  1660→- Updated `task:request` handler with rate limiting + session limits
+  1661→- Updated `task:complete` handler with rate limiting + speed checks
+  1662→- Admin endpoints for monitoring
+  1663→- Periodic cleanup tasks for rate limits
+  1664→
+  1665→### New Engine Features Summary:
+  1666→| Feature | Description | Config |
+  1667→|---------|-------------|--------|
+  1668→| Input Validation | All socket events validated | N/A |
+  1669→| Per-Worker Rate Limits | 10 req/min, 30 completes/min | `CONFIG.TASK_REQUEST_RATE_LIMIT` |
+  1670→| Anti-Fraud Speed Check | Min 3s completion time | `CONFIG.MIN_TASK_COMPLETION_TIME_MS` |
+  1671→| Session Task Limit | Max 100 tasks per connection | `CONFIG.MAX_TASKS_PER_SESSION` |
+  1672→| Duplicate Detection | Auto-disconnect old sessions | Built-in |
+  1673→| Fraud Alert System | Record & monitor suspicious activity | 100 alert buffer |
+  1674→| Admin Endpoints | `/admin/stats`, `/admin/fraud-alerts` | HTTP |
+  1675→
+  1676→### Verification Results:
+  1677→- ESLint: ✓ Passing (0 errors)
+  1678→- Dev Server (port 3000): ✓ Running
+  1679→- Engine Server (port 3003): ✓ Running (v1.1.0)
+  1680→- Health Endpoint: ✓ Returns enhanced stats
+  1681→- Admin Stats Endpoint: ✓ Returns detailed metrics
+  1682→
+  1683→### Example API Responses:
+  1684→
+  1685→**Health Endpoint:**
+  1686→```json
+  1687→{
+  1688→  "status": "ok",
+  1689→  "service": "socialboost-engine",
+  1690→  "version": "1.1.0",
+  1691→  "environment": "development",
+  1692→  "stats": {
+  1693→    "queueLength": 0,
+  1694→    "activeWorkers": 0,
+  1695→    "totalTasksProcessed": 0,
+  1696→    "fraudAlerts": 0
+  1697→  }
+  1698→}
+  1699→```
+  1700→
+  1701→**Admin Stats Endpoint:**
+  1702→```json
+  1703→{
+  1704→  "queueLength": 0,
+  1705→  "activeWorkers": 0,
+  1706→  "fraudAlerts": {
+  1707→    "total": 0,
+  1708→    "lastHour": 0,
+  1709→    "bySeverity": { "high": 0, "medium": 0, "low": 0 }
+  1710→  },
+  1711→  "config": {
+  1712→    "taskTimeoutMs": 120000,
+  1713→    "maxQueueSize": 10000,
+  1714→    "maxTasksPerSession": 100
+  1715→  },
+  1716→  "rateLimits": { "activeEntries": 0 }
+  1717→}
+  1718→```
+  1719→
+  1720→Stage Summary:
+  1721→- **Project Status**: Engine significantly hardened against abuse
+  1722→- **Key Improvements**:
+  1723→  - Full input validation on all socket events
+  1724→  - Per-worker rate limiting prevents spam
+  1725→  - Anti-fraud detection catches bots
+  1726→  - Duplicate connection handling prevents race conditions
+  1727→  - Admin endpoints enable monitoring
+  1728→- **Security Posture**:
+  1729→  - Before: Open to injection, no rate limits, no fraud detection
+  1730→  - After: Validated input, rate limited, fraud monitored
+  1731→- **Remaining Recommendations**:
+  1732→  1. Add authentication to admin endpoints
+  1733→  2. Implement IP-based rate limiting as backup
+  1734→  3. Add webhook notifications for high-severity fraud alerts
+  1735→  4. Consider Redis for distributed rate limiting
+  1736→  5. Add integration tests for engine edge cases
+  1737→

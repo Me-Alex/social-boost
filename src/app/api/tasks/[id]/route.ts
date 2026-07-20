@@ -1,18 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { z } from 'zod';
+import { requireAuth, createSuccessResponse, createErrorResponse, createTimer, logAccess, isValidCuid } from '@/lib/api-utils';
+import { logDataEvent, logSecurityEvent } from '@/lib/audit-log';
 
 // Validation schemas
 const taskIdSchema = z.string().cuid('Invalid task ID format');
 
 const taskActionSchema = z.object({
   action: z.enum(['claim', 'start', 'complete', 'abandon', 'cancel'], { required_error: 'action is required' }),
-  userId: z.string().min(1, 'userId is required'),
   timeSpentMs: z.coerce.number().int().nonnegative().optional()
-});
-
-const deleteTaskSchema = z.object({
-  userId: z.string().min(1, 'userId is required')
+  // Note: userId is now extracted from auth session, not body
 });
 
 // Valid task status transitions
@@ -26,27 +24,40 @@ const validTransitions: Record<string, string[]> = {
   'cancelled': [] // terminal state
 };
 
-// GET /api/tasks/[id] - Get single task details
+// GET /api/tasks/[id] - Get single task details (REQUIRES AUTHENTICATION)
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const timer = createTimer();
+  
+  // REQUIRE authentication
+  const authResult = await requireAuth(request);
+  
+  if (!authResult.authenticated) {
+    return authResult.errorResponse!;
+  }
+  
+  const userId = authResult.session!.userId;
+  
   try {
     const { id } = await params;
     
     // Validate task ID format
     const idValidation = taskIdSchema.safeParse(id);
     if (!idValidation.success) {
-      return NextResponse.json(
-        { error: 'Invalid task ID format' },
-        { status: 400 }
+      return createErrorResponse(
+        'Invalid task ID format',
+        400,
+        { code: 'INVALID_TASK_ID' },
+        authResult.requestId
       );
     }
     
     const task = await db.task.findUnique({
       where: { id },
       include: {
-        creator: { select: { id: true, name: true, email: true } },
+        creator: { select: { id: true, name: true } },
         completer: { select: { id: true, name: true } },
         campaign: { 
           select: { 
@@ -62,28 +73,55 @@ export async function GET(
     });
     
     if (!task) {
-      return NextResponse.json(
-        { error: 'Task not found' },
-        { status: 404 }
+      return createErrorResponse(
+        'Task not found',
+        404,
+        { code: 'TASK_NOT_FOUND' },
+        authResult.requestId
       );
     }
     
-    return NextResponse.json({ success: true, task });
+    const response = createSuccessResponse({ task }, 200, undefined, authResult.requestId);
+    
+    logAccess({
+      request,
+      statusCode: 200,
+      durationMs: timer.elapsed(),
+      userId,
+      requestId: authResult.requestId,
+      details: { taskId: id }
+    });
+    
+    return response;
     
   } catch (error) {
-    console.error('Task GET error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch task', message: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
+    console.error('[Tasks API] GET by ID error:', error);
+    
+    return createErrorResponse(
+      'Failed to fetch task',
+      500,
+      { code: 'INTERNAL_ERROR', message: error instanceof Error ? error.message : 'Unknown error' },
+      authResult.requestId
     );
   }
 }
 
-// PATCH /api/tasks/[id] - Update task (complete, claim, etc.)
+// PATCH /api/tasks/[id] - Update task (complete, claim, etc.) (REQUIRES AUTHENTICATION)
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const timer = createTimer();
+  
+  // REQUIRE authentication
+  const authResult = await requireAuth(request);
+  
+  if (!authResult.authenticated) {
+    return authResult.errorResponse!;
+  }
+  
+  const userId = authResult.session!.userId;
+  
   try {
     const { id } = await params;
     const body = await request.json();
@@ -91,38 +129,35 @@ export async function PATCH(
     // Validate inputs
     const idValidation = taskIdSchema.safeParse(id);
     if (!idValidation.success) {
-      return NextResponse.json(
-        { error: 'Invalid task ID format' },
-        { status: 400 }
+      return createErrorResponse(
+        'Invalid task ID format',
+        400,
+        { code: 'INVALID_TASK_ID' },
+        authResult.requestId
       );
     }
     
     const actionValidation = taskActionSchema.safeParse(body);
     if (!actionValidation.success) {
-      return NextResponse.json(
-        { error: 'Validation failed', details: actionValidation.error.flatten().fieldErrors },
-        { status: 400 }
+      return createErrorResponse(
+        'Validation failed',
+        400,
+        { code: 'VALIDATION_ERROR', details: actionValidation.error.flatten().fieldErrors },
+        authResult.requestId
       );
     }
     
-    const { action, userId, timeSpentMs } = actionValidation.data;
+    const { action, timeSpentMs } = actionValidation.data;
     
     // Fetch task
     const task = await db.task.findUnique({ where: { id } });
     
     if (!task) {
-      return NextResponse.json(
-        { error: 'Task not found' },
-        { status: 404 }
-      );
-    }
-    
-    // Verify user exists
-    const user = await db.user.findUnique({ where: { id: userId } });
-    if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
+      return createErrorResponse(
+        'Task not found',
+        404,
+        { code: 'TASK_NOT_FOUND' },
+        authResult.requestId
       );
     }
     
@@ -130,17 +165,30 @@ export async function PATCH(
       case 'claim': {
         // Validate transition
         if (!validTransitions[task.status]?.includes('claimed')) {
-          return NextResponse.json(
-            { error: `Task is ${task.status}, cannot claim`, currentStatus: task.status },
-            { status: 409 }
+          return createErrorResponse(
+            `Task is ${task.status}, cannot claim`,
+            409,
+            { code: 'INVALID_TRANSITION', currentStatus: task.status },
+            authResult.requestId
           );
         }
         
         // Don't allow claiming own tasks
         if (task.creatorId === userId) {
-          return NextResponse.json(
-            { error: 'Cannot complete your own task' },
-            { status: 400 }
+          logSecurityEvent({
+            action: 'permission_denied',
+            severity: 'warning',
+            userId,
+            requestId: authResult.requestId,
+            details: { action: 'claim_own_task', taskId: id },
+            request,
+          });
+          
+          return createErrorResponse(
+            'Cannot complete your own task',
+            400,
+            { code: 'OWN_TASK_FORBIDDEN' },
+            authResult.requestId
           );
         }
         
@@ -153,9 +201,11 @@ export async function PATCH(
         });
         
         if (activeTask) {
-          return NextResponse.json(
-            { error: 'You already have an active task. Complete or abandon it first.', activeTaskId: activeTask.id },
-            { status: 409 }
+          return createErrorResponse(
+            'You already have an active task. Complete or abandon it first.',
+            409,
+            { code: 'HAS_ACTIVE_TASK', activeTaskId: activeTask.id },
+            authResult.requestId
           );
         }
         
@@ -168,26 +218,49 @@ export async function PATCH(
           }
         });
         
-        return NextResponse.json({ 
-          success: true, 
+        logDataEvent({
+          action: 'update',
+          entity: 'task',
+          entityId: id,
+          userId,
+          success: true,
+          requestId: authResult.requestId,
+          details: { action: 'claim', previousStatus: task.status },
+          request,
+        });
+        
+        return createSuccessResponse({ 
           task: updated,
           message: 'Task claimed successfully'
-        });
+        }, 200, undefined, authResult.requestId);
       }
       
       case 'start': {
         if (!validTransitions[task.status]?.includes('in_progress')) {
-          return NextResponse.json(
-            { error: 'Task must be claimed first', currentStatus: task.status },
-            { status: 400 }
+          return createErrorResponse(
+            'Task must be claimed first',
+            400,
+            { code: 'INVALID_TRANSITION', currentStatus: task.status },
+            authResult.requestId
           );
         }
         
         // Verify ownership
         if (task.completerId !== userId) {
-          return NextResponse.json(
-            { error: 'You are not assigned to this task' },
-            { status: 403 }
+          logSecurityEvent({
+            action: 'permission_denied',
+            severity: 'warning',
+            userId,
+            requestId: authResult.requestId,
+            details: { action: 'start_task_not_owned', taskId: id },
+            request,
+          });
+          
+          return createErrorResponse(
+            'You are not assigned to this task',
+            403,
+            { code: 'NOT_ASSIGNED' },
+            authResult.requestId
           );
         }
         
@@ -199,25 +272,48 @@ export async function PATCH(
           }
         });
         
-        return NextResponse.json({ 
-          success: true, 
+        logDataEvent({
+          action: 'update',
+          entity: 'task',
+          entityId: id,
+          userId,
+          success: true,
+          requestId: authResult.requestId,
+          details: { action: 'start' },
+          request,
+        });
+        
+        return createSuccessResponse({ 
           task: updated,
           message: 'Task started'
-        });
+        }, 200, undefined, authResult.requestId);
       }
       
       case 'complete': {
         if (!['in_progress', 'claimed'].includes(task.status)) {
-          return NextResponse.json(
-            { error: `Task is ${task.status}, cannot complete`, currentStatus: task.status },
-            { status: 400 }
+          return createErrorResponse(
+            `Task is ${task.status}, cannot complete`,
+            400,
+            { code: 'INVALID_TRANSITION', currentStatus: task.status },
+            authResult.requestId
           );
         }
         
         if (task.completerId !== userId) {
-          return NextResponse.json(
-            { error: 'You are not assigned to this task' },
-            { status: 403 }
+          logSecurityEvent({
+            action: 'permission_denied',
+            severity: 'warning',
+            userId,
+            requestId: authResult.requestId,
+            details: { action: 'complete_task_not_owned', taskId: id },
+            request,
+          });
+          
+          return createErrorResponse(
+            'You are not assigned to this task',
+            403,
+            { code: 'NOT_ASSIGNED' },
+            authResult.requestId
           );
         }
         
@@ -256,27 +352,54 @@ export async function PATCH(
           return { updatedTask, updatedUser };
         });
         
-        return NextResponse.json({ 
-          success: true, 
+        logDataEvent({
+          action: 'update',
+          entity: 'task',
+          entityId: id,
+          userId,
+          success: true,
+          requestId: authResult.requestId,
+          details: { 
+            action: 'complete', 
+            creditsEarned: task.rewardCredits,
+            timeSpentMs 
+          },
+          request,
+        });
+        
+        return createSuccessResponse({ 
           task: result.updatedTask,
           creditsEarned: task.rewardCredits,
           newBalance: result.updatedUser.credits,
           message: `Task completed! Earned ${task.rewardCredits} credits`
-        });
+        }, 200, undefined, authResult.requestId);
       }
       
       case 'abandon': {
         if (task.completerId !== userId) {
-          return NextResponse.json(
-            { error: 'Not your task to abandon' },
-            { status: 403 }
+          logSecurityEvent({
+            action: 'permission_denied',
+            severity: 'warning',
+            userId,
+            requestId: authResult.requestId,
+            details: { action: 'abandon_task_not_owned', taskId: id },
+            request,
+          });
+          
+          return createErrorResponse(
+            'Not your task to abandon',
+            403,
+            { code: 'NOT_ASSIGNED' },
+            authResult.requestId
           );
         }
         
         if (!['claimed', 'in_progress'].includes(task.status)) {
-          return NextResponse.json(
-            { error: `Cannot abandon a ${task.status} task` },
-            { status: 400 }
+          return createErrorResponse(
+            `Cannot abandon a ${task.status} task`,
+            400,
+            { code: 'INVALID_TRANSITION', currentStatus: task.status },
+            authResult.requestId
           );
         }
         
@@ -290,25 +413,48 @@ export async function PATCH(
           }
         });
         
-        return NextResponse.json({ 
-          success: true, 
+        logDataEvent({
+          action: 'update',
+          entity: 'task',
+          entityId: id,
+          userId,
+          success: true,
+          requestId: authResult.requestId,
+          details: { action: 'abandon', previousStatus: task.status },
+          request,
+        });
+        
+        return createSuccessResponse({ 
           task: updated,
           message: 'Task abandoned and returned to queue'
-        });
+        }, 200, undefined, authResult.requestId);
       }
       
       case 'cancel': {
         if (task.creatorId !== userId) {
-          return NextResponse.json(
-            { error: 'Only task creator can cancel' },
-            { status: 403 }
+          logSecurityEvent({
+            action: 'permission_denied',
+            severity: 'warning',
+            userId,
+            requestId: authResult.requestId,
+            details: { action: 'cancel_task_not_owned', taskId: id },
+            request,
+          });
+          
+          return createErrorResponse(
+            'Only task creator can cancel',
+            403,
+            { code: 'NOT_CREATOR' },
+            authResult.requestId
           );
         }
         
         if (['completed', 'verified', 'cancelled'].includes(task.status)) {
-          return NextResponse.json(
-            { error: `Cannot cancel a ${task.status} task` },
-            { status: 400 }
+          return createErrorResponse(
+            `Cannot cancel a ${task.status} task`,
+            400,
+            { code: 'INVALID_TRANSITION', currentStatus: task.status },
+            authResult.requestId
           );
         }
         
@@ -327,83 +473,133 @@ export async function PATCH(
           data: { status: 'cancelled' }
         });
         
-        return NextResponse.json({ 
-          success: true, 
+        logDataEvent({
+          action: 'update',
+          entity: 'task',
+          entityId: id,
+          userId,
+          success: true,
+          requestId: authResult.requestId,
+          details: { action: 'cancel', refundAmount, previousStatus: task.status },
+          request,
+        });
+        
+        return createSuccessResponse({ 
           task: updated,
           refundAmount,
           message: refundAmount > 0 ? `Task cancelled. ${refundAmount} credits refunded` : 'Task cancelled'
-        });
+        }, 200, undefined, authResult.requestId);
       }
       
       default:
-        return NextResponse.json(
-          { error: 'Invalid action', validActions: Object.keys(validTransitions) },
-          { status: 400 }
+        return createErrorResponse(
+          'Invalid action',
+          400,
+          { code: 'INVALID_ACTION', validActions: Object.keys(validTransitions) },
+          authResult.requestId
         );
     }
     
   } catch (error) {
-    console.error('Task PATCH error:', error);
+    console.error('[Tasks API] PATCH error:', error);
+    
+    // Log failed attempt
+    logDataEvent({
+      action: 'update',
+      entity: 'task',
+      entityId: id,
+      userId,
+      success: false,
+      requestId: authResult.requestId,
+      details: { error: error instanceof Error ? error.message : 'Unknown error' },
+      request,
+    });
     
     // Handle specific errors
     if (error && typeof error === 'object' && 'code' in error) {
       const prismaError = error as { code: string };
       if (prismaError.code === 'P2025') {
-        return NextResponse.json({ error: 'Record not found during operation' }, { status: 404 });
+        return createErrorResponse('Record not found during operation', 404, { code: 'NOT_FOUND' }, authResult.requestId);
       }
       if (prismaError.code === 'P2003') {
-        return NextResponse.json({ error: 'Foreign key constraint violated' }, { status: 400 });
+        return createErrorResponse('Foreign key constraint violated', 400, { code: 'CONSTRAINT_VIOLATION' }, authResult.requestId);
       }
     }
     
-    return NextResponse.json(
-      { error: 'Failed to update task', message: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
+    return createErrorResponse(
+      'Failed to update task',
+      500,
+      { code: 'INTERNAL_ERROR', message: error instanceof Error ? error.message : 'Unknown error' },
+      authResult.requestId
     );
   }
 }
 
-// DELETE /api/tasks/[id] - Delete task (only pending/failed)
+// DELETE /api/tasks/[id] - Delete task (only pending/failed) (REQUIRES AUTHENTICATION)
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const timer = createTimer();
+  
+  // REQUIRE authentication
+  const authResult = await requireAuth(request);
+  
+  if (!authResult.authenticated) {
+    return authResult.errorResponse!;
+  }
+  
+  const userId = authResult.session!.userId;
+  
   try {
     const { id } = await params;
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
     
     // Validate inputs
     const idValidation = taskIdSchema.safeParse(id);
     if (!idValidation.success) {
-      return NextResponse.json({ error: 'Invalid task ID format' }, { status: 400 });
-    }
-    
-    const userIdValidation = deleteTaskSchema.safeParse({ userId });
-    if (!userIdValidation.success) {
-      return NextResponse.json(
-        { error: 'userId query parameter is required' },
-        { status: 400 }
+      return createErrorResponse(
+        'Invalid task ID format',
+        400,
+        { code: 'INVALID_TASK_ID' },
+        authResult.requestId
       );
     }
     
     const task = await db.task.findUnique({ where: { id } });
     
     if (!task) {
-      return NextResponse.json({ error: 'Task not found' }, { status: 404 });
+      return createErrorResponse(
+        'Task not found',
+        404,
+        { code: 'TASK_NOT_FOUND' },
+        authResult.requestId
+      );
     }
     
     if (task.creatorId !== userId) {
-      return NextResponse.json(
-        { error: 'Only task creator can delete' },
-        { status: 403 }
+      logSecurityEvent({
+        action: 'permission_denied',
+        severity: 'warning',
+        userId,
+        requestId: authResult.requestId,
+        details: { action: 'delete_task_not_owned', taskId: id },
+        request,
+      });
+      
+      return createErrorResponse(
+        'Only task creator can delete',
+        403,
+        { code: 'NOT_CREATOR' },
+        authResult.requestId
       );
     }
     
     if (['completed', 'verified'].includes(task.status)) {
-      return NextResponse.json(
-        { error: 'Cannot delete completed tasks' },
-        { status: 400 }
+      return createErrorResponse(
+        'Cannot delete completed tasks',
+        400,
+        { code: 'CANNOT_DELETE_COMPLETED' },
+        authResult.requestId
       );
     }
     
@@ -420,17 +616,41 @@ export async function DELETE(
       await tx.task.delete({ where: { id } });
     });
     
-    return NextResponse.json({ 
-      success: true, 
-      refunded: task.status === 'pending' ? task.rewardCredits : 0,
-      message: 'Task deleted' 
+    logDataEvent({
+      action: 'delete',
+      entity: 'task',
+      entityId: id,
+      userId,
+      success: true,
+      requestId: authResult.requestId,
+      details: { refunded: task.status === 'pending' ? task.rewardCredits : 0 },
+      request,
     });
     
+    const response = createSuccessResponse({ 
+      refunded: task.status === 'pending' ? task.rewardCredits : 0,
+      message: 'Task deleted' 
+    }, 200, undefined, authResult.requestId);
+    
+    logAccess({
+      request,
+      statusCode: 200,
+      durationMs: timer.elapsed(),
+      userId,
+      requestId: authResult.requestId,
+      details: { taskId: id, action: 'delete' }
+    });
+    
+    return response;
+    
   } catch (error) {
-    console.error('Task DELETE error:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete task', message: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
+    console.error('[Tasks API] DELETE error:', error);
+    
+    return createErrorResponse(
+      'Failed to delete task',
+      500,
+      { code: 'INTERNAL_ERROR', message: error instanceof Error ? error.message : 'Unknown error' },
+      authResult.requestId
     );
   }
 }

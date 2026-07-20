@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { z } from 'zod'
 import { sanitizeInput, isValidEmail, checkRateLimit } from '@/lib/auth'
+import { requireAuth, createSuccessResponse, createErrorResponse, createTimer, logAccess } from '@/lib/api-utils'
+import { logDataEvent, logSecurityEvent } from '@/lib/audit-log'
 
-// Validation schema for user update
+// Validation schema for user update (userId no longer needed - comes from auth)
 const updateUserSchema = z.object({
-  userId: z.string().min(1, 'User ID is required'),
   name: z.string()
     .min(2, 'Name must be at least 2 characters')
     .max(50, 'Name must be less than 50 characters')
@@ -15,39 +16,44 @@ const updateUserSchema = z.object({
     .optional(),
 })
 
-// GET /api/user - Get user profile and stats
+// GET /api/user - Get user profile and stats (REQUIRES AUTHENTICATION)
+// Now uses auth session to identify user instead of query parameter
 export async function GET(request: NextRequest) {
+  const timer = createTimer()
+  
+  // REQUIRE authentication
+  const authResult = await requireAuth(request)
+  
+  if (!authResult.authenticated) {
+    return authResult.errorResponse!
+  }
+  
+  const userId = authResult.session!.userId
+  
   try {
-    const { searchParams } = new URL(request.url)
-    const userId = searchParams.get('id') || searchParams.get('userId')
-    
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'User ID is required (use ?id= or ?userId=)' },
-        { status: 400 }
-      )
-    }
-    
-    // Basic format validation for CUID
-    if (!/^[a-z0-9]{20,30}$/i.test(userId)) {
-      return NextResponse.json(
-        { error: 'Invalid user ID format' },
-        { status: 400 }
-      )
-    }
-    
     // Rate limit for user lookups
     const clientIp = request.headers.get('x-forwarded-for') || 'unknown'
-    const rateLimitResult = checkRateLimit(`user:get:${clientIp}`, 60 * 1000, 100)
+    const rateLimitResult = checkRateLimit(`user:get:${userId}`, 60 * 1000, 100)
     
     if (!rateLimitResult.allowed) {
-      return NextResponse.json(
-        { error: 'Too many requests' },
-        { status: 429 }
+      logSecurityEvent({
+        action: 'rate_limit_exceeded',
+        severity: 'warning',
+        userId,
+        requestId: authResult.requestId,
+        details: { endpoint: 'GET /api/user' },
+        request,
+      })
+      
+      return createErrorResponse(
+        'Too many requests',
+        429,
+        { code: 'RATE_LIMITED' },
+        authResult.requestId
       )
     }
     
-    // Get user with campaign stats
+    // Get user with campaign stats (using authenticated userId)
     const user = await db.user.findUnique({
       where: { id: userId },
       select: {
@@ -82,9 +88,11 @@ export async function GET(request: NextRequest) {
     })
     
     if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
+      return createErrorResponse(
+        'User not found',
+        404,
+        { code: 'USER_NOT_FOUND' },
+        authResult.requestId
       )
     }
     
@@ -95,7 +103,7 @@ export async function GET(request: NextRequest) {
     const totalCreditsSpent = user.campaigns.reduce((sum, c) => sum + c.creditsSpent, 0)
     const totalEngagementDelivered = user.campaigns.reduce((sum, c) => sum + c.completedCount, 0)
     
-    return NextResponse.json({
+    const response = createSuccessResponse({
       user,
       stats: {
         totalCampaigns,
@@ -107,19 +115,43 @@ export async function GET(request: NextRequest) {
         totalEarned: user.totalEarned,
         tasksCompleted: user.tasksCompleted
       }
+    }, 200, undefined, authResult.requestId)
+    
+    logAccess({
+      request,
+      statusCode: 200,
+      durationMs: timer.elapsed(),
+      userId,
+      requestId: authResult.requestId,
     })
     
+    return response
+    
   } catch (error) {
-    console.error('Error fetching user:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+    console.error('[User API] Error fetching user:', error)
+    
+    return createErrorResponse(
+      'Internal server error',
+      500,
+      { code: 'INTERNAL_ERROR' },
+      authResult.requestId
     )
   }
 }
 
-// PUT /api/user - Update user profile
+// PUT /api/user - Update user profile (REQUIRES AUTHENTICATION)
 export async function PUT(request: NextRequest) {
+  const timer = createTimer()
+  
+  // REQUIRE authentication
+  const authResult = await requireAuth(request)
+  
+  if (!authResult.authenticated) {
+    return authResult.errorResponse!
+  }
+  
+  const userId = authResult.session!.userId
+  
   try {
     const body = await request.json()
     
@@ -127,31 +159,18 @@ export async function PUT(request: NextRequest) {
     const validationResult = updateUserSchema.safeParse(body)
     
     if (!validationResult.success) {
-      return NextResponse.json(
+      return createErrorResponse(
+        'Validation failed',
+        400,
         { 
-          error: 'Validation failed', 
+          code: 'VALIDATION_ERROR',
           details: validationResult.error.flatten().fieldErrors 
         },
-        { status: 400 }
+        authResult.requestId
       )
     }
     
-    const { userId, name, email } = validationResult.data
-    
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'User ID is required' },
-        { status: 400 }
-      )
-    }
-    
-    // Basic format validation for CUID
-    if (!/^[a-z0-9]{20,30}$/i.test(userId)) {
-      return NextResponse.json(
-        { error: 'Invalid user ID format' },
-        { status: 400 }
-      )
-    }
+    const { name, email } = validationResult.data
     
     // Check if user exists
     const existingUser = await db.user.findUnique({
@@ -160,9 +179,11 @@ export async function PUT(request: NextRequest) {
     })
     
     if (!existingUser) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
+      return createErrorResponse(
+        'User not found',
+        404,
+        { code: 'USER_NOT_FOUND' },
+        authResult.requestId
       )
     }
     
@@ -177,9 +198,11 @@ export async function PUT(request: NextRequest) {
     if (email !== undefined && email.toLowerCase() !== existingUser.email.toLowerCase()) {
       // Validate new email format
       if (!isValidEmail(email)) {
-        return NextResponse.json(
-          { error: 'Invalid email format' },
-          { status: 400 }
+        return createErrorResponse(
+          'Invalid email format',
+          400,
+          { code: 'INVALID_EMAIL' },
+          authResult.requestId
         )
       }
       
@@ -191,9 +214,11 @@ export async function PUT(request: NextRequest) {
       })
       
       if (emailTaken) {
-        return NextResponse.json(
-          { error: 'Email is already in use by another account' },
-          { status: 409 }
+        return createErrorResponse(
+          'Email is already in use by another account',
+          409,
+          { code: 'EMAIL_TAKEN' },
+          authResult.requestId
         )
       }
       
@@ -202,9 +227,11 @@ export async function PUT(request: NextRequest) {
     
     // Check if there's anything to update
     if (Object.keys(updateData).length === 0) {
-      return NextResponse.json(
+      return createSuccessResponse(
         { message: 'No changes to update', user: existingUser },
-        { status: 200 }
+        200,
+        undefined,
+        authResult.requestId
       )
     }
     
@@ -227,24 +254,63 @@ export async function PUT(request: NextRequest) {
       }
     })
     
-    return NextResponse.json({
-      message: 'Profile updated successfully',
-      user: updatedUser
+    // Log successful update
+    logDataEvent({
+      action: 'update',
+      entity: 'user',
+      entityId: userId,
+      userId,
+      success: true,
+      requestId: authResult.requestId,
+      details: { fieldsUpdated: Object.keys(updateData) },
+      request,
     })
     
+    const response = createSuccessResponse({
+      message: 'Profile updated successfully',
+      user: updatedUser
+    }, 200, undefined, authResult.requestId)
+    
+    logAccess({
+      request,
+      statusCode: 200,
+      durationMs: timer.elapsed(),
+      userId,
+      requestId: authResult.requestId,
+      details: { fieldsUpdated: Object.keys(updateData) }
+    })
+    
+    return response
+    
   } catch (error) {
-    console.error('Error updating user:', error)
+    console.error('[User API] Error updating user:', error)
+    
+    // Log failed attempt
+    logDataEvent({
+      action: 'update',
+      entity: 'user',
+      entityId: userId,
+      userId,
+      success: false,
+      requestId: authResult.requestId,
+      details: { error: error instanceof Error ? error.message : 'Unknown error' },
+      request,
+    })
     
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Validation failed', details: error.errors },
-        { status: 400 }
+      return createErrorResponse(
+        'Validation failed',
+        400,
+        { code: 'VALIDATION_ERROR', details: error.errors },
+        authResult.requestId
       )
     }
     
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+    return createErrorResponse(
+      'Internal server error',
+      500,
+      { code: 'INTERNAL_ERROR' },
+      authResult.requestId
     )
   }
 }

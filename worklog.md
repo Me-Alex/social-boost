@@ -1734,3 +1734,147 @@ Stage Summary:
   3. Add webhook notifications for high-severity fraud alerts
   4. Consider Redis for distributed rate limiting
   5. Add integration tests for engine edge cases
+
+---
+Task ID: 11
+Agent: Main Developer (Round 3 - API Authentication & Audit Logging)
+Task: Integrate authentication middleware into protected APIs, add audit logging, standardize error responses
+
+Work Log:
+
+### 1. Created Audit Logging Utility (`/home/z/my-project/src/lib/audit-log.ts`)
+- Comprehensive audit log system for security events
+- Structured log entries with severity levels (info/warning/error/critical)
+- Categories: auth, data, admin, api, system, security
+- Convenience functions for common events:
+  - `logAuthEvent()` - Login, logout, register, failures
+  - `logDataEvent()` - Create, update, delete operations
+  - `logSecurityEvent()` - Rate limits, unauthorized access, suspicious activity
+  - `logApiAccess()` - API endpoint access logging
+- In-memory buffer with max 1000 entries (for demo)
+- Retrieval functions: `getRecentLogs()`, `getAuditStats()`
+- Color-coded console output for development
+
+### 2. Created API Utilities (`/home/z/my-project/src/lib/api-utils.ts`)
+- **Request ID Tracking**: Generate/extract X-Request-ID headers
+- **Authentication Helpers**:
+  - `requireAuth()` - Returns standardized auth result or error response
+  - `optionalAuth()` - For endpoints that work with/without auth
+- **Standardized Response Helpers**:
+  - `createSuccessResponse()` - Consistent success response format
+  - `createErrorResponse()` - Consistent error format with security headers
+- **Timing & Logging**:
+  - `createTimer()` - High-resolution performance timing
+  - `logAccess()` - Log API access with duration
+- **User ID Extraction**: Priority chain (session > body > query)
+- **CUID Validation**: `isValidCuid()` helper
+
+### 3. Updated Campaigns API (`/home/z/my-project/src/app/api/campaigns/route.ts`)
+- GET: Optional auth (public listing) but requires auth for user-specific queries
+- POST: **REQUIRES AUTHENTICATION**
+- All responses use new standardized format
+- Request ID tracking on all responses
+- Audit logging for:
+  - Campaign creation (success/failure)
+  - Rate limit violations
+  - Unauthorized access attempts
+- Security headers added to all responses
+
+### 4. Updated Tasks API (`/home/z/my-project/src/app/api/tasks/route.ts`)
+- GET: **REQUIRES AUTHENTICATION** - Uses session userId for filtering
+- POST: **REQUIRES AUTHENTICATION** - Uses session userId as creator
+- Removed userId from request body (now from auth session)
+- Default query shows available tasks + user's own tasks
+- Rate limiting tied to authenticated user ID
+- Full audit trail for task creation events
+
+### 5. Updated Tasks/[id] API (`/home/z/my-project/src/app/api/tasks/[id]/route.ts`)
+- GET: **REQUIRES AUTHENTICATION**
+- PATCH: **REQUIRES AUTHENTICATION** - userId from session
+- DELETE: **REQUIRES AUTHENTICATION** - userId from session
+- Security event logging for:
+  - Permission denied (own task operations)
+  - Invalid transitions attempted
+  - Ownership verification failures
+- All actions logged with before/after state
+
+### 6. Updated User API (`/home/z/my-project/src/app/api/user/route.ts`)
+- GET: **REQUIRES AUTHENTICATION** - Returns profile for authenticated user
+- PUT: **REQUIRES AUTHENTICATION** - Updates authenticated user's profile
+- No longer accepts userId in query/body (from session only)
+- Email change validation and conflict detection
+- Profile update audit logging
+
+### 7. Updated Engine Stats API (`/home/z/my-project/src/app/api/engine/route.ts`)
+- Optional auth (public endpoint)
+- Enhanced data returned for authenticated users
+- Standardized response format
+- Request ID tracking
+
+### Security Improvements Summary:
+| Endpoint | Before | After |
+|----------|--------|-------|
+| GET /api/campaigns | Open | Auth required for user-specific |
+| POST /api/campaigns | Open (userId in body) | **AUTH REQUIRED** |
+| GET /api/tasks | Open (userId in query) | **AUTH REQUIRED** |
+| POST /api/tasks | Open (userId in body) | **AUTH REQUIRED** |
+| GET /api/tasks/[id] | Open | **AUTH REQUIRED** |
+| PATCH /api/tasks/[id] | Open (userId in body) | **AUTH REQUIRED** |
+| DELETE /api/tasks/[id] | Open (userId in query) | **AUTH REQUIRED** |
+| GET /api/user | Open (userId in query) | **AUTH REQUIRED** |
+| PUT /api/user | Open (userId in body) | **AUTH REQUIRED** |
+
+### New Standardized Response Format:
+```json
+{
+  "success": true,
+  "data": { ... },
+  "requestId": "req_xxx",
+  "timestamp": "2024-01-01T00:00:00.000Z"
+}
+```
+
+### Error Response Format:
+```json
+{
+  "success": false,
+  "error": "Error message",
+  "code": "ERROR_CODE",
+  "requestId": "req_xxx",
+  "timestamp": "2024-01-01T00:00:00.000Z"
+}
+```
+
+Stage Summary:
+- **Project Status**: All major APIs now protected with authentication
+- **Key Results**:
+  - 9 API endpoints now require valid authentication token
+  - Complete audit trail for all data modifications
+  - Standardized response format across all endpoints
+  - Request ID tracking for debugging distributed requests
+  - Security event logging for suspicious activities
+- **Security Posture**:
+  - Before: APIs open, no audit trail, inconsistent errors
+  - After: Auth-protected, full audit logging, standardized responses
+- **Files Created**:
+  - `/home/z/my-project/src/lib/audit-log.ts` (~280 lines)
+  - `/home/z/my-project/src/lib/api-utils.ts` (~230 lines)
+- **Files Modified**:
+  - `/home/z/my-project/src/app/api/campaigns/route.ts`
+  - `/home/z/my-project/src/app/api/tasks/route.ts`
+  - `/home/z/my-project/src/app/api/tasks/[id]/route.ts`
+  - `/home/z/my-project/src/app/api/user/route.ts`
+  - `/home/z/my-project/src/app/api/engine/route.ts`
+- **Verification Results**:
+  - ESLint: ✓ Passing (0 errors)
+  - Dev Server (port 3000): ✓ Running
+  - All changes compile successfully
+
+### Remaining Recommendations:
+1. Add WebSocket authentication for engine connections
+2. Implement refresh token mechanism for longer sessions
+3. Add rate limiting to auth endpoints based on userId after login
+4. Create admin dashboard to view audit logs
+5. Consider persisting audit logs to database for history
+6. Add CORS configuration for API routes
+7. Implement API versioning for future changes

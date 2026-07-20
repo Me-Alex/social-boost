@@ -1,8 +1,15 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { optionalAuth, createSuccessResponse, createErrorResponse, createTimer, logAccess } from '@/lib/api-utils';
 
-// GET /api/engine/stats - Get engine statistics
-export async function GET() {
+// GET /api/engine/stats - Get engine statistics (public endpoint with enhanced data for authenticated users)
+export async function GET(request: Request) {
+  const timer = createTimer();
+  
+  // Optional auth - public endpoint but with more data for authenticated users
+  const req = request as unknown as import('next/server').NextRequest;
+  const authResult = await optionalAuth(req);
+  
   try {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -48,7 +55,7 @@ export async function GET() {
     ]);
     
     // Calculate platform stats
-    const platforms = {};
+    const platforms: Record<string, { total: number; pending: number; completed: number }> = {};
     for (const item of platformBreakdown) {
       if (!platforms[item.platform]) {
         platforms[item.platform] = { total: 0, pending: 0, completed: 0 };
@@ -57,10 +64,11 @@ export async function GET() {
       (platforms[item.platform] as Record<string, number>)[item.status] = item._count;
     }
     
-    return NextResponse.json({
+    // Build response with base data available to everyone
+    const responseData: Record<string, unknown> = {
       engine: {
         status: 'running',
-        uptime: process.uptime(),
+        uptime: Math.round(process.uptime()),
         timestamp: now.toISOString()
       },
       tasks: {
@@ -82,17 +90,44 @@ export async function GET() {
       
       // Quick stats for dashboard
       summary: {
-        tasksPerHour: Math.round(todayTasks / (now.getHours() + 1)),
+        tasksPerHour: todayTasks > 0 ? Math.round(todayTasks / (now.getHours() + 1)) : 0,
         completionRate: totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0,
         avgWaitTime: pendingTasks > 0 ? `${Math.ceil(pendingTasks / Math.max(activeTasks, 1))} min` : '< 1 min'
       }
+    };
+    
+    // Add additional data for authenticated users
+    if (authResult.session) {
+      // Could add user-specific stats here in the future
+      responseData.authenticated = true;
+    }
+    
+    const response = createSuccessResponse(
+      responseData,
+      200,
+      undefined,
+      authResult.requestId
+    );
+    
+    logAccess({
+      request: req,
+      statusCode: 200,
+      durationMs: timer.elapsed(),
+      userId: authResult.session?.userId,
+      requestId: authResult.requestId,
+      details: { endpoint: 'GET /api/engine/stats' }
     });
     
+    return response;
+    
   } catch (error) {
-    console.error('Engine stats error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch engine stats' },
-      { status: 500 }
+    console.error('[Engine API] Stats error:', error);
+    
+    return createErrorResponse(
+      'Failed to fetch engine stats',
+      500,
+      { code: 'INTERNAL_ERROR', message: error instanceof Error ? error.message : 'Unknown error' },
+      authResult.requestId
     );
   }
 }
