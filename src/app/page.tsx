@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useRef, useCallback } from 'react'
-import { io, Socket } from 'socket.io-client'
+// socket.io-client will be dynamically imported to avoid SSR issues
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -4477,7 +4477,8 @@ interface EarnCreditsProps {
 }
 
 function EarnCreditsPanel({ user, onCreditsUpdate }: EarnCreditsProps) {
-  const socketRef = useRef<Socket | null>(null)
+  // Use any type for socket to avoid SSR import issues with socket.io-client
+  const socketRef = useRef<any>(null)
   const [isConnected, setIsConnected] = useState(false)
   const [currentTask, setCurrentTask] = useState<any>(null)
   const [isWorking, setIsWorking] = useState(false)
@@ -4494,104 +4495,120 @@ function EarnCreditsPanel({ user, onCreditsUpdate }: EarnCreditsProps) {
   const [engineOnline, setEngineOnline] = useState(0)
   const [tasksInQueue, setTasksInQueue] = useState(0)
 
-  // Initialize Socket.io connection
+  // Initialize Socket.io connection (dynamically import to avoid SSR issues)
   useEffect(() => {
     if (!user.id) return
 
-    const newSocket = io('/', {
-      query: { XTransformPort: '3003' },
-      transports: ['websocket', 'polling']
-    })
-
-    newSocket.on('connect', () => {
-      console.log('[EarnCredits] Connected to engine')
-      setIsConnected(true)
+    // Dynamic import of socket.io-client for client-side only
+    import('socket.io-client').then((module) => {
+      const io = module.io
       
-      // Register as worker
-      newSocket.emit('worker:register', { userId: user.id })
-    })
-
-    newSocket.on('disconnect', () => {
-      console.log('[EarnCredits] Disconnected from engine')
-      setIsConnected(false)
-      setIsWorking(false)
-      setCurrentTask(null)
-    })
-
-    // Handle registration success
-    newSocket.on('worker:registered', (data: any) => {
-      if (data.success) {
-        toast.success('Connected to task engine!', {
-          description: `Queue: ${data.stats?.queueLength || 0} tasks available`
-        })
-        setQueueStats(data.stats)
-      }
-    })
-
-    // Handle task assignment
-    newSocket.on('task:assigned', (task: any) => {
-      console.log('[EarnCredits] Task assigned:', task)
-      setCurrentTask(task)
-      setIsWorking(true)
-      setTaskStartTime(new Date())
-      setElapsedTime(0)
-      setVerificationCode(task.verificationCode || '')
-      toast.info('New task assigned!', {
-        description: `${task.platform}/${task.serviceType} - +${task.rewardCredits} credits`
+      const newSocket = io('/', {
+        query: { XTransformPort: '3003' },
+        transports: ['websocket', 'polling']
       })
+
+      newSocket.on('connect', () => {
+        console.log('[EarnCredits] Connected to engine')
+        setIsConnected(true)
+        
+        // Register as worker
+        newSocket.emit('worker:register', { userId: user.id })
+      })
+
+      newSocket.on('disconnect', () => {
+        console.log('[EarnCredits] Disconnected from engine')
+        setIsConnected(false)
+        setIsWorking(false)
+        setCurrentTask(null)
+      })
+
+      // Handle registration success
+      newSocket.on('worker:registered', (data: any) => {
+        if (data.success) {
+          toast.success('Connected to task engine!', {
+            description: `Queue: ${data.stats?.queueLength || 0} tasks available`
+          })
+          setQueueStats(data.stats)
+        }
+      })
+
+      // Handle task assignment
+      newSocket.on('task:assigned', (task: any) => {
+        console.log('[EarnCredits] Task assigned:', task)
+        setCurrentTask(task)
+        setIsWorking(true)
+        setTaskStartTime(new Date())
+        setElapsedTime(0)
+        setVerificationCode(task.verificationCode || '')
+        toast.info('New task assigned!', {
+          description: `${task.platform}/${task.serviceType} - +${task.rewardCredits} credits`
+        })
+      })
+
+      // Handle task completion
+      newSocket.on('task:completed', (data: any) => {
+        console.log('[EarnCredits] Task completed:', data)
+        setIsWorking(false)
+        setCurrentTask(null)
+        setTaskStartTime(null)
+        setElapsedTime(0)
+        setTasksCompleted(prev => prev + 1)
+        setTotalEarned(prev => prev + (data.creditsEarned || 1))
+        onCreditsUpdate(user.credits + (data.creditsEarned || 1))
+        
+        // Add to recent activity
+        setRecentActivity(prev => [{
+          type: 'completed',
+          credits: data.creditsEarned || 1,
+          timestamp: new Date(),
+          message: data.message || 'Task completed!'
+        }, ...prev.slice(0, 9)])
+        
+        toast.success(data.message || 'Task completed! Credits earned!')
+      })
+
+      // Handle empty queue
+      newSocket.on('task:empty', (data: any) => {
+        toast.info(data.message || 'No tasks available right now')
+      })
+
+      // Handle errors
+      newSocket.on('error', (error: any) => {
+        console.error('[EarnCredits] Error:', error)
+        toast.error(error.message || 'An error occurred')
+      })
+
+      // Handle queue updates
+      newSocket.on('stats:online', (data: any) => {
+        setEngineOnline(data.count)
+      })
+
+      newSocket.on('stats:update', (data: any) => {
+        setTasksInQueue(data.queueLength || 0)
+      })
+
+      newSocket.on('task:available', (data: any) => {
+        setTasksInQueue(data.queueLength || 0)
+      })
+
+      socketRef.current = newSocket
+
+      // Store cleanup function reference
+      return () => {
+        newSocket.disconnect()
+        socketRef.current = null
+      }
+    }).catch((err) => {
+      console.error('[EarnCredits] Failed to load socket.io-client:', err)
     })
-
-    // Handle task completion
-    newSocket.on('task:completed', (data: any) => {
-      console.log('[EarnCredits] Task completed:', data)
-      setIsWorking(false)
-      setCurrentTask(null)
-      setTaskStartTime(null)
-      setElapsedTime(0)
-      setTasksCompleted(prev => prev + 1)
-      setTotalEarned(prev => prev + (data.creditsEarned || 1))
-      onCreditsUpdate(user.credits + (data.creditsEarned || 1))
-      
-      // Add to recent activity
-      setRecentActivity(prev => [{
-        type: 'completed',
-        credits: data.creditsEarned || 1,
-        timestamp: new Date(),
-        message: data.message || 'Task completed!'
-      }, ...prev.slice(0, 9)])
-      
-      toast.success(data.message || 'Task completed! Credits earned!')
-    })
-
-    // Handle empty queue
-    newSocket.on('task:empty', (data: any) => {
-      toast.info(data.message || 'No tasks available right now')
-    })
-
-    // Handle errors
-    newSocket.on('error', (error: any) => {
-      console.error('[EarnCredits] Error:', error)
-      toast.error(error.message || 'An error occurred')
-    })
-
-    // Handle queue updates
-    newSocket.on('stats:online', (data: any) => {
-      setEngineOnline(data.count)
-    })
-
-    newSocket.on('stats:update', (data: any) => {
-      setTasksInQueue(data.queueLength || 0)
-    })
-
-    newSocket.on('task:available', (data: any) => {
-      setTasksInQueue(data.queueLength || 0)
-    })
-
-    socketRef.current = newSocket
-
+    
+    // Cleanup on unmount
     return () => {
-      newSocket.disconnect()
-      socketRef.current = null
+      if (socketRef.current) {
+        socketRef.current.disconnect()
+        socketRef.current = null
+      }
     }
   }, [user.id])
 
