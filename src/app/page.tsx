@@ -129,6 +129,7 @@ import {
   Zap as ZapIcon,
   Radio,
   Wifi,
+  WifiOff,
   Power,
   CircleDot
 } from 'lucide-react'
@@ -4500,6 +4501,10 @@ function EarnCreditsPanel({ user, authToken, onCreditsUpdate }: EarnCreditsProps
   const [engineOnline, setEngineOnline] = useState(0)
   const [tasksInQueue, setTasksInQueue] = useState(0)
   
+  // Authentication & Connection status
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [authError, setAuthError] = useState<string | null>(null)
+  
   // Reconnection state
   const [reconnectAttempt, setReconnectAttempt] = useState(0)
   const [isReconnecting, setIsReconnecting] = useState(false)
@@ -4590,6 +4595,15 @@ function EarnCreditsPanel({ user, authToken, onCreditsUpdate }: EarnCreditsProps
     socket.on('worker:registered', (data: any) => {
       if (data.success) {
         setQueueStats(data.stats)
+        setIsAuthenticated(data.authenticated || true)
+        setAuthError(null)
+        
+        if (data.security?.ipTracked) {
+          console.log('[EarnCredits] Connection secured with IP tracking')
+        }
+      } else {
+        setIsAuthenticated(false)
+        setAuthError(data.error || 'Registration failed')
       }
     })
 
@@ -4633,31 +4647,87 @@ function EarnCreditsPanel({ user, authToken, onCreditsUpdate }: EarnCreditsProps
       toast.info(data.message || 'No tasks available right now')
     })
 
-    // Handle errors
+    // Handle errors (enhanced for engine v1.3.0 security responses)
     socket.on('error', (error: any) => {
       console.error('[EarnCredits] Error:', error)
       
-      // Provide user-friendly messages for auth-related errors
-      if (error.code === 'TOKEN_REQUIRED' || error.code === 'AUTH_FAILED' || 
-          error.code === 'INVALID_TOKEN_FORMAT' || error.code === 'AUTH_TIMEOUT') {
-        toast.error('Authentication required', {
-          description: 'Please login again to connect to the task engine.',
-          duration: 5000
-        })
-        // Trigger logout for auth failures
-        setTimeout(() => window.location.reload(), 2000)
-        return
+      // Handle authentication and security-related errors with specific messages
+      switch (error.code) {
+        // Critical auth failures - require re-login
+        case 'TOKEN_REQUIRED':
+        case 'AUTH_FAILED':
+        case 'INVALID_TOKEN_FORMAT':
+        case 'AUTH_TIMEOUT':
+        case 'AUTH_MISMATCH':
+          toast.error('Authentication Failed', {
+            description: error.message || 'Please login again to connect to the task engine.',
+            duration: 5000
+          })
+          // Trigger logout for critical auth failures
+          setTimeout(() => window.location.reload(), 2000)
+          return
+          
+        // Rate limiting errors - inform user about cooldown
+        case 'AUTH_BLOCKED':
+        case 'AUTH_RATE_LIMITED':
+          toast.error('Too Many Attempts', {
+            description: error.message || 'Please wait a moment before trying again.',
+            duration: error.retryAfter ? Math.min(error.retryAfter * 1000, 10000) : 8000
+          })
+          // Don't disconnect on rate limit, just wait
+          return
+          
+        // Connection limit errors
+        case 'CONNECTION_LIMIT_EXCEEDED':
+          toast.error('Connection Limit Reached', {
+            description: error.message || 'Too many connections from your network.',
+            duration: 6000
+          })
+          socket.disconnect()
+          return
+          
+        // Task-related errors
+        case 'NOT_REGISTERED':
+          toast.error('Session Lost', {
+            description: 'Please refresh the page to reconnect.',
+            duration: 4000
+          })
+          return
+          
+        case 'RATE_LIMITED':
+          toast.warning('Slow Down', {
+            description: error.message || 'You are making requests too quickly.',
+            duration: 4000
+          })
+          return
+          
+        case 'HAS_TASK':
+          toast.info('Task In Progress', {
+            description: 'Complete or abandon your current task first.',
+            duration: 3000
+          })
+          return
+          
+        case 'SESSION_LIMIT':
+          toast.warning('Session Limit', {
+            description: error.message || 'Please reconnect to continue.',
+            duration: 4000
+          })
+          return
+          
+        case 'SUSPICIOUS_ACTIVITY':
+          toast.error('Security Check', {
+            description: error.message || 'Task completion was flagged.',
+            duration: 5000
+          })
+          return
+          
+        default:
+          // Generic error handling
+          toast.error(error.message || 'An error occurred', {
+            duration: 4000
+          })
       }
-      
-      if (error.code === 'AUTH_MISMATCH') {
-        toast.error('Session conflict detected', {
-          description: 'Please login again.',
-          duration: 5000
-        })
-        return
-      }
-      
-      toast.error(error.message || 'An error occurred')
     })
     
     // Handle warnings from engine (stale connection etc.)
@@ -4859,21 +4929,26 @@ function EarnCreditsPanel({ user, authToken, onCreditsUpdate }: EarnCreditsProps
     <div className="space-y-6">
       {/* Header Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {/* Connection Status */}
-        <Card className={`border-0 shadow-sm ${isConnected ? 'border-l-4 border-l-green-500' : 'border-l-4 border-l-red-500'}`}>
+        {/* Connection Status (Enhanced with auth status) */}
+        <Card className={`border-0 shadow-sm ${isConnected && isAuthenticated ? 'border-l-4 border-l-green-500' : isConnected ? 'border-l-4 border-l-amber-500' : 'border-l-4 border-l-red-500'}`}>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Engine Status</p>
-                <p className={`text-lg font-bold ${isConnected ? 'text-green-600' : isReconnecting ? 'text-amber-500' : 'text-red-500'}`}>
-                  {isConnected ? 'Connected' : isReconnecting ? `Reconnecting... (${reconnectAttempt}/${maxReconnectAttempts})` : 'Disconnected'}
+                <p className={`text-lg font-bold ${isConnected && isAuthenticated ? 'text-green-600' : isConnected ? 'text-amber-600' : isReconnecting ? 'text-amber-500' : 'text-red-500'}`}>
+                  {isConnected && isAuthenticated ? 'Authenticated' : isConnected ? 'Connected...' : isReconnecting ? `Reconnecting... (${reconnectAttempt}/${maxReconnectAttempts})` : 'Disconnected'}
                 </p>
+                {authError && (
+                  <p className="text-xs text-red-500 mt-1 truncate max-w-[140px]">{authError}</p>
+                )}
               </div>
-              <div className={`p-3 rounded-full ${isConnected ? 'bg-green-100' : isReconnecting ? 'bg-amber-100 animate-pulse' : 'bg-red-100'}`}>
+              <div className={`p-3 rounded-full ${isConnected && isAuthenticated ? 'bg-green-100' : isConnected ? 'bg-amber-100 animate-pulse' : isReconnecting ? 'bg-amber-100 animate-pulse' : 'bg-red-100'}`}>
                 {isReconnecting ? (
                   <Loader2 className="w-6 h-6 text-amber-600 animate-spin" />
+                ) : isConnected && isAuthenticated ? (
+                  <ShieldCheck className="w-6 h-6 text-green-600" />
                 ) : (
-                  <Wifi className={`w-6 h-6 ${isConnected ? 'text-green-600' : 'text-red-500'}`} />
+                  <WifiOff className={`w-6 h-6 ${isConnected ? 'text-amber-600' : 'text-red-500'}`} />
                 )}
               </div>
             </div>

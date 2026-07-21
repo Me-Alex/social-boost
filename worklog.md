@@ -1984,3 +1984,180 @@ Stage Summary:
 - Environment issue: Dev server connectivity intermittent (system-level, not code)
 - Consider: Migrate middleware.ts to proxy.ts (Next.js deprecation warning)
 - Consider: Add rate limiting to /api/auth/verify endpoint
+
+---
+Task ID: 4
+Agent: Main Developer
+Task: Round 5 - Engine Security Hardening & Admin API Endpoints
+
+Work Log:
+
+### 1. Engine Security Enhancements (v1.2.0 → v1.3.0)
+
+#### A. Authentication Rate Limiting (Brute Force Protection)
+- **Problem**: No protection against brute force token guessing on WebSocket connections
+- **Solution**: Implemented per-IP authentication rate limiting
+
+**New Functions Added:**
+- `checkAuthRateLimit(ip)` - Checks if IP is allowed to attempt auth
+  - Tracks attempts per IP in configurable time window (default: 10 attempts/minute)
+  - Blocks IPs that exceed limit with progressive cooldown (2x window duration)
+  - Records fraud alerts for blocked IPs
+- `cleanupAuthRateLimits()` - Periodic cleanup of expired entries
+
+**Configuration Options:**
+```typescript
+AUTH_RATE_LIMIT_MAX: 10,      // Max auth attempts per IP per window
+AUTH_RATE_WINDOW_MS: 60000,   // 1 minute window
+```
+
+#### B. Per-IP Connection Limiting
+- **Problem**: Single source could open unlimited connections
+- **Solution**: Track and limit connections per IP address
+
+**New Functions:**
+- `trackConnectionIp(ip)` - Counts connections per IP
+- `untrackConnectionIp(ip)` - Decrements count on disconnect
+- Configurable via `MAX_CONNECTIONS_PER_IP` (default: 5)
+
+#### C. Connection Metadata Tracking
+- **Problem**: Limited visibility into connected clients
+- **Solution**: Comprehensive connection metadata tracking
+
+**New Data Structures:**
+```typescript
+interface ConnectionMetadata {
+  socketId: string;
+  ip?: string;
+  userAgent?: string;
+  connectedAt: Date;
+  authenticatedAt?: Date;
+  userId?: string;
+}
+```
+
+**Benefits:**
+- Track connection lifecycle
+- Monitor authentication timing
+- Support for admin `/admin/connections` endpoint
+
+#### D. Admin Endpoint Protection
+- **Problem**: Admin endpoints (`/admin/stats`, `/admin/fraud-alerts`) were publicly accessible
+- **Solution**: API key-based authentication for admin endpoints
+
+**Implementation:**
+- `verifyAdminAccess(req, res)` function
+- Accepts API key via:
+  - `X-Admin-Key` header
+  - `Authorization: Bearer <key>` header
+  - `?admin_key=<key>` query parameter
+- Returns 403 Forbidden with descriptive error if invalid
+
+**New Admin Endpoint:**
+- `GET /admin/connections` - Lists all active connections with metadata
+
+#### E. Security Headers on HTTP Responses
+Added security headers to all HTTP responses:
+- X-Content-Type-Options: nosniff
+- X-Frame-Options: DENY
+- X-XSS-Protection: 1; mode=block
+- Strict-Transport-Security: max-age=31536000; includeSubDomains
+
+#### F. Socket.io Configuration Hardening
+- Set `maxHttpBufferSize: 100000` (100KB) to prevent large payloads
+- Explicitly specify allowed transports: `['websocket', 'polling']`
+- Use configurable `ALLOWED_ORIGINS` array for CORS
+
+### 2. New Admin API Endpoints
+
+#### A. Audit Logs API
+**File:** `/home/z/my-project/src/app/api/admin/audit-logs/route.ts`
+
+**Features:**
+- GET endpoint with comprehensive filtering options:
+  - `limit` (1-500, default: 50)
+  - `offset` (pagination)
+  - `category` (auth, data, admin, api, system, security)
+  - `severity` (info, warning, error, critical)
+  - `userId`, `action` (partial match)
+  - `since`, `until` (ISO date range)
+  - `stats=true` for statistics-only response
+- Requires authentication via `requireAuth()`
+- Validates all input parameters
+- Returns paginated results with metadata
+
+#### B. System Stats API
+**File:** `/home/z/my-project/src/app/api/admin/stats/route.ts`
+
+**Features:**
+- Comprehensive system statistics in single request:
+  - User stats (total, active, created today/week)
+  - Session stats (active sessions, unique users)
+  - Campaign stats (total, active, pending tasks)
+  - Task stats (by status, completed today)
+  - Audit log statistics (by severity/category, recent errors)
+  - Recent security events (last 24 hours)
+- All queries run in parallel for performance
+- Requires authentication
+
+### 3. Frontend Enhancements
+
+#### A. Enhanced Error Handling (Engine v1.3.0 Compatible)
+Updated error handler in EarnCreditsPanel with specific handling for new error codes:
+
+| Error Code | Handling |
+|------------|----------|
+| TOKEN_REQUIRED, AUTH_FAILED, INVALID_TOKEN_FORMAT, AUTH_TIMEOUT, AUTH_MISMATCH | Show error toast + trigger re-login after 2s |
+| AUTH_BLOCKED, AUTH_RATE_LIMITED | Show "Too Many Attempts" toast with retry-after duration |
+| CONNECTION_LIMIT_EXCEEDED | Show error + disconnect socket |
+| NOT_REGISTERED | Show "Session Lost" message |
+| RATE_LIMITED | Warning toast (non-critical) |
+| HAS_TASK, SESSION_LIMIT | Info/warning toasts |
+| SUSPICIOUS_ACTIVITY | Security warning toast |
+
+#### B. Authentication Status UI Enhancement
+- Added `isAuthenticated` state tracking
+- Added `authError` state for displaying auth failures
+- Updated connection status card to show:
+  - **Connected** (green) → **Authenticated** (green with shield icon)
+  - **Connected...** (amber) → Waiting for auth confirmation
+  - **Disconnected** (red) → Not connected
+- Shows auth error message inline when present
+- Uses ShieldCheck icon for authenticated state
+- Uses WifiOff icon for disconnected state
+
+### Files Modified/Created:
+1. `/home/z/my-project/mini-services/engine/index.ts` - v1.3.0 with security hardening
+2. `/home/z/my-project/src/app/api/admin/audit-logs/route.ts` - NEW - Audit logs API
+3. `/home/z/my-project/src/app/api/admin/stats/route.ts` - NEW - System stats API
+4. `/home/z/my-project/src/app/page.tsx` - Enhanced error handling & UI
+
+### Verification:
+- ESLint: ✓ Passing (0 errors)
+- Agent-browser testing: ✓ Site loads correctly
+- Dashboard preview: ✓ Working
+- Console errors: ✓ None detected
+
+Stage Summary:
+- **Project Status**: Round 5 complete - Major security hardening deployed
+- **Key Results**:
+  - Engine now has brute force protection for auth attempts
+  - Per-IP connection limiting prevents abuse
+  - Admin endpoints are now protected with API keys
+  - Connection metadata tracking for monitoring
+  - New admin APIs for audit logs and system stats
+  - Frontend shows detailed auth/connection status
+- **Security Improvements This Round**:
+  - Auth rate limiting (10 attempts/min per IP, then block)
+  - Connection limiting (max 5 per IP)
+  - Admin endpoint authentication required
+  - Security headers on all responses
+  - Enhanced error messages for all failure modes
+- **Configuration Variables Added:**
+  - `AUTH_RATE_LIMIT_MAX`, `AUTH_RATE_WINDOW_MS`
+  - `ADMIN_API_KEY`, `MAX_CONNECTIONS_PER_IP`
+  - `ALLOWED_ORIGINS`
+- **Risks / Next Steps**:
+  - Consider: Add admin dashboard UI component for viewing audit logs
+  - Consider: Implement WebSocket event encryption for sensitive data
+  - Consider: Add IP whitelist functionality for admin access

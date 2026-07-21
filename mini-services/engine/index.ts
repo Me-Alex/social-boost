@@ -7,9 +7,10 @@
  * 3. Handling credit exchange between users
  * 4. Anti-fraud detection and prevention
  * 5. WebSocket authentication & authorization
+ * 6. Rate limiting & brute force protection
  * 
  * Port: 3003
- * @version 1.2.0 - Enhanced with WebSocket auth, connection security
+ * @version 1.3.0 - Enhanced security: auth rate limiting, admin protection, connection metadata
  */
 
 import { createServer } from "http";
@@ -43,17 +44,69 @@ const CONFIG = {
   AUTH_TIMEOUT_MS: 15000, // Time to authenticate after connection (15 seconds)
   REQUIRE_AUTH_TOKEN: true, // Require valid auth token for registration
   TOKEN_VALIDATION_CACHE_TTL: 60000, // Cache validated tokens for 1 minute
+  
+  // Security enhancements (v1.3.0)
+  AUTH_RATE_LIMIT_MAX: 10, // Max auth attempts per IP per window
+  AUTH_RATE_WINDOW_MS: 60000, // 1 minute window for auth rate limiting
+  ADMIN_API_KEY: process.env.ADMIN_API_KEY || 'socialboost_admin_2024_secret', // API key for admin endpoints
+  ALLOWED_ORIGINS: ["http://localhost:3000", "http://127.0.0.1:3000"],
+  MAX_CONNECTIONS_PER_IP: 5, // Max simultaneous connections from single IP
 };
+
+/**
+ * Verify admin API key from request headers or query params
+ */
+function verifyAdminAccess(req: any, res: any): boolean {
+  // Check header first
+  const authHeader = req.headers['x-admin-key'] || req.headers['authorization']?.replace('Bearer ', '');
+  
+  // Fallback to query parameter
+  const url = new URL(req.url, `http://localhost:${PORT}`);
+  const queryKey = url.searchParams.get('admin_key');
+  
+  const apiKey = authHeader || queryKey;
+  
+  if (apiKey !== CONFIG.ADMIN_API_KEY) {
+    res.writeHead(403, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ 
+      error: 'Forbidden', 
+      message: 'Valid admin API key required',
+      code: 'ADMIN_AUTH_REQUIRED'
+    }));
+    return false;
+  }
+  
+  return true;
+}
+
+/**
+ * Extract client IP from request (supports proxies)
+ */
+function getClientIp(req: any): string {
+  return req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
+         req.headers['x-real-ip'] ||
+         req.socket?.remoteAddress ||
+         'unknown';
+}
 
 // Create HTTP server and Socket.io instance
 const httpServer = createServer((req, res) => {
+  // Security headers for all responses
+  const setSecurityHeaders = () => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  };
+  
   if (req.url === '/health') {
+    setSecurityHeaders();
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ 
       status: 'ok', 
       service: 'socialboost-engine', 
       port: PORT,
-      version: '1.1.0',
+      version: '1.3.0',
       environment: ENVIRONMENT,
       uptime: process.uptime(),
       timestamp: new Date().toISOString(),
@@ -61,49 +114,88 @@ const httpServer = createServer((req, res) => {
         queueLength: taskQueue.length,
         activeWorkers: activeWorkers.size,
         totalTasksProcessed: engineStats.totalTasksProcessed,
-        fraudAlerts: fraudAlerts.length
+        fraudAlerts: fraudAlerts.length,
+        authenticatedConnections: connectionMetadata.size
       }
     }));
     return;
   }
   
-  // Admin endpoint for fraud alerts (basic - should be protected in production)
-  if (req.url === '/admin/fraud-alerts') {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify(getFraudAlertsSummary()));
+  // Admin endpoint for fraud alerts (PROTECTED)
+  if (req.url?.startsWith('/admin/')) {
+    setSecurityHeaders();
+    if (!verifyAdminAccess(req, res)) return;
+    
+    if (req.url === '/admin/fraud-alerts') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(getFraudAlertsSummary()));
+      return;
+    }
+    
+    // Admin endpoint for detailed stats
+    if (req.url === '/admin/stats' || req.url === '/admin/stats/') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        ...getQueueStats(),
+        fraudAlerts: getFraudAlertsSummary(),
+        security: {
+          authRateLimitEntries: authRateLimits.size,
+          tokenCacheEntries: tokenValidationCache.size,
+          connectionsTracked: connectionMetadata.size,
+          connectionsByIp: Object.fromEntries(connectionsPerIp),
+        },
+        config: {
+          taskTimeoutMs: CONFIG.TASK_TIMEOUT_MS,
+          maxQueueSize: CONFIG.MAX_QUEUE_SIZE,
+          maxTasksPerSession: CONFIG.MAX_TASKS_PER_SESSION,
+          authRequired: CONFIG.REQUIRE_AUTH_TOKEN,
+          maxConnectionsPerIp: CONFIG.MAX_CONNECTIONS_PER_IP,
+        },
+        rateLimits: {
+          activeEntries: workerRateLimits.size
+        }
+      }));
+      return;
+    }
+    
+    // Admin endpoint for connection metadata
+    if (req.url === '/admin/connections') {
+      const connections = Array.from(connectionMetadata.values()).map(c => ({
+        socketId: c.socketId,
+        ip: c.ip,
+        connectedAt: c.connectedAt,
+        authenticatedAt: c.authenticatedAt,
+        userId: c.userId,
+        isAuthenticated: !!c.userId,
+      }));
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ connections, total: connections.length }));
+      return;
+    }
+    
+    // Unknown admin endpoint
+    res.writeHead(404, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'Admin endpoint not found' }));
     return;
   }
   
-  // Admin endpoint for detailed stats
-  if (req.url === '/admin/stats') {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({
-      ...getQueueStats(),
-      fraudAlerts: getFraudAlertsSummary(),
-      config: {
-        taskTimeoutMs: CONFIG.TASK_TIMEOUT_MS,
-        maxQueueSize: CONFIG.MAX_QUEUE_SIZE,
-        maxTasksPerSession: CONFIG.MAX_TASKS_PER_SESSION
-      },
-      rateLimits: {
-        activeEntries: workerRateLimits.size
-      }
-    }));
-    return;
-  }
-  
+  setSecurityHeaders();
   res.writeHead(200, { 'Content-Type': 'application/json' });
   res.end(JSON.stringify({ status: 'ok', service: 'socialboost-engine', port: PORT }));
 });
 
 const io = new Server(httpServer, {
   cors: {
-    origin: ["http://localhost:3000", "http://127.0.0.1:3000"],
+    origin: CONFIG.ALLOWED_ORIGINS,
     methods: ["GET", "POST"],
     credentials: true
   },
   pingInterval: 25000,
-  pingTimeout: 60000
+  pingTimeout: 60000,
+  // Max HTTP payload size (prevent large payloads)
+  maxHttpBufferSize: 100000, // 100KB
+  // Transport configuration
+  transports: ['websocket', 'polling'],
 });
 
 // ============================================================================
@@ -152,6 +244,29 @@ const tokenValidationCache = new Map<string, CachedTokenValidation>();
 
 // Unauthenticated connection tracking
 const unauthenticatedConnections = new Map<string, NodeJS.Timeout>();
+
+// Authentication rate limiting store (per IP)
+interface AuthRateLimitEntry {
+  count: number;
+  windowStart: number;
+  lastAttempt: number;
+  blockedUntil?: number;
+}
+const authRateLimits = new Map<string, AuthRateLimitEntry>();
+
+// Connection metadata tracking
+interface ConnectionMetadata {
+  socketId: string;
+  ip?: string;
+  userAgent?: string;
+  connectedAt: Date;
+  authenticatedAt?: Date;
+  userId?: string;
+}
+const connectionMetadata = new Map<string, ConnectionMetadata>();
+
+// Per-IP connection counting
+const connectionsPerIp = new Map<string, number>();
 
 // Anti-fraud tracking
 interface FraudAlert {
@@ -396,6 +511,119 @@ function isValidServiceType(serviceType: string): boolean {
 function sanitize(str: string, maxLength: number = 500): string {
   if (typeof str !== 'string') return '';
   return str.trim().slice(0, maxLength).replace(/[<>\"'&\\]/g, '');
+}
+
+// ============================================================================
+// AUTHENTICATION RATE LIMITING (Brute Force Protection)
+// ============================================================================
+
+/**
+ * Check if an IP is allowed to attempt authentication
+ * Returns { allowed: boolean, retryAfter?: number, blocked?: boolean }
+ */
+function checkAuthRateLimit(ip: string): { 
+  allowed: boolean; 
+  retryAfter?: number;
+  blocked?: boolean;
+} {
+  const now = Date.now();
+  let entry = authRateLimits.get(ip);
+  
+  // Initialize new entry if doesn't exist
+  if (!entry) {
+    entry = { count: 0, windowStart: now, lastAttempt: now };
+    authRateLimits.set(ip, entry);
+  }
+  
+  // Check if currently blocked (rate limit exceeded with cooldown)
+  if (entry.blockedUntil && now < entry.blockedUntil) {
+    return { 
+      allowed: false, 
+      blocked: true,
+      retryAfter: Math.ceil((entry.blockedUntil - now) / 1000)
+    };
+  }
+  
+  // Reset window if expired
+  if (now - entry.windowStart > CONFIG.AUTH_RATE_WINDOW_MS) {
+    entry.count = 0;
+    entry.windowStart = now;
+  }
+  
+  // Check if limit exceeded
+  if (entry.count >= CONFIG.AUTH_RATE_LIMIT_MAX) {
+    // Block for twice the window duration as penalty
+    entry.blockedUntil = now + (CONFIG.AUTH_RATE_WINDOW_MS * 2);
+    
+    console.warn(`[Security] Auth rate limit exceeded for IP ${ip}. Blocked for ${Math.round(CONFIG.AUTH_RATE_WINDOW_MS * 2 / 1000)}s`);
+    
+    recordFraudAlert(ip, 'Authentication rate limit exceeded', 'high', {
+      ip,
+      attemptsInWindow: entry.count,
+      maxAllowed: CONFIG.AUTH_RATE_LIMIT_MAX,
+      blockedUntil: new Date(entry.blockedUntil).toISOString()
+    });
+    
+    return { 
+      allowed: false, 
+      blocked: true,
+      retryAfter: Math.round((entry.blockedUntil - now) / 1000)
+    };
+  }
+  
+  // Increment counter
+  entry.count++;
+  entry.lastAttempt = now;
+  
+  return { allowed: true };
+}
+
+/**
+ * Clean up expired auth rate limit entries
+ */
+function cleanupAuthRateLimits(): void {
+  const now = Date.now();
+  const maxAge = CONFIG.AUTH_RATE_WINDOW_MS * 3; // Keep for 3x window duration
+  
+  for (const [ip, entry] of authRateLimits.entries()) {
+    // Remove if window expired and not blocked
+    if (now - entry.windowStart > maxAge && !entry.blockedUntil) {
+      authRateLimits.delete(ip);
+    }
+    // Also remove if block has expired and window is old
+    if (entry.blockedUntil && now > entry.blockedUntil + CONFIG.AUTH_RATE_WINDOW_MS) {
+      authRateLimits.delete(ip);
+    }
+  }
+}
+
+/**
+ * Track connection per IP (prevent too many connections from single source)
+ */
+function trackConnectionIp(ip: string): { allowed: boolean; error?: string } {
+  const currentCount = connectionsPerIp.get(ip) || 0;
+  
+  if (currentCount >= CONFIG.MAX_CONNECTIONS_PER_IP) {
+    return { 
+      allowed: false, 
+      error: `Maximum connections (${CONFIG.MAX_CONNECTIONS_PER_IP}) per IP exceeded`
+    };
+  }
+  
+  connectionsPerIp.set(ip, currentCount + 1);
+  return { allowed: true };
+}
+
+/**
+ * Remove tracked connection for IP
+ */
+function untrackConnectionIp(ip: string): void {
+  const currentCount = connectionsPerIp.get(ip) || 0;
+  if (currentCount <= 1) {
+    connectionsPerIp.delete(ip);
+  } else {
+    connectionsPerIp.set(ip, currentCount - 1);
+  }
 }
 
 // ============================================================================
@@ -655,7 +883,35 @@ async function callMainAPI(endpoint: string, options: RequestInit = {}): Promise
 // ============================================================================
 
 io.on("connection", async (socket: Socket) => {
-  console.log(`[Engine] Worker connected: ${socket.id}`);
+  // Extract client IP (supports proxy headers)
+  const clientIp = socket.handshake.headers['x-forwarded-for']?.toString().split(',')[0]?.trim() ||
+                   socket.handshake.headers['x-real-ip']?.toString() ||
+                   socket.handshake.address ||
+                   'unknown';
+  
+  const userAgent = socket.handshake.headers['user-agent']?.slice(0, 200);
+  
+  console.log(`[Engine] Worker connected: ${socket.id} from IP: ${clientIp}`);
+  
+  // Check per-IP connection limit
+  const ipCheck = trackConnectionIp(clientIp);
+  if (!ipCheck.allowed) {
+    console.warn(`[Security] Connection limit exceeded for IP: ${clientIp}`);
+    socket.emit("error", { 
+      code: "CONNECTION_LIMIT_EXCEEDED", 
+      message: ipCheck.error || "Too many connections from your network"
+    });
+    socket.disconnect(true);
+    return;
+  }
+  
+  // Track connection metadata
+  connectionMetadata.set(socket.id, {
+    socketId: socket.id,
+    ip: clientIp,
+    userAgent,
+    connectedAt: new Date(),
+  });
   
   // Set authentication timeout - must register within CONFIG.AUTH_TIMEOUT_MS
   setAuthTimeout(socket);
@@ -670,6 +926,24 @@ io.on("connection", async (socket: Socket) => {
       if (!data || typeof data !== 'object') {
         socket.emit("error", { code: "INVALID_INPUT", message: "Invalid registration data" });
         socket.disconnect();
+        return;
+      }
+      
+      // === AUTH RATE LIMITING (Brute Force Protection) ===
+      const authRateCheck = checkAuthRateLimit(clientIp);
+      if (!authRateCheck.allowed) {
+        console.warn(`[Security] Auth rate limit exceeded for IP ${clientIp} on socket ${socket.id}`);
+        socket.emit("error", { 
+          code: authRateCheck.blocked ? "AUTH_BLOCKED" : "AUTH_RATE_LIMITED",
+          message: authRateCheck.blocked 
+            ? `Too many failed attempts. Try again in ${authRateCheck.retryAfter} seconds.`
+            : "Authentication requests are being rate limited.",
+          retryAfter: authRateCheck.retryAfter,
+          blocked: authRateCheck.blocked
+        });
+        if (authRateCheck.blocked) {
+          socket.disconnect(true);
+        }
         return;
       }
       
@@ -762,11 +1036,19 @@ io.on("connection", async (socket: Socket) => {
         currentTaskId: null,
         lastHeartbeat: new Date(),
         tasksCompleted: 0,
-        ip: data.ip ? sanitize(data.ip, 45) : undefined,
+        ip: clientIp !== 'unknown' ? sanitize(clientIp, 45) : (data.ip ? sanitize(data.ip, 45) : undefined),
         name: user.name ? sanitize(user.name, 50) : (user.email ? sanitize(user.email.split('@')[0], 50) : 'User')
       };
       
       activeWorkers.set(socket.id, worker);
+      
+      // Update connection metadata with authentication info
+      const meta = connectionMetadata.get(socket.id);
+      if (meta) {
+        meta.authenticatedAt = new Date();
+        meta.userId = sanitizedUserId;
+        connectionMetadata.set(socket.id, meta);
+      }
       
       // Track peak users
       if (activeWorkers.size > engineStats.peakConcurrentUsers) {
@@ -778,7 +1060,11 @@ io.on("connection", async (socket: Socket) => {
         stats: getQueueStats(),
         user: { credits: user.credits, name: worker.name },
         authenticated: true, // Indicate successful authentication
-        serverTime: new Date().toISOString()
+        serverTime: new Date().toISOString(),
+        security: {
+          ipTracked: true,
+          connectionTime: Date.now() - (meta?.connectedAt.getTime() || Date.now()),
+        }
       });
       
       // Broadcast updated online count
@@ -1144,11 +1430,18 @@ io.on("connection", async (socket: Socket) => {
   /**
    * Handle disconnect
    */
-  socket.on("disconnect", async () => {
-    console.log(`[Engine] Worker disconnected: ${socket.id}`);
+  socket.on("disconnect", async (reason) => {
+    console.log(`[Engine] Worker disconnected: ${socket.id} (reason: ${reason})`);
     
     // Clear authentication timeout if still pending
     clearAuthTimeout(socket.id);
+    
+    // Clean up connection metadata
+    const meta = connectionMetadata.get(socket.id);
+    if (meta && meta.ip) {
+      untrackConnectionIp(meta.ip);
+    }
+    connectionMetadata.delete(socket.id);
     
     const worker = activeWorkers.get(socket.id);
     if (worker) {
@@ -1202,6 +1495,7 @@ setInterval(async () => {
 setInterval(() => {
   cleanupRateLimits();
   cleanupTokenCache(); // Also clean up expired token validations
+  cleanupAuthRateLimits(); // Clean up auth rate limit entries (v1.3.0)
 }, 2 * 60 * 1000);
 
 // Stale worker tracking with progressive warnings
@@ -1309,14 +1603,18 @@ httpServer.listen(PORT, () => {
   console.log(`
 ╔═══════════════════════════════════════════════════════════╗
 ║                                                           ║
-║   🚀 SocialBoost Engine v1.2.0                           ║
+║   🚀 SocialBoost Engine v1.3.0                           ║
 ║   ─────────────────────────────────                       ║
 ║   Real-time Task Exchange System                          ║
 ║   ✓ WebSocket Authentication Enabled                      ║
+║   ✓ Rate Limiting & Brute Force Protection                ║
+║   ✓ Admin Endpoint Protection                             ║
+║   ✓ Connection Metadata Tracking                          ║
 ║                                                           ║
 ║   Port:     ${PORT}                                          ║
 ║   Status:   ✅ Running                                     ║
 ║   Auth:     ${CONFIG.REQUIRE_AUTH_TOKEN ? '✓ Required' : '✗ Optional'}                                        ║
+║   Max Conn/IP: ${CONFIG.MAX_CONNECTIONS_PER_IP.toString()}                                           ║
 ║   Started:  ${new Date().toISOString()}         ║
 ║                                                           ║
 ║   Events:                                                  ║
@@ -1326,6 +1624,11 @@ httpServer.listen(PORT, () => {
 ║   • tasks:create     - Batch create tasks                  ║
 ║   • queue:info       - Get queue stats                     ║
 ║   • task:abandon     - Abandon current task                ║
+║                                                           ║
+║   Admin Endpoints (require API key):                       ║
+║   • /admin/stats       - Full system stats                 ║
+║   • /admin/connections - Active connections                ║
+║   • /admin/fraud-alerts - Security alerts                  ║
 ║                                                           ║
 ╚═══════════════════════════════════════════════════════════╝
   `);

@@ -1428,575 +1428,575 @@
   1428→interface DashboardProps {
   1429→  user: { name: string; email: string }
   1430→  onLogout: () => void
-  1431→}
-  1432→
-  1433→function Dashboard({ user, onLogout }: DashboardProps) {
-  1434→  const [sidebarOpen, setSidebarOpen] = useState(true)
-  1435→  const [activeDashboardTab, setActiveDashboardTab] = useState('overview')
-  1436→  const [campaigns, setCampaigns] = useState<Campaign[]>(mockCampaigns)
-  1437→  const [isNewCampaignOpen, setIsNewCampaignOpen] = useState(false)
-  1438→  const [selectedCampaigns, setSelectedCampaigns] = useState<string[]>([])
-  1439→
-  1440→  // New Campaign Form State
-  1441→  const [newCampaign, setNewCampaign] = useState({
-  1442→    name: '',
-  1443→    platform: 'youtube' as 'youtube' | 'instagram',
-  1444→    serviceType: 'views',
-  1445→    targetUrl: '',
-  1446→    quantity: 1000,
-  1447→    speed: 'normal',
-  1448→    geoTarget: 'all'
-  1449→  })
-  1450→
-  1451→  // Stats calculations
-  1452→  const availableCredits = mockUserStats.totalCredits - mockUserStats.usedCredits
-  1453→  const creditsPercentage = Math.round((mockUserStats.usedCredits / mockUserStats.totalCredits) * 100)
-  1454→
-  1455→  const handleCreateCampaign = () => {
-  1456→    if (!newCampaign.name || !newCampaign.targetUrl) {
-  1457→      toast.error('Please fill in all required fields')
-  1458→      return
-  1459→    }
-  1460→
-  1461→    const creditsNeeded = Math.ceil(newCampaign.quantity / 100)
-  1462→    if (creditsNeeded > availableCredits) {
-  1463→      toast.error(`Insufficient credits. You need ${creditsNeeded} but have ${availableCredits}`)
-  1464→      return
-  1465→    }
-  1466→
-  1467→    const campaign: Campaign = {
-  1468→      id: `camp${Date.now()}`,
-  1469→      name: newCampaign.name,
-  1470→      platform: newCampaign.platform,
-  1471→      serviceType: newCampaign.serviceType,
-  1472→      targetUrl: newCampaign.targetUrl,
-  1473→      quantity: newCampaign.quantity,
-  1474→      completedCount: 0,
-  1475→      status: 'pending',
-  1476→      creditsSpent: creditsNeeded,
-  1477→      createdAt: new Date().toISOString().split('T')[0],
-  1478→      progress: 0
-  1479→    }
-  1480→
-  1481→    setCampaigns([campaign, ...campaigns])
-  1482→    setIsNewCampaignOpen(false)
-  1483→    toast.success('Campaign created successfully!', { description: `${newCampaign.name} is now processing` })
-  1484→    
-  1485→    // Reset form
-  1486→    setNewCampaign({
-  1487→      name: '',
-  1488→      platform: 'youtube',
-  1489→      serviceType: 'views',
-  1490→      targetUrl: '',
-  1491→      quantity: 1000,
-  1492→      speed: 'normal',
-  1493→      geoTarget: 'all'
-  1494→    })
-  1495→  }
-  1496→
-  1497→  const handleToggleCampaignStatus = (id: string) => {
-  1498→    setCampaigns(campaigns.map(c => 
-  1499→      c.id === id 
-  1500→        ? { ...c, status: c.status === 'active' ? 'paused' : c.status === 'paused' ? 'active' : c.status }
-  1501→        : c
-  1502→    ))
-  1503→  }
-  1504→
-  1505→  const handleDeleteCampaign = (id: string) => {
-  1506→    setCampaigns(campaigns.filter(c => c.id !== id))
-  1507→    toast.success('Campaign deleted')
-  1508→  }
-  1509→
-  1510→  const getStatusBadge = (status: string) => {
-  1511→    const styles: Record<string, string> = {
-  1512→      active: 'bg-green-100 text-green-700 border-green-200',
-  1513→      paused: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-  1514→      completed: 'bg-blue-100 text-blue-700 border-blue-200',
-  1515→      pending: 'bg-gray-100 text-gray-700 border-gray-200'
-  1516→    }
-  1517→    return styles[status] || styles.pending
-  1518→  }
-  1519→
-  1520→  const getPlatformIcon = (platform: string) => {
-  1521→    return platform === 'youtube' 
-  1522→      ? <Youtube className="w-4 h-4 text-red-500" />
-  1523→      : <Instagram className="w-4 h-4 text-pink-500" />
-  1524→  }
-  1525→
-  1526→  return (
-  1527→    <div className="min-h-screen flex bg-gray-50">
-  1528→      {/* Sidebar */}
-  1529→      <aside className={`${sidebarOpen ? 'w-64' : 'w-20'} bg-slate-900 text-white transition-all duration-300 flex flex-col fixed h-screen z-40`}>
-  1530→        {/* Logo */}
-  1531→        <div className="p-4 border-b border-slate-800 flex items-center gap-3">
-  1532→          <div className="w-10 h-10 rounded-xl gradient-bg flex items-center justify-center flex-shrink-0">
-  1533→            <Rocket className="w-6 h-6 text-white" />
-  1534→          </div>
-  1535→          {sidebarOpen && <span className="font-bold text-lg gradient-text">SocialBoost</span>}
-  1536→        </div>
-  1537→
-  1538→        {/* Navigation */}
-  1539→        <nav className="flex-1 p-4 space-y-2">
-  1540→          {[
-  1541→            { icon: <LayoutDashboard />, label: 'Overview', id: 'overview' },
-  1542→            { icon: <Target />, label: 'Campaigns', id: 'campaigns' },
-  1543→            { icon: <BarChart3 />, label: 'Analytics', id: 'analytics' },
-  1544→            { icon: <Coins />, label: 'Credits', id: 'credits' },
-  1545→            { icon: <ZapIcon />, label: 'Earn Credits', id: 'earn' },
-  1546→            { icon: <Settings />, label: 'Settings', id: 'settings' },
-  1547→          ].map((item) => (
-  1548→            <button
-  1549→              key={item.id}
-  1550→              onClick={() => setActiveDashboardTab(item.id)}
-  1551→              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${
-  1552→                activeDashboardTab === item.id 
-  1553→                  ? 'bg-warm-500/20 text-warm-400 font-medium' 
-  1554→                  : 'hover:bg-slate-800 text-slate-400 hover:text-white'
-  1555→              }`}
-  1556→            >
-  1557→              {item.icon}
-  1558→              {sidebarOpen && <span>{item.label}</span>}
-  1559→            </button>
-  1560→          ))}
-  1561→        </nav>
-  1562→
-  1563→        {/* User Section */}
-  1564→        <div className="p-4 border-t border-slate-800">
-  1565→          <div className={`flex items-center ${sidebarOpen ? 'gap-3' : 'justify-center'}`}>
-  1566→            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-warm-400 to-warm-600 flex items-center justify-center text-white font-bold">
-  1567→              {user.name.charAt(0)}
-  1568→            </div>
-  1569→            {sidebarOpen && (
-  1570→              <div className="flex-1 min-w-0">
-  1571→                <p className="font-medium truncate">{user.name}</p>
-  1572→                <p className="text-xs text-slate-400 truncate">{user.email}</p>
-  1573→              </div>
-  1574→            )}
-  1575→            <button onClick={onLogout} className="p-2 hover:bg-slate-800 rounded-lg transition-colors" title="Logout">
-  1576→              <LogOut className="w-5 h-5 text-slate-400" />
-  1577→            </button>
-  1578→          </div>
-  1579→        </div>
-  1580→      </aside>
-  1581→
-  1582→      {/* Main Content */}
-  1583→      <main className={`flex-1 ${sidebarOpen ? 'ml-64' : 'ml-20'} transition-all duration-300`}>
-  1584→        {/* Top Header */}
-  1585→        <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b px-6 py-4">
-  1586→          <div className="flex items-center justify-between">
-  1587→            <div className="flex items-center gap-4">
-  1588→              <button 
-  1589→                onClick={() => setSidebarOpen(!sidebarOpen)}
-  1590→                className="p-2 hover:bg-gray-100 rounded-lg"
-  1591→              >
-  1592→                <Menu className="w-5 h-5" />
-  1593→              </button>
-  1594→              <h1 className="text-xl font-bold capitalize">{activeDashboardTab}</h1>
-  1595→            </div>
-  1596→            
-  1597→            <div className="flex items-center gap-3">
-  1598→              <Button variant="outline" size="sm" className="gap-2">
-  1599→                <Bell className="w-4 h-4" />
-  1600→                Notifications
-  1601→              </Button>
-  1602→              <Button 
-  1603→                size="sm" 
-  1604→                className="gradient-bg text-white border-0 gap-2"
-  1605→                onClick={() => setIsNewCampaignOpen(true)}
-  1606→              >
-  1607→                <Plus className="w-4 h-4" />
-  1608→                New Campaign
-  1609→              </Button>
-  1610→            </div>
-  1611→          </div>
-  1612→        </header>
-  1613→
-  1614→        {/* Dashboard Content */}
-  1615→        <div className="p-6">
-  1616→          {/* OVERVIEW TAB */}
-  1617→          {activeDashboardTab === 'overview' && (
-  1618→            <div className="space-y-6">
-  1619→              {/* Stats Grid */}
-  1620→              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-  1621→                <Card className="border-0 shadow-sm overflow-hidden">
-  1622→                  <CardContent className="p-6">
-  1623→                    <div className="flex items-start justify-between">
-  1624→                      <div>
-  1625→                        <p className="text-sm text-muted-foreground">Available Credits</p>
-  1626→                        <p className="text-3xl font-bold mt-1">{availableCredits.toLocaleString()}</p>
-  1627→                        <p className="text-xs text-muted-foreground mt-1">{creditsPercentage}% used</p>
-  1628→                      </div>
-  1629→                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-warm-400 to-orange-500 flex items-center justify-center">
-  1630→                        <Coins className="w-6 h-6 text-white" />
-  1631→                      </div>
-  1632→                    </div>
-  1633→                    <div className="mt-3 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-  1634→                      <div className="h-full gradient-bg rounded-full" style={{ width: `${creditsPercentage}%` }}></div>
-  1635→                    </div>
-  1636→                  </CardContent>
-  1637→                </Card>
-  1638→
-  1639→                <Card className="border-0 shadow-sm">
-  1640→                  <CardContent className="p-6">
-  1641→                    <div className="flex items-start justify-between">
-  1642→                      <div>
-  1643→                        <p className="text-sm text-muted-foreground">Active Campaigns</p>
-  1644→                        <p className="text-3xl font-bold mt-1">{mockUserStats.activeCampaigns}</p>
-  1645→                        <p className="text-xs text-green-600 flex items-center gap-1 mt-1">
-  1646→                          <ArrowUpRight className="w-3 h-3" /> +2 this week
-  1647→                        </p>
-  1648→                      </div>
-  1649→                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-400 to-cyan-500 flex items-center justify-center">
-  1650→                        <Target className="w-6 h-6 text-white" />
-  1651→                      </div>
-  1652→                    </div>
-  1653→                  </CardContent>
-  1654→                </Card>
-  1655→
-  1656→                <Card className="border-0 shadow-sm">
-  1657→                  <CardContent className="p-6">
-  1658→                    <div className="flex items-start justify-between">
-  1659→                      <div>
-  1660→                        <p className="text-sm text-muted-foreground">Total Views</p>
-  1661→                        <p className="text-3xl font-bold mt-1">{(mockUserStats.totalViews / 1000).toFixed(1)}K</p>
-  1662→                        <p className="text-xs text-green-600 flex items-center gap-1 mt-1">
-  1663→                          <ArrowUpRight className="w-3 h-3" /> +18% vs last week
-  1664→                        </p>
-  1665→                      </div>
-  1666→                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-400 to-violet-500 flex items-center justify-center">
-  1667→                        <Eye className="w-6 h-6 text-white" />
-  1668→                      </div>
-  1669→                    </div>
-  1670→                  </CardContent>
-  1671→                </Card>
-  1672→
-  1673→                <Card className="border-0 shadow-sm">
-  1674→                  <CardContent className="p-6">
-  1675→                    <div className="flex items-start justify-between">
-  1676→                      <div>
-  1677→                        <p className="text-sm text-muted-foreground">Engagement Rate</p>
-  1678→                        <p className="text-3xl font-bold mt-1">{mockUserStats.engagementRate}%</p>
-  1679→                        <p className="text-xs text-green-600 flex items-center gap-1 mt-1">
-  1680→                          <ArrowUpRight className="w-3 h-3" /> +2.3% improvement
-  1681→                        </p>
-  1682→                      </div>
-  1683→                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center">
-  1684→                        <TrendingUp className="w-6 h-6 text-white" />
-  1685→                      </div>
-  1686→                    </div>
-  1687→                  </CardContent>
-  1688→                </Card>
-  1689→              </div>
-  1690→
-  1691→              {/* Charts Row */}
-  1692→              <div className="grid lg:grid-cols-3 gap-6">
-  1693→                {/* Views Chart */}
-  1694→                <Card className="lg:col-span-2 border-0 shadow-sm">
-  1695→                  <CardHeader className="pb-2">
-  1696→                    <div className="flex items-center justify-between">
-  1697→                      <CardTitle className="text-base">Views & Followers Trend</CardTitle>
-  1698→                      <Select defaultValue="7d">
-  1699→                        <SelectTrigger className="w-28 h-8 text-xs" />
-  1700→                        <SelectContent>
-  1701→                          <SelectItem value="7d">Last 7 days</SelectItem>
-  1702→                          <SelectItem value="30d">Last 30 days</SelectItem>
-  1703→                          <SelectItem value="90d">Last 90 days</SelectItem>
-  1704→                        </SelectContent>
-  1705→                      </Select>
-  1706→                    </div>
-  1707→                  </CardHeader>
-  1708→                  <CardContent>
-  1709→                    <ResponsiveContainer width="100%" height={280}>
-  1710→                      <AreaChart data={chartDataViews}>
-  1711→                        <defs>
-  1712→                          <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
-  1713→                            <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3}/>
-  1714→                            <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/>
-  1715→                          </linearGradient>
-  1716→                          <linearGradient id="colorFollowers" x1="0" y1="0" x2="0" y2="1">
-  1717→                            <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3}/>
-  1718→                            <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
-  1719→                          </linearGradient>
-  1720→                        </defs>
-  1721→                        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-  1722→                        <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
-  1723→                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
-  1724→                        <Tooltip 
-  1725→                          contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-  1726→                        />
-  1727→                        <Area type="monotone" dataKey="views" stroke="#f59e0b" strokeWidth={2} fillOpacity={1} fill="url(#colorViews)" />
-  1728→                        <Area type="monotone" dataKey="followers" stroke="#8b5cf6" strokeWidth={2} fillOpacity={1} fill="url(#colorFollowers)" />
-  1729→                      </AreaChart>
-  1730→                    </ResponsiveContainer>
-  1731→                  </CardContent>
-  1732→                </Card>
-  1733→
-  1734→                {/* Engagement Pie Chart */}
-  1735→                <Card className="border-0 shadow-sm">
-  1736→                  <CardHeader className="pb-2">
-  1737→                    <CardTitle className="text-base">Engagement Breakdown</CardTitle>
-  1738→                  </CardHeader>
-  1739→                  <CardContent>
-  1740→                    <ResponsiveContainer width="100%" height={200}>
-  1741→                      <PieChart>
-  1742→                        <Pie
-  1743→                          data={chartDataEngagement}
-  1744→                          cx="50%"
-  1745→                          cy="50%"
-  1746→                          innerRadius={50}
-  1747→                          outerRadius={80}
-  1748→                          paddingAngle={5}
-  1749→                          dataKey="value"
-  1750→                        >
-  1751→                          {chartDataEngagement.map((entry, index) => (
-  1752→                            <Cell key={`cell-${index}`} fill={entry.color} />
-  1753→                          ))}
-  1754→                        </Pie>
-  1755→                        <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
-  1756→                      </PieChart>
-  1757→                    </ResponsiveContainer>
-  1758→                    <div className="space-y-2 mt-4">
-  1759→                      {chartDataEngagement.map((item, i) => (
-  1760→                        <div key={i} className="flex items-center justify-between text-sm">
-  1761→                          <div className="flex items-center gap-2">
-  1762→                            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }}></div>
-  1763→                            <span>{item.name}</span>
-  1764→                          </div>
-  1765→                          <span className="font-medium">{item.value.toLocaleString()}</span>
-  1766→                        </div>
-  1767→                      ))}
-  1768→                    </div>
-  1769→                  </CardContent>
-  1770→                </Card>
-  1771→              </div>
-  1772→
-  1773→              {/* Recent Activity */}
-  1774→              <Card className="border-0 shadow-sm">
-  1775→                <CardHeader>
-  1776→                  <div className="flex items-center justify-between">
-  1777→                    <CardTitle className="text-base">Recent Campaign Activity</CardTitle>
-  1778→                    <Button variant="ghost" size="sm" className="text-warm-600">
-  1779→                      View All <ArrowRight className="w-4 h-4 ml-1" />
-  1780→                    </Button>
-  1781→                  </div>
-  1782→                </CardHeader>
-  1783→                <CardContent>
-  1784→                  <div className="overflow-x-auto">
-  1785→                    <table className="w-full">
-  1786→                      <thead>
-  1787→                        <tr className="text-left text-sm text-muted-foreground border-b">
-  1788→                          <th className="pb-3 font-medium">Campaign</th>
-  1789→                          <th className="pb-3 font-medium">Platform</th>
-  1790→                          <th className="pb-3 font-medium">Progress</th>
-  1791→                          <th className="pb-3 font-medium">Status</th>
-  1792→                          <th className="pb-3 font-medium">Actions</th>
-  1793→                        </tr>
-  1794→                      </thead>
-  1795→                      <tbody>
-  1796→                        {campaigns.slice(0, 5).map((campaign) => (
-  1797→                          <tr key={campaign.id} className="border-b last:border-0">
-  1798→                            <td className="py-3">
-  1799→                              <div>
-  1800→                                <p className="font-medium text-sm">{campaign.name}</p>
-  1801→                                <p className="text-xs text-muted-foreground">{campaign.createdAt}</p>
-  1802→                              </div>
-  1803→                            </td>
-  1804→                            <td className="py-3">
-  1805→                              <div className="flex items-center gap-1">
-  1806→                                {getPlatformIcon(campaign.platform)}
-  1807→                                <span className="text-sm capitalize">{campaign.serviceType}</span>
-  1808→                              </div>
-  1809→                            </td>
-  1810→                            <td className="py-3">
-  1811→                              <div className="flex items-center gap-2">
-  1812→                                <div className="w-20 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-  1813→                                  <div 
-  1814→                                    className="h-full gradient-bg rounded-full" 
-  1815→                                    style={{ width: `${campaign.progress}%` }}
-  1816→                                  ></div>
-  1817→                                </div>
-  1818→                                <span className="text-xs text-muted-foreground">{campaign.progress}%</span>
-  1819→                              </div>
-  1820→                            </td>
-  1821→                            <td className="py-3">
-  1822→                              <Badge variant="outline" className={getStatusBadge(campaign.status)}>
-  1823→                                {campaign.status}
-  1824→                              </Badge>
-  1825→                            </td>
-  1826→                            <td className="py-3">
-  1827→                              <div className="flex items-center gap-1">
-  1828→                                <button 
-  1829→                                  onClick={() => handleToggleCampaignStatus(campaign.id)}
-  1830→                                  className="p-1.5 hover:bg-gray-100 rounded-lg"
-  1831→                                >
-  1832→                                  {campaign.status === 'active' ? <Pause className="w-4 h-4" /> : <PlayCircle className="w-4 h-4" />}
-  1833→                                </button>
-  1834→                                <button className="p-1.5 hover:bg-gray-100 rounded-lg">
-  1835→                                  <MoreHorizontal className="w-4 h-4" />
-  1836→                                </button>
-  1837→                              </div>
-  1838→                            </td>
-  1839→                          </tr>
-  1840→                        ))}
-  1841→                      </tbody>
-  1842→                    </table>
-  1843→                  </div>
-  1844→                </CardContent>
-  1845→              </Card>
-  1846→            </div>
-  1847→          )}
-  1848→
-  1849→          {/* CAMPAIGNS TAB */}
-  1850→          {activeDashboardTab === 'campaigns' && (
-  1851→            <div className="space-y-6">
-  1852→              {/* Filters Bar */}
-  1853→              <Card className="border-0 shadow-sm">
-  1854→                <CardContent className="p-4">
-  1855→                  <div className="flex flex-wrap items-center gap-4">
-  1856→                    <div className="relative flex-1 min-w-[200px]">
-  1857→                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-  1858→                      <Input placeholder="Search campaigns..." className="pl-9" />
-  1859→                    </div>
-  1860→                    <Select defaultValue="all-platforms">
-  1861→                      <SelectTrigger className="w-40" />
-  1862→                      <SelectContent>
-  1863→                        <SelectItem value="all-platforms">All Platforms</SelectItem>
-  1864→                        <SelectItem value="youtube">YouTube</SelectItem>
-  1865→                        <SelectItem value="instagram">Instagram</SelectItem>
-  1866→                      </SelectContent>
-  1867→                    </Select>
-  1868→                    <Select defaultValue="all-statuses">
-  1869→                      <SelectTrigger className="w-36" />
-  1870→                      <SelectContent>
-  1871→                        <SelectItem value="all-statuses">All Status</SelectItem>
-  1872→                        <SelectItem value="active">Active</SelectItem>
-  1873→                        <SelectItem value="paused">Paused</SelectItem>
-  1874→                        <SelectItem value="completed">Completed</SelectItem>
-  1875→                        <SelectItem value="pending">Pending</SelectItem>
-  1876→                      </SelectContent>
-  1877→                    </Select>
-  1878→                    <Button variant="outline" size="sm" className="gap-2">
-  1879→                      <Filter className="w-4 h-4" /> More Filters
-  1880→                    </Button>
-  1881→                  </div>
-  1882→                </CardContent>
-  1883→              </Card>
-  1884→
-  1885→              {/* Campaigns Table */}
-  1886→              <Card className="border-0 shadow-sm">
-  1887→                <CardHeader>
-  1888→                  <div className="flex items-center justify-between">
-  1889→                    <div className="flex items-center gap-2">
-  1890→                      <CardTitle className="text-base">All Campaigns</CardTitle>
-  1891→                      <Badge variant="secondary">{campaigns.length} total</Badge>
-  1892→                    </div>
-  1893→                    <div className="flex items-center gap-2">
-  1894→                      <Button variant="outline" size="sm" className="gap-2">
-  1895→                        <Download className="w-4 h-4" /> Export
-  1896→                      </Button>
-  1897→                      <Button variant="outline" size="sm" className="gap-2">
-  1898→                        <RefreshCw className="w-4 h-4" /> Refresh
-  1899→                      </Button>
-  1900→                    </div>
-  1901→                  </div>
-  1902→                </CardHeader>
-  1903→                <CardContent>
-  1904→                  <div className="overflow-x-auto">
-  1905→                    <table className="w-full">
-  1906→                      <thead>
-  1907→                        <tr className="text-left text-sm text-muted-foreground border-b bg-gray-50">
-  1908→                          <th className="p-3 font-medium w-10">
-  1909→                            <input type="checkbox" className="rounded" />
-  1910→                          </th>
-  1911→                          <th className="p-3 font-medium">Campaign Name</th>
-  1912→                          <th className="p-3 font-medium">Platform</th>
-  1913→                          <th className="p-3 font-medium">Service Type</th>
-  1914→                          <th className="p-3 font-medium">Target URL</th>
-  1915→                          <th className="p-3 font-medium">Progress</th>
-  1916→                          <th className="p-3 font-medium">Credits</th>
-  1917→                          <th className="p-3 font-medium">Status</th>
-  1918→                          <th className="p-3 font-medium">Created</th>
-  1919→                          <th className="p-3 font-medium">Actions</th>
-  1920→                        </tr>
-  1921→                      </thead>
-  1922→                      <tbody>
-  1923→                        {campaigns.map((campaign) => (
-  1924→                          <tr key={campaign.id} className="border-b hover:bg-gray-50/50 transition-colors group">
-  1925→                            <td className="p-3">
-  1926→                              <input 
-  1927→                                type="checkbox" 
-  1928→                                checked={selectedCampaigns.includes(campaign.id)}
-  1929→                                onChange={(e) => {
-  1930→                                  if (e.target.checked) {
-  1931→                                    setSelectedCampaigns([...selectedCampaigns, campaign.id])
-  1932→                                  } else {
-  1933→                                    setSelectedCampaigns(selectedCampaigns.filter(id => id !== campaign.id))
-  1934→                                  }
-  1935→                                }}
-  1936→                                className="rounded"
-  1937→                              />
-  1938→                            </td>
-  1939→                            <td className="p-3">
-  1940→                              <p className="font-medium text-sm">{campaign.name}</p>
-  1941→                            </td>
-  1942→                            <td className="p-3">
-  1943→                              <div className="flex items-center gap-1.5">
-  1944→                                {getPlatformIcon(campaign.platform)}
-  1945→                                <span className="text-sm capitalize">{campaign.platform}</span>
-  1946→                              </div>
-  1947→                            </td>
-  1948→                            <td className="p-3">
-  1949→                              <span className="text-sm bg-gray-100 px-2 py-1 rounded capitalize">{campaign.serviceType.replace('_', ' ')}</span>
-  1950→                            </td>
-  1951→                            <td className="p-3 max-w-[200px]">
-  1952→                              <a href={campaign.targetUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-warm-600 hover:text-warm-700 flex items-center gap-1 truncate" title={campaign.targetUrl}>
-  1953→                                <span className="truncate">{campaign.targetUrl.replace(/^https?:\/\/(www\.)?/, '')}</span>
-  1954→                                <ExternalLink className="w-3 h-3 flex-shrink-0" />
-  1955→                              </a>
-  1956→                            </td>
-  1957→                            <td className="p-3">
-  1958→                              <div className="space-y-1">
-  1959→                                <div className="flex justify-between text-xs">
-  1960→                                  <span>{campaign.completedCount.toLocaleString()} / {campaign.quantity.toLocaleString()}</span>
-  1961→                                  <span>{campaign.progress}%</span>
-  1962→                                </div>
-  1963→                                <div className="w-24 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-  1964→                                  <div 
-  1965→                                    className={`h-full rounded-full ${
-  1966→                                      campaign.progress === 100 ? 'bg-green-500' : 'gradient-bg'
-  1967→                                    }`}
-  1968→                                    style={{ width: `${campaign.progress}%` }}
-  1969→                                  ></div>
-  1970→                                </div>
-  1971→                              </div>
-  1972→                            </td>
-  1973→                            <td className="p-3">
-  1974→                              <span className="text-sm font-medium">{campaign.creditsSpent}</span>
-  1975→                              <Coins className="w-3 h-3 inline ml-1 text-warm-500" />
-  1976→                            </td>
-  1977→                            <td className="p-3">
-  1978→                              <Badge variant="outline" className={getStatusBadge(campaign.status)}>
-  1979→                                {campaign.status}
-  1980→                              </Badge>
-  1981→                            </td>
-  1982→                            <td className="p-3 text-sm text-muted-foreground">
-  1983→                              {campaign.createdAt}
-  1984→                            </td>
-  1985→                            <td className="p-3">
-  1986→                              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-  1987→                                <button 
-  1988→                                  onClick={() => handleToggleCampaignStatus(campaign.id)}
-  1989→                                  className="p-1.5 hover:bg-gray-100 rounded-lg"
-  1990→                                  title={campaign.status === 'active' ? 'Pause' : 'Resume'}
-  1991→                                >
-  1992→                                  {campaign.status === 'active' ? <Pause className="w-4 h-4" /> : campaign.status === 'paused' ? <PlayCircle className="w-4 h-4" /> : null}
-  1993→                                </button>
-  1994→                                <button className="p-1.5 hover:bg-gray-100 rounded-lg" title="Edit">
-  1995→                                  <Edit3 className="w-4 h-4" />
-  1996→                                </button>
-  1997→                                <button 
-  1998→                                  onClick={() => handleDeleteCampaign(campaign.id)}
-  1999→                                  className="p-1.5 hover:bg-red-100 text-red-500 rounded-lg"
-  2000→                                  title="Delete"
+  1431→  authToken: string | null
+  1432→}
+  1433→
+  1434→function Dashboard({ user, onLogout, authToken }: DashboardProps) {
+  1435→  const [sidebarOpen, setSidebarOpen] = useState(true)
+  1436→  const [activeDashboardTab, setActiveDashboardTab] = useState('overview')
+  1437→  const [campaigns, setCampaigns] = useState<Campaign[]>(mockCampaigns)
+  1438→  const [isNewCampaignOpen, setIsNewCampaignOpen] = useState(false)
+  1439→  const [selectedCampaigns, setSelectedCampaigns] = useState<string[]>([])
+  1440→
+  1441→  // New Campaign Form State
+  1442→  const [newCampaign, setNewCampaign] = useState({
+  1443→    name: '',
+  1444→    platform: 'youtube' as 'youtube' | 'instagram',
+  1445→    serviceType: 'views',
+  1446→    targetUrl: '',
+  1447→    quantity: 1000,
+  1448→    speed: 'normal',
+  1449→    geoTarget: 'all'
+  1450→  })
+  1451→
+  1452→  // Stats calculations
+  1453→  const availableCredits = mockUserStats.totalCredits - mockUserStats.usedCredits
+  1454→  const creditsPercentage = Math.round((mockUserStats.usedCredits / mockUserStats.totalCredits) * 100)
+  1455→
+  1456→  const handleCreateCampaign = () => {
+  1457→    if (!newCampaign.name || !newCampaign.targetUrl) {
+  1458→      toast.error('Please fill in all required fields')
+  1459→      return
+  1460→    }
+  1461→
+  1462→    const creditsNeeded = Math.ceil(newCampaign.quantity / 100)
+  1463→    if (creditsNeeded > availableCredits) {
+  1464→      toast.error(`Insufficient credits. You need ${creditsNeeded} but have ${availableCredits}`)
+  1465→      return
+  1466→    }
+  1467→
+  1468→    const campaign: Campaign = {
+  1469→      id: `camp${Date.now()}`,
+  1470→      name: newCampaign.name,
+  1471→      platform: newCampaign.platform,
+  1472→      serviceType: newCampaign.serviceType,
+  1473→      targetUrl: newCampaign.targetUrl,
+  1474→      quantity: newCampaign.quantity,
+  1475→      completedCount: 0,
+  1476→      status: 'pending',
+  1477→      creditsSpent: creditsNeeded,
+  1478→      createdAt: new Date().toISOString().split('T')[0],
+  1479→      progress: 0
+  1480→    }
+  1481→
+  1482→    setCampaigns([campaign, ...campaigns])
+  1483→    setIsNewCampaignOpen(false)
+  1484→    toast.success('Campaign created successfully!', { description: `${newCampaign.name} is now processing` })
+  1485→    
+  1486→    // Reset form
+  1487→    setNewCampaign({
+  1488→      name: '',
+  1489→      platform: 'youtube',
+  1490→      serviceType: 'views',
+  1491→      targetUrl: '',
+  1492→      quantity: 1000,
+  1493→      speed: 'normal',
+  1494→      geoTarget: 'all'
+  1495→    })
+  1496→  }
+  1497→
+  1498→  const handleToggleCampaignStatus = (id: string) => {
+  1499→    setCampaigns(campaigns.map(c => 
+  1500→      c.id === id 
+  1501→        ? { ...c, status: c.status === 'active' ? 'paused' : c.status === 'paused' ? 'active' : c.status }
+  1502→        : c
+  1503→    ))
+  1504→  }
+  1505→
+  1506→  const handleDeleteCampaign = (id: string) => {
+  1507→    setCampaigns(campaigns.filter(c => c.id !== id))
+  1508→    toast.success('Campaign deleted')
+  1509→  }
+  1510→
+  1511→  const getStatusBadge = (status: string) => {
+  1512→    const styles: Record<string, string> = {
+  1513→      active: 'bg-green-100 text-green-700 border-green-200',
+  1514→      paused: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+  1515→      completed: 'bg-blue-100 text-blue-700 border-blue-200',
+  1516→      pending: 'bg-gray-100 text-gray-700 border-gray-200'
+  1517→    }
+  1518→    return styles[status] || styles.pending
+  1519→  }
+  1520→
+  1521→  const getPlatformIcon = (platform: string) => {
+  1522→    return platform === 'youtube' 
+  1523→      ? <Youtube className="w-4 h-4 text-red-500" />
+  1524→      : <Instagram className="w-4 h-4 text-pink-500" />
+  1525→  }
+  1526→
+  1527→  return (
+  1528→    <div className="min-h-screen flex bg-gray-50">
+  1529→      {/* Sidebar */}
+  1530→      <aside className={`${sidebarOpen ? 'w-64' : 'w-20'} bg-slate-900 text-white transition-all duration-300 flex flex-col fixed h-screen z-40`}>
+  1531→        {/* Logo */}
+  1532→        <div className="p-4 border-b border-slate-800 flex items-center gap-3">
+  1533→          <div className="w-10 h-10 rounded-xl gradient-bg flex items-center justify-center flex-shrink-0">
+  1534→            <Rocket className="w-6 h-6 text-white" />
+  1535→          </div>
+  1536→          {sidebarOpen && <span className="font-bold text-lg gradient-text">SocialBoost</span>}
+  1537→        </div>
+  1538→
+  1539→        {/* Navigation */}
+  1540→        <nav className="flex-1 p-4 space-y-2">
+  1541→          {[
+  1542→            { icon: <LayoutDashboard />, label: 'Overview', id: 'overview' },
+  1543→            { icon: <Target />, label: 'Campaigns', id: 'campaigns' },
+  1544→            { icon: <BarChart3 />, label: 'Analytics', id: 'analytics' },
+  1545→            { icon: <Coins />, label: 'Credits', id: 'credits' },
+  1546→            { icon: <ZapIcon />, label: 'Earn Credits', id: 'earn' },
+  1547→            { icon: <Settings />, label: 'Settings', id: 'settings' },
+  1548→          ].map((item) => (
+  1549→            <button
+  1550→              key={item.id}
+  1551→              onClick={() => setActiveDashboardTab(item.id)}
+  1552→              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${
+  1553→                activeDashboardTab === item.id 
+  1554→                  ? 'bg-warm-500/20 text-warm-400 font-medium' 
+  1555→                  : 'hover:bg-slate-800 text-slate-400 hover:text-white'
+  1556→              }`}
+  1557→            >
+  1558→              {item.icon}
+  1559→              {sidebarOpen && <span>{item.label}</span>}
+  1560→            </button>
+  1561→          ))}
+  1562→        </nav>
+  1563→
+  1564→        {/* User Section */}
+  1565→        <div className="p-4 border-t border-slate-800">
+  1566→          <div className={`flex items-center ${sidebarOpen ? 'gap-3' : 'justify-center'}`}>
+  1567→            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-warm-400 to-warm-600 flex items-center justify-center text-white font-bold">
+  1568→              {user.name.charAt(0)}
+  1569→            </div>
+  1570→            {sidebarOpen && (
+  1571→              <div className="flex-1 min-w-0">
+  1572→                <p className="font-medium truncate">{user.name}</p>
+  1573→                <p className="text-xs text-slate-400 truncate">{user.email}</p>
+  1574→              </div>
+  1575→            )}
+  1576→            <button onClick={onLogout} className="p-2 hover:bg-slate-800 rounded-lg transition-colors" title="Logout">
+  1577→              <LogOut className="w-5 h-5 text-slate-400" />
+  1578→            </button>
+  1579→          </div>
+  1580→        </div>
+  1581→      </aside>
+  1582→
+  1583→      {/* Main Content */}
+  1584→      <main className={`flex-1 ${sidebarOpen ? 'ml-64' : 'ml-20'} transition-all duration-300`}>
+  1585→        {/* Top Header */}
+  1586→        <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b px-6 py-4">
+  1587→          <div className="flex items-center justify-between">
+  1588→            <div className="flex items-center gap-4">
+  1589→              <button 
+  1590→                onClick={() => setSidebarOpen(!sidebarOpen)}
+  1591→                className="p-2 hover:bg-gray-100 rounded-lg"
+  1592→              >
+  1593→                <Menu className="w-5 h-5" />
+  1594→              </button>
+  1595→              <h1 className="text-xl font-bold capitalize">{activeDashboardTab}</h1>
+  1596→            </div>
+  1597→            
+  1598→            <div className="flex items-center gap-3">
+  1599→              <Button variant="outline" size="sm" className="gap-2">
+  1600→                <Bell className="w-4 h-4" />
+  1601→                Notifications
+  1602→              </Button>
+  1603→              <Button 
+  1604→                size="sm" 
+  1605→                className="gradient-bg text-white border-0 gap-2"
+  1606→                onClick={() => setIsNewCampaignOpen(true)}
+  1607→              >
+  1608→                <Plus className="w-4 h-4" />
+  1609→                New Campaign
+  1610→              </Button>
+  1611→            </div>
+  1612→          </div>
+  1613→        </header>
+  1614→
+  1615→        {/* Dashboard Content */}
+  1616→        <div className="p-6">
+  1617→          {/* OVERVIEW TAB */}
+  1618→          {activeDashboardTab === 'overview' && (
+  1619→            <div className="space-y-6">
+  1620→              {/* Stats Grid */}
+  1621→              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+  1622→                <Card className="border-0 shadow-sm overflow-hidden">
+  1623→                  <CardContent className="p-6">
+  1624→                    <div className="flex items-start justify-between">
+  1625→                      <div>
+  1626→                        <p className="text-sm text-muted-foreground">Available Credits</p>
+  1627→                        <p className="text-3xl font-bold mt-1">{availableCredits.toLocaleString()}</p>
+  1628→                        <p className="text-xs text-muted-foreground mt-1">{creditsPercentage}% used</p>
+  1629→                      </div>
+  1630→                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-warm-400 to-orange-500 flex items-center justify-center">
+  1631→                        <Coins className="w-6 h-6 text-white" />
+  1632→                      </div>
+  1633→                    </div>
+  1634→                    <div className="mt-3 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+  1635→                      <div className="h-full gradient-bg rounded-full" style={{ width: `${creditsPercentage}%` }}></div>
+  1636→                    </div>
+  1637→                  </CardContent>
+  1638→                </Card>
+  1639→
+  1640→                <Card className="border-0 shadow-sm">
+  1641→                  <CardContent className="p-6">
+  1642→                    <div className="flex items-start justify-between">
+  1643→                      <div>
+  1644→                        <p className="text-sm text-muted-foreground">Active Campaigns</p>
+  1645→                        <p className="text-3xl font-bold mt-1">{mockUserStats.activeCampaigns}</p>
+  1646→                        <p className="text-xs text-green-600 flex items-center gap-1 mt-1">
+  1647→                          <ArrowUpRight className="w-3 h-3" /> +2 this week
+  1648→                        </p>
+  1649→                      </div>
+  1650→                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-400 to-cyan-500 flex items-center justify-center">
+  1651→                        <Target className="w-6 h-6 text-white" />
+  1652→                      </div>
+  1653→                    </div>
+  1654→                  </CardContent>
+  1655→                </Card>
+  1656→
+  1657→                <Card className="border-0 shadow-sm">
+  1658→                  <CardContent className="p-6">
+  1659→                    <div className="flex items-start justify-between">
+  1660→                      <div>
+  1661→                        <p className="text-sm text-muted-foreground">Total Views</p>
+  1662→                        <p className="text-3xl font-bold mt-1">{(mockUserStats.totalViews / 1000).toFixed(1)}K</p>
+  1663→                        <p className="text-xs text-green-600 flex items-center gap-1 mt-1">
+  1664→                          <ArrowUpRight className="w-3 h-3" /> +18% vs last week
+  1665→                        </p>
+  1666→                      </div>
+  1667→                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-400 to-violet-500 flex items-center justify-center">
+  1668→                        <Eye className="w-6 h-6 text-white" />
+  1669→                      </div>
+  1670→                    </div>
+  1671→                  </CardContent>
+  1672→                </Card>
+  1673→
+  1674→                <Card className="border-0 shadow-sm">
+  1675→                  <CardContent className="p-6">
+  1676→                    <div className="flex items-start justify-between">
+  1677→                      <div>
+  1678→                        <p className="text-sm text-muted-foreground">Engagement Rate</p>
+  1679→                        <p className="text-3xl font-bold mt-1">{mockUserStats.engagementRate}%</p>
+  1680→                        <p className="text-xs text-green-600 flex items-center gap-1 mt-1">
+  1681→                          <ArrowUpRight className="w-3 h-3" /> +2.3% improvement
+  1682→                        </p>
+  1683→                      </div>
+  1684→                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center">
+  1685→                        <TrendingUp className="w-6 h-6 text-white" />
+  1686→                      </div>
+  1687→                    </div>
+  1688→                  </CardContent>
+  1689→                </Card>
+  1690→              </div>
+  1691→
+  1692→              {/* Charts Row */}
+  1693→              <div className="grid lg:grid-cols-3 gap-6">
+  1694→                {/* Views Chart */}
+  1695→                <Card className="lg:col-span-2 border-0 shadow-sm">
+  1696→                  <CardHeader className="pb-2">
+  1697→                    <div className="flex items-center justify-between">
+  1698→                      <CardTitle className="text-base">Views & Followers Trend</CardTitle>
+  1699→                      <Select defaultValue="7d">
+  1700→                        <SelectTrigger className="w-28 h-8 text-xs" />
+  1701→                        <SelectContent>
+  1702→                          <SelectItem value="7d">Last 7 days</SelectItem>
+  1703→                          <SelectItem value="30d">Last 30 days</SelectItem>
+  1704→                          <SelectItem value="90d">Last 90 days</SelectItem>
+  1705→                        </SelectContent>
+  1706→                      </Select>
+  1707→                    </div>
+  1708→                  </CardHeader>
+  1709→                  <CardContent>
+  1710→                    <ResponsiveContainer width="100%" height={280}>
+  1711→                      <AreaChart data={chartDataViews}>
+  1712→                        <defs>
+  1713→                          <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
+  1714→                            <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3}/>
+  1715→                            <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/>
+  1716→                          </linearGradient>
+  1717→                          <linearGradient id="colorFollowers" x1="0" y1="0" x2="0" y2="1">
+  1718→                            <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3}/>
+  1719→                            <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
+  1720→                          </linearGradient>
+  1721→                        </defs>
+  1722→                        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+  1723→                        <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
+  1724→                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
+  1725→                        <Tooltip 
+  1726→                          contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+  1727→                        />
+  1728→                        <Area type="monotone" dataKey="views" stroke="#f59e0b" strokeWidth={2} fillOpacity={1} fill="url(#colorViews)" />
+  1729→                        <Area type="monotone" dataKey="followers" stroke="#8b5cf6" strokeWidth={2} fillOpacity={1} fill="url(#colorFollowers)" />
+  1730→                      </AreaChart>
+  1731→                    </ResponsiveContainer>
+  1732→                  </CardContent>
+  1733→                </Card>
+  1734→
+  1735→                {/* Engagement Pie Chart */}
+  1736→                <Card className="border-0 shadow-sm">
+  1737→                  <CardHeader className="pb-2">
+  1738→                    <CardTitle className="text-base">Engagement Breakdown</CardTitle>
+  1739→                  </CardHeader>
+  1740→                  <CardContent>
+  1741→                    <ResponsiveContainer width="100%" height={200}>
+  1742→                      <PieChart>
+  1743→                        <Pie
+  1744→                          data={chartDataEngagement}
+  1745→                          cx="50%"
+  1746→                          cy="50%"
+  1747→                          innerRadius={50}
+  1748→                          outerRadius={80}
+  1749→                          paddingAngle={5}
+  1750→                          dataKey="value"
+  1751→                        >
+  1752→                          {chartDataEngagement.map((entry, index) => (
+  1753→                            <Cell key={`cell-${index}`} fill={entry.color} />
+  1754→                          ))}
+  1755→                        </Pie>
+  1756→                        <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
+  1757→                      </PieChart>
+  1758→                    </ResponsiveContainer>
+  1759→                    <div className="space-y-2 mt-4">
+  1760→                      {chartDataEngagement.map((item, i) => (
+  1761→                        <div key={i} className="flex items-center justify-between text-sm">
+  1762→                          <div className="flex items-center gap-2">
+  1763→                            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }}></div>
+  1764→                            <span>{item.name}</span>
+  1765→                          </div>
+  1766→                          <span className="font-medium">{item.value.toLocaleString()}</span>
+  1767→                        </div>
+  1768→                      ))}
+  1769→                    </div>
+  1770→                  </CardContent>
+  1771→                </Card>
+  1772→              </div>
+  1773→
+  1774→              {/* Recent Activity */}
+  1775→              <Card className="border-0 shadow-sm">
+  1776→                <CardHeader>
+  1777→                  <div className="flex items-center justify-between">
+  1778→                    <CardTitle className="text-base">Recent Campaign Activity</CardTitle>
+  1779→                    <Button variant="ghost" size="sm" className="text-warm-600">
+  1780→                      View All <ArrowRight className="w-4 h-4 ml-1" />
+  1781→                    </Button>
+  1782→                  </div>
+  1783→                </CardHeader>
+  1784→                <CardContent>
+  1785→                  <div className="overflow-x-auto">
+  1786→                    <table className="w-full">
+  1787→                      <thead>
+  1788→                        <tr className="text-left text-sm text-muted-foreground border-b">
+  1789→                          <th className="pb-3 font-medium">Campaign</th>
+  1790→                          <th className="pb-3 font-medium">Platform</th>
+  1791→                          <th className="pb-3 font-medium">Progress</th>
+  1792→                          <th className="pb-3 font-medium">Status</th>
+  1793→                          <th className="pb-3 font-medium">Actions</th>
+  1794→                        </tr>
+  1795→                      </thead>
+  1796→                      <tbody>
+  1797→                        {campaigns.slice(0, 5).map((campaign) => (
+  1798→                          <tr key={campaign.id} className="border-b last:border-0">
+  1799→                            <td className="py-3">
+  1800→                              <div>
+  1801→                                <p className="font-medium text-sm">{campaign.name}</p>
+  1802→                                <p className="text-xs text-muted-foreground">{campaign.createdAt}</p>
+  1803→                              </div>
+  1804→                            </td>
+  1805→                            <td className="py-3">
+  1806→                              <div className="flex items-center gap-1">
+  1807→                                {getPlatformIcon(campaign.platform)}
+  1808→                                <span className="text-sm capitalize">{campaign.serviceType}</span>
+  1809→                              </div>
+  1810→                            </td>
+  1811→                            <td className="py-3">
+  1812→                              <div className="flex items-center gap-2">
+  1813→                                <div className="w-20 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+  1814→                                  <div 
+  1815→                                    className="h-full gradient-bg rounded-full" 
+  1816→                                    style={{ width: `${campaign.progress}%` }}
+  1817→                                  ></div>
+  1818→                                </div>
+  1819→                                <span className="text-xs text-muted-foreground">{campaign.progress}%</span>
+  1820→                              </div>
+  1821→                            </td>
+  1822→                            <td className="py-3">
+  1823→                              <Badge variant="outline" className={getStatusBadge(campaign.status)}>
+  1824→                                {campaign.status}
+  1825→                              </Badge>
+  1826→                            </td>
+  1827→                            <td className="py-3">
+  1828→                              <div className="flex items-center gap-1">
+  1829→                                <button 
+  1830→                                  onClick={() => handleToggleCampaignStatus(campaign.id)}
+  1831→                                  className="p-1.5 hover:bg-gray-100 rounded-lg"
+  1832→                                >
+  1833→                                  {campaign.status === 'active' ? <Pause className="w-4 h-4" /> : <PlayCircle className="w-4 h-4" />}
+  1834→                                </button>
+  1835→                                <button className="p-1.5 hover:bg-gray-100 rounded-lg">
+  1836→                                  <MoreHorizontal className="w-4 h-4" />
+  1837→                                </button>
+  1838→                              </div>
+  1839→                            </td>
+  1840→                          </tr>
+  1841→                        ))}
+  1842→                      </tbody>
+  1843→                    </table>
+  1844→                  </div>
+  1845→                </CardContent>
+  1846→              </Card>
+  1847→            </div>
+  1848→          )}
+  1849→
+  1850→          {/* CAMPAIGNS TAB */}
+  1851→          {activeDashboardTab === 'campaigns' && (
+  1852→            <div className="space-y-6">
+  1853→              {/* Filters Bar */}
+  1854→              <Card className="border-0 shadow-sm">
+  1855→                <CardContent className="p-4">
+  1856→                  <div className="flex flex-wrap items-center gap-4">
+  1857→                    <div className="relative flex-1 min-w-[200px]">
+  1858→                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+  1859→                      <Input placeholder="Search campaigns..." className="pl-9" />
+  1860→                    </div>
+  1861→                    <Select defaultValue="all-platforms">
+  1862→                      <SelectTrigger className="w-40" />
+  1863→                      <SelectContent>
+  1864→                        <SelectItem value="all-platforms">All Platforms</SelectItem>
+  1865→                        <SelectItem value="youtube">YouTube</SelectItem>
+  1866→                        <SelectItem value="instagram">Instagram</SelectItem>
+  1867→                      </SelectContent>
+  1868→                    </Select>
+  1869→                    <Select defaultValue="all-statuses">
+  1870→                      <SelectTrigger className="w-36" />
+  1871→                      <SelectContent>
+  1872→                        <SelectItem value="all-statuses">All Status</SelectItem>
+  1873→                        <SelectItem value="active">Active</SelectItem>
+  1874→                        <SelectItem value="paused">Paused</SelectItem>
+  1875→                        <SelectItem value="completed">Completed</SelectItem>
+  1876→                        <SelectItem value="pending">Pending</SelectItem>
+  1877→                      </SelectContent>
+  1878→                    </Select>
+  1879→                    <Button variant="outline" size="sm" className="gap-2">
+  1880→                      <Filter className="w-4 h-4" /> More Filters
+  1881→                    </Button>
+  1882→                  </div>
+  1883→                </CardContent>
+  1884→              </Card>
+  1885→
+  1886→              {/* Campaigns Table */}
+  1887→              <Card className="border-0 shadow-sm">
+  1888→                <CardHeader>
+  1889→                  <div className="flex items-center justify-between">
+  1890→                    <div className="flex items-center gap-2">
+  1891→                      <CardTitle className="text-base">All Campaigns</CardTitle>
+  1892→                      <Badge variant="secondary">{campaigns.length} total</Badge>
+  1893→                    </div>
+  1894→                    <div className="flex items-center gap-2">
+  1895→                      <Button variant="outline" size="sm" className="gap-2">
+  1896→                        <Download className="w-4 h-4" /> Export
+  1897→                      </Button>
+  1898→                      <Button variant="outline" size="sm" className="gap-2">
+  1899→                        <RefreshCw className="w-4 h-4" /> Refresh
+  1900→                      </Button>
+  1901→                    </div>
+  1902→                  </div>
+  1903→                </CardHeader>
+  1904→                <CardContent>
+  1905→                  <div className="overflow-x-auto">
+  1906→                    <table className="w-full">
+  1907→                      <thead>
+  1908→                        <tr className="text-left text-sm text-muted-foreground border-b bg-gray-50">
+  1909→                          <th className="p-3 font-medium w-10">
+  1910→                            <input type="checkbox" className="rounded" />
+  1911→                          </th>
+  1912→                          <th className="p-3 font-medium">Campaign Name</th>
+  1913→                          <th className="p-3 font-medium">Platform</th>
+  1914→                          <th className="p-3 font-medium">Service Type</th>
+  1915→                          <th className="p-3 font-medium">Target URL</th>
+  1916→                          <th className="p-3 font-medium">Progress</th>
+  1917→                          <th className="p-3 font-medium">Credits</th>
+  1918→                          <th className="p-3 font-medium">Status</th>
+  1919→                          <th className="p-3 font-medium">Created</th>
+  1920→                          <th className="p-3 font-medium">Actions</th>
+  1921→                        </tr>
+  1922→                      </thead>
+  1923→                      <tbody>
+  1924→                        {campaigns.map((campaign) => (
+  1925→                          <tr key={campaign.id} className="border-b hover:bg-gray-50/50 transition-colors group">
+  1926→                            <td className="p-3">
+  1927→                              <input 
+  1928→                                type="checkbox" 
+  1929→                                checked={selectedCampaigns.includes(campaign.id)}
+  1930→                                onChange={(e) => {
+  1931→                                  if (e.target.checked) {
+  1932→                                    setSelectedCampaigns([...selectedCampaigns, campaign.id])
+  1933→                                  } else {
+  1934→                                    setSelectedCampaigns(selectedCampaigns.filter(id => id !== campaign.id))
+  1935→                                  }
+  1936→                                }}
+  1937→                                className="rounded"
+  1938→                              />
+  1939→                            </td>
+  1940→                            <td className="p-3">
+  1941→                              <p className="font-medium text-sm">{campaign.name}</p>
+  1942→                            </td>
+  1943→                            <td className="p-3">
+  1944→                              <div className="flex items-center gap-1.5">
+  1945→                                {getPlatformIcon(campaign.platform)}
+  1946→                                <span className="text-sm capitalize">{campaign.platform}</span>
+  1947→                              </div>
+  1948→                            </td>
+  1949→                            <td className="p-3">
+  1950→                              <span className="text-sm bg-gray-100 px-2 py-1 rounded capitalize">{campaign.serviceType.replace('_', ' ')}</span>
+  1951→                            </td>
+  1952→                            <td className="p-3 max-w-[200px]">
+  1953→                              <a href={campaign.targetUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-warm-600 hover:text-warm-700 flex items-center gap-1 truncate" title={campaign.targetUrl}>
+  1954→                                <span className="truncate">{campaign.targetUrl.replace(/^https?:\/\/(www\.)?/, '')}</span>
+  1955→                                <ExternalLink className="w-3 h-3 flex-shrink-0" />
+  1956→                              </a>
+  1957→                            </td>
+  1958→                            <td className="p-3">
+  1959→                              <div className="space-y-1">
+  1960→                                <div className="flex justify-between text-xs">
+  1961→                                  <span>{campaign.completedCount.toLocaleString()} / {campaign.quantity.toLocaleString()}</span>
+  1962→                                  <span>{campaign.progress}%</span>
+  1963→                                </div>
+  1964→                                <div className="w-24 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+  1965→                                  <div 
+  1966→                                    className={`h-full rounded-full ${
+  1967→                                      campaign.progress === 100 ? 'bg-green-500' : 'gradient-bg'
+  1968→                                    }`}
+  1969→                                    style={{ width: `${campaign.progress}%` }}
+  1970→                                  ></div>
+  1971→                                </div>
+  1972→                              </div>
+  1973→                            </td>
+  1974→                            <td className="p-3">
+  1975→                              <span className="text-sm font-medium">{campaign.creditsSpent}</span>
+  1976→                              <Coins className="w-3 h-3 inline ml-1 text-warm-500" />
+  1977→                            </td>
+  1978→                            <td className="p-3">
+  1979→                              <Badge variant="outline" className={getStatusBadge(campaign.status)}>
+  1980→                                {campaign.status}
+  1981→                              </Badge>
+  1982→                            </td>
+  1983→                            <td className="p-3 text-sm text-muted-foreground">
+  1984→                              {campaign.createdAt}
+  1985→                            </td>
+  1986→                            <td className="p-3">
+  1987→                              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+  1988→                                <button 
+  1989→                                  onClick={() => handleToggleCampaignStatus(campaign.id)}
+  1990→                                  className="p-1.5 hover:bg-gray-100 rounded-lg"
+  1991→                                  title={campaign.status === 'active' ? 'Pause' : 'Resume'}
+  1992→                                >
+  1993→                                  {campaign.status === 'active' ? <Pause className="w-4 h-4" /> : campaign.status === 'paused' ? <PlayCircle className="w-4 h-4" /> : null}
+  1994→                                </button>
+  1995→                                <button className="p-1.5 hover:bg-gray-100 rounded-lg" title="Edit">
+  1996→                                  <Edit3 className="w-4 h-4" />
+  1997→                                </button>
+  1998→                                <button 
+  1999→                                  onClick={() => handleDeleteCampaign(campaign.id)}
+  2000→                                  className="p-1.5 hover:bg-red-100 text-red-500 rounded-lg"
 
-[showing lines 1-2000 of 7172; use offset=2001 with limit to continue reading]
+[showing lines 1-2000 of 7248; use offset=2001 with limit to continue reading]
