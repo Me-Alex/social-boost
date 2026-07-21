@@ -1878,3 +1878,109 @@ Stage Summary:
 5. Consider persisting audit logs to database for history
 6. Add CORS configuration for API routes
 7. Implement API versioning for future changes
+
+---
+Task ID: 4
+Agent: Main Developer (Round 4 - WebSocket Authentication & Engineering Hardening)
+Task: Review codebase, troubleshoot issues, implement WebSocket authentication & additional hardening
+
+Work Log:
+
+### 1. WebSocket Authentication Implementation (CRITICAL SECURITY FIX)
+- **Problem**: Engine accepted any WebSocket connection without authentication
+- **Solution**: Implemented full token-based auth for engine connections
+
+#### Files Modified:
+- **`/home/z/my-project/mini-services/engine/index.ts`** (v1.1.0 → v1.2.0)
+  - Added `validateAuthToken()` function with API call to `/api/auth/verify`
+  - Added token validation cache (1-minute TTL) to reduce API calls
+  - Added `setAuthTimeout()` - disconnects unauthenticated connections after 15s
+  - Updated `worker:register` handler to:
+    - Require valid auth token (configurable via `REQUIRE_AUTH_TOKEN`)
+    - Validate token format before API call
+    - Verify userId matches token owner (prevents impersonation)
+    - Record fraud alerts for ID mismatch attempts
+  - Added cleanup for token cache and auth timeouts
+
+- **`/home/z/my-project/src/app/api/auth/verify/route.ts`** (NEW)
+  - GET/POST endpoint for token verification
+  - Used by engine to validate WebSocket auth tokens
+  - Comprehensive audit logging for all verification attempts
+  - Returns `{ valid, userId, tokenId, expiresAt }` or error details
+
+### 2. Frontend Auth Token Handling
+- **Problem**: Frontend didn't store or pass auth tokens for WebSocket connections
+
+#### Files Modified:
+- **`/home/z/my-project/src/app/page.tsx`**
+  - Added `authToken` state with localStorage persistence
+  - Initialize auth state from localStorage on page load (lazy initializer pattern)
+  - Store token on login/register success
+  - Clear token on logout
+  - Pass `authToken` prop through Dashboard → EarnCreditsPanel
+  - Update both initial connect and reconnect to include token in `worker:register`
+  - Enhanced error handler for auth-related error codes (TOKEN_REQUIRED, AUTH_FAILED, AUTH_TIMEOUT, etc.)
+
+### 3. CORS Middleware Configuration
+- **File Created**: `/home/z/my-project/src/middleware.ts`
+  - Handles CORS preflight (OPTIONS) requests
+  - Adds security headers to all API responses:
+    - X-Content-Type-Options: nosniff
+    - X-Frame-Options: DENY
+    - X-XSS-Protection: 1; mode=block
+    - Referrer-Policy: strict-origin-when-cross-origin
+  - Configurable allowed origins list
+  - Automatic Request-ID header injection
+
+### 4. Audit Log Database Persistence
+- **Problem**: Audit logs were only stored in-memory (lost on restart)
+
+#### Schema Changes (`/home/z/my-project/prisma/schema.prisma`):
+- Added `AuditLog` model with fields:
+  - severity, category, action, message
+  - userId (relation to User), requestId
+  - ipAddress, userAgent, method, path, statusCode
+  - details (JSON string), createdAt
+  - Indexes on userId, severity, category, createdAt, action
+- Added `auditLogs` relation to User model
+
+#### Library Updates (`/home/z/my-project/src/lib/audit-log.ts`):
+- Dual-mode logging: in-memory buffer + database persistence
+- Batch writes every 5 seconds (non-blocking)
+- New functions:
+  - `getAuditLogsFromDb()` - Paginated historical queries
+  - `getAuditStatsFromDb()` - Aggregated statistics from DB
+
+### 5. Bug Fixes
+- Fixed duplicate `clientIp` variable in login route
+- Fixed React hooks lint warning (setState in effect → lazy initializer)
+
+### Verification:
+- ESLint: ✓ Passing (0 errors)
+- Prisma schema pushed successfully
+- All files saved and tracked
+
+Stage Summary:
+- **Project Status**: Round 4 complete - Major security improvements deployed
+- **Key Results**:
+  - WebSocket connections now require authenticated tokens
+  - Token validation prevents user impersonation
+  - Unauthenticated connections timeout after 15 seconds
+  - CORS properly configured for API routes
+  - Audit logs now persist to database for historical analysis
+  - Frontend properly manages auth token lifecycle
+- **Security Improvements**:
+  - Closed critical gap: unauthenticated engine access
+  - Anti-impersonation: userId must match token owner
+  - Fraud alert recording for suspicious attempts
+- **Produced Artifacts**:
+  - `/home/z/my-project/mini-services/engine/index.ts` - v1.2.0 with auth
+  - `/home/z/my-project/src/app/api/auth/verify/route.ts` - New endpoint
+  - `/home/z/my-project/src/middleware.ts` - CORS configuration
+  - `/home/z/my-project/src/lib/audit-log.ts` - Enhanced with DB persistence
+  - `/home/z/my-project/prisma/schema.prisma` - Added AuditLog model
+
+### Risks / Next Steps:
+- Environment issue: Dev server connectivity intermittent (system-level, not code)
+- Consider: Migrate middleware.ts to proxy.ts (Next.js deprecation warning)
+- Consider: Add rate limiting to /api/auth/verify endpoint

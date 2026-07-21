@@ -172,10 +172,7 @@ export async function POST(request: NextRequest) {
     // Generate session token
     const sessionToken = generateToken()
     
-    // Create authenticated session
-    const clientIp = request.headers.get('x-forwarded-for') || 
-                      request.headers.get('x-real-ip') || 
-                      'unknown'
+    // Create authenticated session (reusing clientIp from above)
     const userAgent = request.headers.get('user-agent') || undefined
     
     createSession(user.id, sessionToken, { ip: clientIp, userAgent })

@@ -29,6 +29,7 @@ model User {
   createdTasks    Task[]       @relation("CreatedTasks")
   completedTasks  Task[]       @relation("CompletedTasks")
   sessions        Session[]
+  auditLogs       AuditLog[]
 }
 
 model Campaign {
@@ -122,6 +123,44 @@ model EngineStats {
   blockedIps          Int      @default(0)
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
+}
+
+// Audit Log - For security event tracking and compliance
+model AuditLog {
+  id              String   @id @default(cuid())
+  
+  // Event Classification
+  severity        String   @default("info") // info, warning, error, critical
+  category        String   @default("general") // auth, data, api, security, system
+  
+  // Event Details
+  action          String
+  message         String?
+  
+  // User Context (nullable for system events)
+  userId          String?
+  user            User?    @relation(fields: [userId], references: [id])
+  
+  // Request Context
+  requestId       String?
+  ipAddress       String?
+  userAgent       String?
+  method          String?
+  path           String?
+  statusCode      Int?
+  
+  // Additional Data (JSON-like flexibility)
+  details         String?  // JSON string for additional structured data
+  
+  // Timestamps
+  createdAt       DateTime @default(now()) @map("created_at")
+  
+  // Indexes for common queries
+  @@index([userId])
+  @@index([severity])
+  @@index([category])
+  @@index([createdAt])
+  @@index([action])
 }
 
 enum Platform {

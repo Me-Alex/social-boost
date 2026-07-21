@@ -1428,9 +1428,10 @@ function EnhancedFAQ() {
 interface DashboardProps {
   user: { name: string; email: string }
   onLogout: () => void
+  authToken: string | null
 }
 
-function Dashboard({ user, onLogout }: DashboardProps) {
+function Dashboard({ user, onLogout, authToken }: DashboardProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [activeDashboardTab, setActiveDashboardTab] = useState('overview')
   const [campaigns, setCampaigns] = useState<Campaign[]>(mockCampaigns)
@@ -2217,7 +2218,10 @@ function Dashboard({ user, onLogout }: DashboardProps) {
 
           {/* EARN CREDITS TAB - Engine Integration */}
           {activeDashboardTab === 'earn' && (
-            <EarnCreditsPanel user={user} onCreditsUpdate={(credits) => {
+            <EarnCreditsPanel 
+              user={user} 
+              authToken={authToken}
+              onCreditsUpdate={(credits) => {
               setUser(prev => ({ ...prev, credits }))
             }} />
           )}
@@ -4473,10 +4477,11 @@ function PlatformStatsWidget() {
 
 interface EarnCreditsProps {
   user: { id?: string; name: string; email: string; credits: number }
+  authToken: string | null
   onCreditsUpdate: (credits: number) => void
 }
 
-function EarnCreditsPanel({ user, onCreditsUpdate }: EarnCreditsProps) {
+function EarnCreditsPanel({ user, authToken, onCreditsUpdate }: EarnCreditsProps) {
   // Use any type for socket to avoid SSR import issues with socket.io-client
   const socketRef = useRef<any>(null)
   const [isConnected, setIsConnected] = useState(false)
@@ -4547,8 +4552,11 @@ function EarnCreditsPanel({ user, onCreditsUpdate }: EarnCreditsProps) {
           setIsReconnecting(false)
           setReconnectAttempt(0)
           
-          // Re-register as worker
-          newSocket.emit('worker:register', { userId: user.id })
+          // Re-register as worker with auth token
+          newSocket.emit('worker:register', { 
+            userId: user.id, 
+            token: authToken // Pass auth token for WebSocket authentication
+          })
           
           toast.success('Reconnected to task engine!', {
             description: 'You can continue earning credits'
@@ -4628,6 +4636,27 @@ function EarnCreditsPanel({ user, onCreditsUpdate }: EarnCreditsProps) {
     // Handle errors
     socket.on('error', (error: any) => {
       console.error('[EarnCredits] Error:', error)
+      
+      // Provide user-friendly messages for auth-related errors
+      if (error.code === 'TOKEN_REQUIRED' || error.code === 'AUTH_FAILED' || 
+          error.code === 'INVALID_TOKEN_FORMAT' || error.code === 'AUTH_TIMEOUT') {
+        toast.error('Authentication required', {
+          description: 'Please login again to connect to the task engine.',
+          duration: 5000
+        })
+        // Trigger logout for auth failures
+        setTimeout(() => window.location.reload(), 2000)
+        return
+      }
+      
+      if (error.code === 'AUTH_MISMATCH') {
+        toast.error('Session conflict detected', {
+          description: 'Please login again.',
+          duration: 5000
+        })
+        return
+      }
+      
       toast.error(error.message || 'An error occurred')
     })
     
@@ -4688,8 +4717,11 @@ function EarnCreditsPanel({ user, onCreditsUpdate }: EarnCreditsProps) {
         setReconnectAttempt(0)
         setIsReconnecting(false)
         
-        // Register as worker
-        newSocket.emit('worker:register', { userId: user.id })
+        // Register as worker with auth token (required by engine v1.2+)
+        newSocket.emit('worker:register', { 
+          userId: user.id, 
+          token: authToken // Pass auth token for WebSocket authentication
+        })
       })
 
       newSocket.on('connect_error', (error: any) => {
@@ -5203,8 +5235,34 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false)
   
   // Auth State
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [currentUser, setCurrentUser] = useState({ name: '', email: '' })
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {
+    // Check if there's a saved session on initial render
+    if (typeof window !== 'undefined') {
+      return !!localStorage.getItem('socialboost_auth_token')
+    }
+    return false
+  })
+  const [currentUser, setCurrentUser] = useState(() => {
+    // Initialize user from localStorage (only runs once during initial render)
+    if (typeof window !== 'undefined') {
+      const savedUser = localStorage.getItem('socialboost_user')
+      if (savedUser) {
+        try {
+          return JSON.parse(savedUser)
+        } catch {
+          return { name: '', email: '' }
+        }
+      }
+    }
+    return { name: '', email: '' }
+  })
+  const [authToken, setAuthToken] = useState<string | null>(() => {
+    // Initialize from localStorage (only runs once during initial render)
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('socialboost_auth_token')
+    }
+    return null
+  })
   
   // Newsletter handler
   const handleNewsletterSubmit = useCallback(async (e: React.FormEvent) => {
@@ -5247,6 +5305,12 @@ export default function Home() {
         // Set user as logged in
         setIsLoggedIn(true)
         setCurrentUser({ name, email })
+        // Store auth token for WebSocket authentication
+        if (data.token) {
+          setAuthToken(data.token)
+          localStorage.setItem('socialboost_auth_token', data.token)
+          localStorage.setItem('socialboost_user', JSON.stringify({ name, email }))
+        }
         setEmail('')
         setPassword('')
         setName('')
@@ -5285,6 +5349,15 @@ export default function Home() {
           name: data.user.name || data.user.email.split('@')[0], 
           email: data.user.email 
         })
+        // Store auth token for WebSocket authentication
+        if (data.token) {
+          setAuthToken(data.token)
+          localStorage.setItem('socialboost_auth_token', data.token)
+          localStorage.setItem('socialboost_user', JSON.stringify({ 
+            name: data.user.name || data.user.email.split('@')[0], 
+            email: data.user.email 
+          }))
+        }
         setEmail('')
         setPassword('')
       } else {
@@ -5299,12 +5372,15 @@ export default function Home() {
   const handleLogout = useCallback(() => {
     setIsLoggedIn(false)
     setCurrentUser({ name: '', email: '' })
+    setAuthToken(null)
+    localStorage.removeItem('socialboost_auth_token')
+    localStorage.removeItem('socialboost_user')
     toast.success('Logged out successfully')
   }, [])
 
   // If logged in, show Dashboard
   if (isLoggedIn) {
-    return <Dashboard user={currentUser} onLogout={handleLogout} />
+    return <Dashboard user={currentUser} onLogout={handleLogout} authToken={authToken} />
   }
 
   // Otherwise, show Landing Page

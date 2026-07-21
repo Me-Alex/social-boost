@@ -6,9 +6,10 @@
  * 2. Distributing tasks to workers in real-time
  * 3. Handling credit exchange between users
  * 4. Anti-fraud detection and prevention
+ * 5. WebSocket authentication & authorization
  * 
  * Port: 3003
- * @version 1.1.0 - Enhanced with validation, rate limiting, anti-fraud
+ * @version 1.2.0 - Enhanced with WebSocket auth, connection security
  */
 
 import { createServer } from "http";
@@ -37,6 +38,11 @@ const CONFIG = {
   // Queue limits
   MAX_QUEUE_SIZE: 10000,
   MAX_TASKS_PER_USER: 50, // Max pending tasks per creator
+  
+  // Authentication settings
+  AUTH_TIMEOUT_MS: 15000, // Time to authenticate after connection (15 seconds)
+  REQUIRE_AUTH_TOKEN: true, // Require valid auth token for registration
+  TOKEN_VALIDATION_CACHE_TTL: 60000, // Cache validated tokens for 1 minute
 };
 
 // Create HTTP server and Socket.io instance
@@ -135,6 +141,17 @@ const workerTasks: Map<string, string> = new Map(); // socketId -> currentTaskId
 
 // Per-worker rate limiting store
 const workerRateLimits: Map<string, { taskRequests: number; taskCompletes: number; windowStart: number }> = new Map();
+
+// Token validation cache (avoid hitting API on every check)
+interface CachedTokenValidation {
+  userId: string;
+  valid: boolean;
+  validatedAt: Date;
+}
+const tokenValidationCache = new Map<string, CachedTokenValidation>();
+
+// Unauthenticated connection tracking
+const unauthenticatedConnections = new Map<string, NodeJS.Timeout>();
 
 // Anti-fraud tracking
 interface FraudAlert {
@@ -382,6 +399,108 @@ function sanitize(str: string, maxLength: number = 500): string {
 }
 
 // ============================================================================
+// AUTHENTICATION FUNCTIONS
+// ============================================================================
+
+/**
+ * Validate authentication token against main API
+ * Uses caching to avoid excessive API calls
+ */
+async function validateAuthToken(token: string): Promise<{
+  valid: boolean;
+  userId?: string;
+  error?: string;
+}> {
+  // Check cache first
+  const cached = tokenValidationCache.get(token);
+  if (cached) {
+    const cacheAge = Date.now() - cached.validatedAt.getTime();
+    if (cacheAge < CONFIG.TOKEN_VALIDATION_CACHE_TTL) {
+      return { valid: cached.valid, userId: cached.userId };
+    }
+    // Cache expired, remove it
+    tokenValidationCache.delete(token);
+  }
+  
+  try {
+    // Call main API to verify token
+    const response = await fetch(`${MAIN_API_URL}/api/auth/verify?token=${encodeURIComponent(token)}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    
+    const result = await response.json();
+    
+    if (result.valid && result.userId) {
+      // Cache successful validation
+      tokenValidationCache.set(token, {
+        userId: result.userId,
+        valid: true,
+        validatedAt: new Date()
+      });
+      
+      return { valid: true, userId: result.userId };
+    } else {
+      // Cache failed validation for shorter time
+      tokenValidationCache.set(token, {
+        userId: '',
+        valid: false,
+        validatedAt: new Date()
+      });
+      
+      return { valid: false, error: result.error || 'Token validation failed' };
+    }
+  } catch (error) {
+    console.error('[Engine] Token validation API call failed:', error);
+    return { valid: false, error: 'Authentication service unavailable' };
+  }
+}
+
+/**
+ * Set up authentication timeout for a new connection
+ * If the connection doesn't authenticate within CONFIG.AUTH_TIMEOUT_MS, disconnect
+ */
+function setAuthTimeout(socket: Socket): void {
+  const timeoutId = setTimeout(() => {
+    // Check if still not authenticated (not in activeWorkers)
+    if (!activeWorkers.has(socket.id)) {
+      console.log(`[Engine] Connection ${socket.id} timed out - no authentication received`);
+      socket.emit('error', {
+        code: 'AUTH_TIMEOUT',
+        message: 'Authentication required. Please provide valid credentials.'
+      });
+      socket.disconnect(true);
+    }
+    unauthenticatedConnections.delete(socket.id);
+  }, CONFIG.AUTH_TIMEOUT_MS);
+  
+  unauthenticatedConnections.set(socket.id, timeoutId);
+}
+
+/**
+ * Clear authentication timeout (called on successful registration)
+ */
+function clearAuthTimeout(socketId: string): void {
+  const timeoutId = unauthenticatedConnections.get(socketId);
+  if (timeoutId) {
+    clearTimeout(timeoutId);
+    unauthenticatedConnections.delete(socketId);
+  }
+}
+
+/**
+ * Clean up expired token cache entries
+ */
+function cleanupTokenCache(): void {
+  const now = Date.now();
+  for (const [token, cached] of tokenValidationCache.entries()) {
+    if (now - cached.validatedAt.getTime() > CONFIG.TOKEN_VALIDATION_CACHE_TTL * 2) {
+      tokenValidationCache.delete(token);
+    }
+  }
+}
+
+// ============================================================================
 // RATE LIMITING FUNCTIONS
 // ============================================================================
 
@@ -538,8 +657,12 @@ async function callMainAPI(endpoint: string, options: RequestInit = {}): Promise
 io.on("connection", async (socket: Socket) => {
   console.log(`[Engine] Worker connected: ${socket.id}`);
   
+  // Set authentication timeout - must register within CONFIG.AUTH_TIMEOUT_MS
+  setAuthTimeout(socket);
+  
   /**
    * Worker authentication and registration
+   * Requires valid auth token if CONFIG.REQUIRE_AUTH_TOKEN is enabled
    */
   socket.on("worker:register", async (data: { userId: string; token?: string; ip?: string }) => {
     try {
@@ -548,6 +671,56 @@ io.on("connection", async (socket: Socket) => {
         socket.emit("error", { code: "INVALID_INPUT", message: "Invalid registration data" });
         socket.disconnect();
         return;
+      }
+      
+      // === TOKEN VALIDATION (Security Critical) ===
+      if (CONFIG.REQUIRE_AUTH_TOKEN) {
+        if (!data.token || typeof data.token !== 'string') {
+          console.warn(`[Engine] Registration attempt without token from ${socket.id}`);
+          socket.emit("error", { 
+            code: "TOKEN_REQUIRED", 
+            message: "Authentication token is required. Please login first." 
+          });
+          socket.disconnect();
+          return;
+        }
+        
+        // Validate token format (basic check before API call)
+        if (!/^[a-f0-9]{64}$/i.test(data.token)) {
+          socket.emit("error", { code: "INVALID_TOKEN_FORMAT", message: "Invalid token format" });
+          socket.disconnect();
+          return;
+        }
+        
+        // Validate token against main API
+        const tokenResult = await validateAuthToken(data.token);
+        
+        if (!tokenResult.valid || !tokenResult.userId) {
+          console.warn(`[Engine] Invalid token provided by ${socket.id}: ${data.token?.slice(0, 8)}...`);
+          socket.emit("error", { 
+            code: "AUTH_FAILED", 
+            message: tokenResult.error || "Invalid or expired token. Please login again." 
+          });
+          socket.disconnect();
+          return;
+        }
+        
+        // Verify userId matches the token's owner (prevent impersonation)
+        if (data.userId && data.userId !== tokenResult.userId) {
+          console.warn(`[Engine] User ID mismatch! Token belongs to ${tokenResult.userId}, but ${data.userId} was provided`);
+          recordFraudAlert(data.userId || 'unknown', 'User ID impersonation attempt', 'high', {
+            claimedUserId: data.userId,
+            actualTokenOwner: tokenResult.userId,
+            socketId: socket.id
+          });
+          socket.emit("error", { code: "AUTH_MISMATCH", message: "User ID does not match token" });
+          socket.disconnect();
+          return;
+        }
+        
+        // Use the verified userId from token
+        data.userId = tokenResult.userId;
+        console.log(`[Engine] Token validated for user ${tokenResult.userId}`);
       }
       
       if (!isValidUserId(data.userId)) {
@@ -579,6 +752,9 @@ io.on("connection", async (socket: Socket) => {
       
       const user = userResponse.user;
       
+      // === AUTHENTICATION SUCCESSFUL - Clear timeout and register ===
+      clearAuthTimeout(socket.id);
+      
       // Register worker
       const worker: ActiveWorker = {
         socketId: socket.id,
@@ -600,13 +776,15 @@ io.on("connection", async (socket: Socket) => {
       socket.emit("worker:registered", {
         success: true,
         stats: getQueueStats(),
-        user: { credits: user.credits, name: worker.name }
+        user: { credits: user.credits, name: worker.name },
+        authenticated: true, // Indicate successful authentication
+        serverTime: new Date().toISOString()
       });
       
       // Broadcast updated online count
       io.emit("stats:online", { count: activeWorkers.size });
       
-      console.log(`[Engine] Worker registered: ${socket.id} (User: ${sanitizedUserId})`);
+      console.log(`[Engine] ✓ Worker authenticated & registered: ${socket.id} (User: ${sanitizedUserId})`);
       
     } catch (error) {
       console.error("[Engine] Registration error:", error);
@@ -969,6 +1147,9 @@ io.on("connection", async (socket: Socket) => {
   socket.on("disconnect", async () => {
     console.log(`[Engine] Worker disconnected: ${socket.id}`);
     
+    // Clear authentication timeout if still pending
+    clearAuthTimeout(socket.id);
+    
     const worker = activeWorkers.get(socket.id);
     if (worker) {
       // Use unified clearWorkerTask function to handle task re-queuing
@@ -1020,6 +1201,7 @@ setInterval(async () => {
 // Clean up stale rate limit entries every 2 minutes
 setInterval(() => {
   cleanupRateLimits();
+  cleanupTokenCache(); // Also clean up expired token validations
 }, 2 * 60 * 1000);
 
 // Stale worker tracking with progressive warnings
@@ -1127,21 +1309,23 @@ httpServer.listen(PORT, () => {
   console.log(`
 ╔═══════════════════════════════════════════════════════════╗
 ║                                                           ║
-║   🚀 SocialBoost Engine v1.0                             ║
+║   🚀 SocialBoost Engine v1.2.0                           ║
 ║   ─────────────────────────────────                       ║
 ║   Real-time Task Exchange System                          ║
+║   ✓ WebSocket Authentication Enabled                      ║
 ║                                                           ║
 ║   Port:     ${PORT}                                          ║
 ║   Status:   ✅ Running                                     ║
+║   Auth:     ${CONFIG.REQUIRE_AUTH_TOKEN ? '✓ Required' : '✗ Optional'}                                        ║
 ║   Started:  ${new Date().toISOString()}         ║
 ║                                                           ║
 ║   Events:                                                  ║
-║   • worker:register     - Register worker                  ║
-║   • task:request       - Get next task                    ║
-║   • task:complete      - Submit completion                ║
-║   • tasks:create       - Batch create tasks               ║
-║   • queue:info         - Get queue stats                  ║
-║   • task:abandon       - Abandon current task             ║
+║   • worker:register   - Register (requires token)          ║
+║   • task:request     - Get next task                       ║
+║   • task:complete    - Submit completion                   ║
+║   • tasks:create     - Batch create tasks                  ║
+║   • queue:info       - Get queue stats                     ║
+║   • task:abandon     - Abandon current task                ║
 ║                                                           ║
 ╚═══════════════════════════════════════════════════════════╝
   `);

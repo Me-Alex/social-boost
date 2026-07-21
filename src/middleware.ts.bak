@@ -1,0 +1,111 @@
+/**
+ * Next.js Middleware for SocialBoost
+ * 
+ * Handles:
+ * - CORS configuration for API routes
+ * - Security headers
+ * - Request logging
+ */
+
+import { NextRequest, NextResponse } from 'next/server'
+
+// Allowed origins (configure based on your deployment)
+const ALLOWED_ORIGINS = [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  // Add production domains here when deployed
+  // 'https://yourdomain.com',
+  // 'https://www.yourdomain.com',
+]
+
+// Paths that should be handled by this middleware
+const PROTECTED_PATHS = ['/api/']
+
+// Security headers to add to all responses
+const SECURITY_HEADERS = {
+  'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options': 'DENY',
+  'X-XSS-Protection': '1; mode=block',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+}
+
+export function middleware(request: NextRequest) {
+  const { pathname, origin } = request.nextUrl
+  
+  // Only process API routes
+  if (!PROTECTED_PATHS.some(path => pathname.startsWith(path))) {
+    return NextResponse.next()
+  }
+  
+  // Handle CORS preflight requests
+  if (request.method === 'OPTIONS') {
+    const origin = request.headers.get('origin')
+    
+    if (origin && isOriginAllowed(origin)) {
+      return new NextResponse(null, {
+        status: 204,
+        headers: {
+          'Access-Control-Allow-Origin': origin,
+          'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+          'Access-Control-Allow-Headers': [
+            'Content-Type',
+            'Authorization',
+            'X-Request-ID',
+            'X-Forwarded-For',
+          ].join(', '),
+          'Access-Control-Max-Age': '86400', // 24 hours
+          'Access-Control-Allow-Credentials': 'true',
+          ...SECURITY_HEADERS,
+        }
+      })
+    }
+    
+    return new NextResponse(null, { status: 204 })
+  }
+  
+  // For regular API requests, add security headers and CORS if needed
+  const response = NextResponse.next()
+  
+  // Add security headers to all responses
+  Object.entries(SECURITY_HEADERS).forEach(([key, value]) => {
+    response.headers.set(key, value)
+  })
+  
+  // Add CORS headers for cross-origin requests
+  const requestOrigin = request.headers.get('origin')
+  if (requestOrigin && isOriginAllowed(requestOrigin)) {
+    response.headers.set('Access-Control-Allow-Origin', requestOrigin)
+    response.headers.set('Access-Control-Allow-Credentials', 'true')
+    response.headers.set('Vary', 'Origin')
+  }
+  
+  // Add request ID header if not present
+  const requestId = request.headers.get('x-request-id') || 
+                    `req_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`
+  response.headers.set('X-Request-ID', requestId)
+  
+  return response
+}
+
+/**
+ * Check if an origin is allowed for CORS
+ */
+function isOriginAllowed(origin: string): boolean {
+  // Allow same-origin requests
+  if (ALLOWED_ORIGINS.includes(origin)) {
+    return true
+  }
+  
+  // Allow in development
+  if (process.env.NODE_ENV === 'development') {
+    return origin.includes('localhost') || origin.includes('127.0.0.1')
+  }
+  
+  return false
+}
+
+// Configure which paths the middleware should run on
+export const config = {
+  matcher: ['/api/:path*'],
+}

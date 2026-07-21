@@ -1,0 +1,1149 @@
+     1→/**
+     2→ * SocialBoost Engine - Real-time Task Exchange System
+     3→ * 
+     4→ * This engine powers the SocialBoost platform by:
+     5→ * 1. Managing task queues for social media engagement
+     6→ * 2. Distributing tasks to workers in real-time
+     7→ * 3. Handling credit exchange between users
+     8→ * 4. Anti-fraud detection and prevention
+     9→ * 
+    10→ * Port: 3003
+    11→ * @version 1.1.0 - Enhanced with validation, rate limiting, anti-fraud
+    12→ */
+    13→
+    14→import { createServer } from "http";
+    15→import { Server, Socket } from "socket.io";
+    16→
+    17→const PORT = 3003;
+    18→const MAIN_API_URL = "http://localhost:3000";
+    19→const ENVIRONMENT = process.env.NODE_ENV || 'development';
+    20→
+    21→// ============================================================================
+    22→// CONFIGURATION
+    23→// ============================================================================
+    24→
+    25→const CONFIG = {
+    26→  // Rate limiting per worker (requests per minute)
+    27→  TASK_REQUEST_RATE_LIMIT: 10,
+    28→  TASK_COMPLETE_RATE_LIMIT: 30,
+    29→  
+    30→  // Task timeout (ms)
+    31→  TASK_TIMEOUT_MS: 120000, // 2 minutes
+    32→  
+    33→  // Anti-fraud thresholds
+    34→  MIN_TASK_COMPLETION_TIME_MS: 3000, // Minimum time to complete a task (bot detection)
+    35→  MAX_TASKS_PER_SESSION: 100, // Max tasks before requiring re-auth
+    36→  
+    37→  // Queue limits
+    38→  MAX_QUEUE_SIZE: 10000,
+    39→  MAX_TASKS_PER_USER: 50, // Max pending tasks per creator
+    40→};
+    41→
+    42→// Create HTTP server and Socket.io instance
+    43→const httpServer = createServer((req, res) => {
+    44→  if (req.url === '/health') {
+    45→    res.writeHead(200, { 'Content-Type': 'application/json' });
+    46→    res.end(JSON.stringify({ 
+    47→      status: 'ok', 
+    48→      service: 'socialboost-engine', 
+    49→      port: PORT,
+    50→      version: '1.1.0',
+    51→      environment: ENVIRONMENT,
+    52→      uptime: process.uptime(),
+    53→      timestamp: new Date().toISOString(),
+    54→      stats: {
+    55→        queueLength: taskQueue.length,
+    56→        activeWorkers: activeWorkers.size,
+    57→        totalTasksProcessed: engineStats.totalTasksProcessed,
+    58→        fraudAlerts: fraudAlerts.length
+    59→      }
+    60→    }));
+    61→    return;
+    62→  }
+    63→  
+    64→  // Admin endpoint for fraud alerts (basic - should be protected in production)
+    65→  if (req.url === '/admin/fraud-alerts') {
+    66→    res.writeHead(200, { 'Content-Type': 'application/json' });
+    67→    res.end(JSON.stringify(getFraudAlertsSummary()));
+    68→    return;
+    69→  }
+    70→  
+    71→  // Admin endpoint for detailed stats
+    72→  if (req.url === '/admin/stats') {
+    73→    res.writeHead(200, { 'Content-Type': 'application/json' });
+    74→    res.end(JSON.stringify({
+    75→      ...getQueueStats(),
+    76→      fraudAlerts: getFraudAlertsSummary(),
+    77→      config: {
+    78→        taskTimeoutMs: CONFIG.TASK_TIMEOUT_MS,
+    79→        maxQueueSize: CONFIG.MAX_QUEUE_SIZE,
+    80→        maxTasksPerSession: CONFIG.MAX_TASKS_PER_SESSION
+    81→      },
+    82→      rateLimits: {
+    83→        activeEntries: workerRateLimits.size
+    84→      }
+    85→    }));
+    86→    return;
+    87→  }
+    88→  
+    89→  res.writeHead(200, { 'Content-Type': 'application/json' });
+    90→  res.end(JSON.stringify({ status: 'ok', service: 'socialboost-engine', port: PORT }));
+    91→});
+    92→
+    93→const io = new Server(httpServer, {
+    94→  cors: {
+    95→    origin: ["http://localhost:3000", "http://127.0.0.1:3000"],
+    96→    methods: ["GET", "POST"],
+    97→    credentials: true
+    98→  },
+    99→  pingInterval: 25000,
+   100→  pingTimeout: 60000
+   101→});
+   102→
+   103→// ============================================================================
+   104→// IN-MEMORY TASK QUEUE (Redis-like functionality)
+   105→// ============================================================================
+   106→
+   107→interface QueuedTask {
+   108→  id: string;
+   109→  campaignId?: string;
+   110→  creatorId: string;
+   111→  platform: string;
+   112→  serviceType: string;
+   113→  targetUrl: string;
+   114→  targetId: string;
+   115→  rewardCredits: number;
+   116→  priority: number;
+   117→  createdAt: Date;
+   118→  expiresAt?: Date;
+   119→}
+   120→
+   121→interface ActiveWorker {
+   122→  socketId: string;
+   123→  userId: string;
+   124→  currentTaskId: string | null;
+   125→  lastHeartbeat: Date;
+   126→  tasksCompleted: number;
+   127→  ip?: string;
+   128→  name?: string;
+   129→}
+   130→
+   131→// Task Queue State
+   132→const taskQueue: QueuedTask[] = [];
+   133→const activeWorkers: Map<string, ActiveWorker> = new Map();
+   134→const workerTasks: Map<string, string> = new Map(); // socketId -> currentTaskId
+   135→
+   136→// Per-worker rate limiting store
+   137→const workerRateLimits: Map<string, { taskRequests: number; taskCompletes: number; windowStart: number }> = new Map();
+   138→
+   139→// Anti-fraud tracking
+   140→interface FraudAlert {
+   141→  userId: string;
+   142→  reason: string;
+   143→  severity: 'low' | 'medium' | 'high';
+   144→  timestamp: Date;
+   145→  details: Record<string, unknown>;
+   146→}
+   147→const fraudAlerts: FraudAlert[] = [];
+   148→const MAX_FRAUD_ALERTS = 100;
+   149→
+   150→// Statistics
+   151→const engineStats = {
+   152→  totalTasksProcessed: 0,
+   153→  totalCreditsExchanged: 0,
+   154→  peakConcurrentUsers: 0,
+   155→  startTime: new Date(),
+   156→  tasksCreatedToday: 0,
+   157→  tasksCompletedToday: 0,
+   158→  uptime: () => Math.floor((Date.now() - engineStats.startTime.getTime()) / 1000),
+   159→  resetDailyCounters: function() {
+   160→    this.tasksCreatedToday = 0;
+   161→    this.tasksCompletedToday = 0;
+   162→  }
+   163→};
+   164→
+   165→// ============================================================================
+   166→// TASK QUEUE MANAGEMENT FUNCTIONS
+   167→// ============================================================================
+   168→
+   169→/**
+   170→ * Add a task to the queue
+   171→ */
+   172→function addTaskToQueue(task: QueuedTask): void {
+   173→  // Insert maintaining priority order (higher priority first)
+   174→  const insertIndex = taskQueue.findIndex(t => t.priority < task.priority);
+   175→  if (insertIndex === -1) {
+   176→    taskQueue.push(task);
+   177→  } else {
+   178→    taskQueue.splice(insertIndex, 0, task);
+   179→  }
+   180→  
+   181→  console.log(`[Engine] Task added to queue: ${task.id} (${task.platform}/${task.serviceType})`);
+   182→  engineStats.tasksCreatedToday++;
+   183→  
+   184→  // Notify waiting workers about new task
+   185→  emitTaskAvailable();
+   186→}
+   187→
+   188→/**
+   189→ * Get next available task for a worker
+   190→ * Includes race condition protection - removes task from queue atomically
+   191→ */
+   192→function getNextTaskAndRemove(workerUserId: string, preferredPlatform?: string): QueuedTask | null {
+   193→  // Filter out own tasks and expired tasks
+   194→  const now = new Date();
+   195→  let taskIndex = -1;
+   196→  let selectedTask: QueuedTask | null = null;
+   197→  
+   198→  // Find best task (prefer platform if specified)
+   199→  for (let i = 0; i < taskQueue.length; i++) {
+   200→    const task = taskQueue[i];
+   201→    if (task.creatorId !== workerUserId && (!task.expiresAt || task.expiresAt > now)) {
+   202→      if (preferredPlatform) {
+   203→        if (task.platform === preferredPlatform) {
+   204→          taskIndex = i;
+   205→          selectedTask = task;
+   206→          break; // Found preferred platform task
+   207→        }
+   208→      } else {
+   209→        taskIndex = i;
+   210→        selectedTask = task;
+   211→        break; // Found first available task
+   212→      }
+   213→    }
+   214→  }
+   215→  
+   216→  // Atomically remove from queue to prevent double-assignment
+   217→  if (taskIndex !== -1 && selectedTask) {
+   218→    taskQueue.splice(taskIndex, 1);
+   219→    return selectedTask;
+   220→  }
+   221→  
+   222→  return null;
+   223→}
+   224→
+   225→/**
+   226→ * Remove task from queue
+   227→ */
+   228→function removeFromQueue(taskId: string): boolean {
+   229→  const index = taskQueue.findIndex(t => t.id === taskId);
+   230→  if (index !== -1) {
+   231→    taskQueue.splice(index, 1);
+   232→    return true;
+   233→  }
+   234→  return false;
+   235→}
+   236→
+   237→/**
+   238→ * Get queue statistics
+   239→ */
+   240→function getQueueStats() {
+   241→  const tasksByPlatform = taskQueue.reduce((acc, t) => {
+   242→    acc[t.platform] = (acc[t.platform] || 0) + 1;
+   243→    return acc;
+   244→  }, {} as Record<string, number>);
+   245→  
+   246→  const tasksByService = taskQueue.reduce((acc, t) => {
+   247→    const key = `${t.platform}/${t.serviceType}`;
+   248→    acc[key] = (acc[key] || 0) + 1;
+   249→    return acc;
+   250→  }, {} as Record<string, number>);
+   251→  
+   252→  return {
+   253→    queueLength: taskQueue.length,
+   254→    activeWorkers: activeWorkers.size,
+   255→    tasksByPlatform,
+   256→    tasksByService,
+   257→    engineUptime: engineStats.uptime(),
+   258→    totalTasksProcessed: engineStats.totalTasksProcessed,
+   259→    totalCreditsExchanged: engineStats.totalCreditsExchanged,
+   260→    tasksCreatedToday: engineStats.tasksCreatedToday,
+   261→    tasksCompletedToday: engineStats.tasksCompletedToday,
+   262→    peakConcurrentUsers: engineStats.peakConcurrentUsers
+   263→  };
+   264→}
+   265→
+   266→// ============================================================================
+   267→// HELPER FUNCTIONS
+   268→// ============================================================================
+   269→
+   270→/**
+   271→ * Re-queue a task back to the queue (unified helper to avoid code duplication)
+   272→ */
+   273→async function reQueueTask(taskId: string): Promise<void> {
+   274→  try {
+   275→    const taskResponse = await callMainAPI(`/api/tasks/${taskId}`);
+   276→    
+   277→    if (taskResponse && taskResponse.task) {
+   278→      const task = taskResponse.task;
+   279→      
+   280→      // Only re-queue if still pending
+   281→      if (task.status === 'pending') {
+   282→        addTaskToQueue({
+   283→          id: task.id,
+   284→          campaignId: task.campaignId,
+   285→          creatorId: task.creatorId,
+   286→          platform: task.platform,
+   287→          serviceType: task.serviceType,
+   288→          targetUrl: task.targetUrl,
+   289→          targetId: task.targetId,
+   290→          rewardCredits: task.rewardCredits,
+   291→          priority: task.priority || 1,
+   292→          createdAt: new Date(task.createdAt),
+   293→          expiresAt: task.expiresAt ? new Date(task.expiresAt) : undefined
+   294→        });
+   295→        console.log(`[Engine] Task re-queued: ${taskId}`);
+   296→      }
+   297→    }
+   298→  } catch (error) {
+   299→    console.error(`[Engine] Error re-queuing task ${taskId}:`, error);
+   300→  }
+   301→}
+   302→
+   303→/**
+   304→ * Clear worker's current task and optionally re-queue it
+   305→ */
+   306→async function clearWorkerTask(worker: ActiveWorker, socketId: string, shouldReQueue: boolean = true): Promise<void> {
+   307→  if (worker.currentTaskId) {
+   308→    const taskId = worker.currentTaskId;
+   309→    
+   310→    // Abandon task via API first
+   311→    try {
+   312→      await callMainAPI(`/api/tasks/${taskId}`, {
+   313→        method: 'PATCH',
+   314→        body: JSON.stringify({ action: 'abandon', userId: worker.userId })
+   315→      });
+   316→    } catch (e) {
+   317→      console.error(`[Engine] Error abandoning task ${taskId}:`, e);
+   318→    }
+   319→    
+   320→    // Re-queue if requested
+   321→    if (shouldReQueue) {
+   322→      await reQueueTask(taskId);
+   323→    }
+   324→    
+   325→    // Clear local state
+   326→    worker.currentTaskId = null;
+   327→    workerTasks.delete(socketId);
+   328→  }
+   329→}
+   330→
+   331→function generateVerificationCode(): string {
+   332→  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+   333→  let code = '';
+   334→  for (let i = 0; i < 6; i++) {
+   335→    code += chars.charAt(Math.floor(Math.random() * chars.length));
+   336→  }
+   337→  return code;
+   338→}
+   339→
+   340→function emitTaskAvailable(): void {
+   341→  io.emit("task:available", { 
+   342→    queueLength: taskQueue.length,
+   343→    timestamp: Date.now()
+   344→  });
+   345→}
+   346→
+   347→// ============================================================================
+   348→// VALIDATION FUNCTIONS
+   349→// ============================================================================
+   350→
+   351→/**
+   352→ * Validate userId format (basic CUID check)
+   353→ */
+   354→function isValidUserId(userId: string): boolean {
+   355→  // CUID format: starts with 'c', followed by alphanumeric, 25 chars total
+   356→  return typeof userId === 'string' && /^[a-z0-9]{20,30}$/i.test(userId);
+   357→}
+   358→
+   359→/**
+   360→ * Validate platform value
+   361→ */
+   362→function isValidPlatform(platform: string): boolean {
+   363→  const validPlatforms = ['youtube', 'instagram', 'tiktok', 'twitter', 'facebook'];
+   364→  return typeof platform === 'string' && validPlatforms.includes(platform.toLowerCase());
+   365→}
+   366→
+   367→/**
+   368→ * Validate service type
+   369→ */
+   370→function isValidServiceType(serviceType: string): boolean {
+   371→  const validTypes = ['views', 'subscribers', 'likes', 'comments', 'followers', 
+   372→                      'reels_views', 'story_views', 'shares', 'retweets'];
+   373→  return typeof serviceType === 'string' && validTypes.includes(serviceType.toLowerCase());
+   374→}
+   375→
+   376→/**
+   377→ * Sanitize string input (prevent injection)
+   378→ */
+   379→function sanitize(str: string, maxLength: number = 500): string {
+   380→  if (typeof str !== 'string') return '';
+   381→  return str.trim().slice(0, maxLength).replace(/[<>\"'&\\]/g, '');
+   382→}
+   383→
+   384→// ============================================================================
+   385→// RATE LIMITING FUNCTIONS
+   386→// ============================================================================
+   387→
+   388→/**
+   389→ * Check if worker is within rate limits
+   390→ * Returns { allowed: boolean, retryAfter?: number }
+   391→ */
+   392→function checkWorkerRateLimit(socketId: string, action: 'taskRequest' | 'taskComplete'): { 
+   393→  allowed: boolean; 
+   394→  retryAfter?: number;
+   395→} {
+   396→  const now = Date.now();
+   397→  const windowMs = 60 * 1000; // 1 minute window
+   398→  let limits = workerRateLimits.get(socketId);
+   399→  
+   400→  // Reset window if expired or doesn't exist
+   401→  if (!limits || now - limits.windowStart > windowMs) {
+   402→    limits = { taskRequests: 0, taskCompletes: 0, windowStart: now };
+   403→    workerRateLimits.set(socketId, limits);
+   404→  }
+   405→  
+   406→  if (action === 'taskRequest') {
+   407→    if (limits.taskRequests >= CONFIG.TASK_REQUEST_RATE_LIMIT) {
+   408→      const retryAfter = Math.ceil((limits.windowStart + windowMs - now) / 1000);
+   409→      return { allowed: false, retryAfter: Math.max(1, retryAfter) };
+   410→    }
+   411→    limits.taskRequests++;
+   412→  } else if (action === 'taskComplete') {
+   413→    if (limits.taskCompletes >= CONFIG.TASK_COMPLETE_RATE_LIMIT) {
+   414→      const retryAfter = Math.ceil((limits.windowStart + windowMs - now) / 1000);
+   415→      return { allowed: false, retryAfter: Math.max(1, retryAfter) };
+   416→    }
+   417→    limits.taskCompletes++;
+   418→  }
+   419→  
+   420→  return { allowed: true };
+   421→}
+   422→
+   423→/**
+   424→ * Clean up stale rate limit entries (call periodically)
+   425→ */
+   426→function cleanupRateLimits(): void {
+   427→  const now = Date.now();
+   428→  const windowMs = 60 * 1000;
+   429→  
+   430→  for (const [socketId, limits] of workerRateLimits.entries()) {
+   431→    if (now - limits.windowStart > windowMs * 2) { // Remove after 2 minutes of inactivity
+   432→      workerRateLimits.delete(socketId);
+   433→    }
+   434→  }
+   435→}
+   436→
+   437→// ============================================================================
+   438→// ANTI-FRAUD FUNCTIONS
+   439→// ============================================================================
+   440→
+   441→/**
+   442→ * Record a fraud alert for investigation
+   443→ */
+   444→function recordFraudAlert(
+   445→  userId: string, 
+   446→  reason: string, 
+   447→  severity: 'low' | 'medium' | 'high',
+   448→  details: Record<string, unknown> = {}
+   449→): void {
+   450→  const alert: FraudAlert = {
+   451→    userId,
+   452→    reason,
+   453→    severity,
+   454→    timestamp: new Date(),
+   455→    details
+   456→  };
+   457→  
+   458→  fraudAlerts.push(alert);
+   459→  
+   460→  // Keep only recent alerts
+   461→  if (fraudAlerts.length > MAX_FRAUD_ALERTS) {
+   462→    fraudAlerts.shift();
+   463→  }
+   464→  
+   465→  // Log high severity alerts immediately
+   466→  if (severity === 'high' || severity === 'medium') {
+   467→    console.warn(`[FRAUD ALERT] [${severity.toUpperCase()}] User ${userId}: ${reason}`, details);
+   468→  }
+   469→}
+   470→
+   471→/**
+   472→ * Check for suspicious completion speed (potential bot)
+   473→ */
+   474→function checkCompletionSpeed(worker: ActiveWorker, timeSpentMs: number): boolean {
+   475→  if (timeSpentMs < CONFIG.MIN_TASK_COMPLETION_TIME_MS) {
+   476→    recordFraudAlert(worker.userId, 'Suspiciously fast task completion', 'medium', {
+   477→      timeSpentMs,
+   478→      threshold: CONFIG.MIN_TASK_COMPLETION_TIME_MS,
+   479→      tasksCompleted: worker.tasksCompleted
+   480→    });
+   481→    return false; // Block suspicious completions
+   482→  }
+   483→  return true;
+   484→}
+   485→
+   486→/**
+   487→ * Get fraud alerts summary (for admin monitoring)
+   488→ */
+   489→function getFraudAlertsSummary() {
+   490→  const now = Date.now();
+   491→  const lastHour = fraudAlerts.filter(a => now - a.getTime() < 60 * 60 * 1000);
+   492→  return {
+   493→    total: fraudAlerts.length,
+   494→    lastHour: lastHour.length,
+   495→    bySeverity: {
+   496→      high: lastHour.filter(a => a.severity === 'high').length,
+   497→      medium: lastHour.filter(a => a.severity === 'medium').length,
+   498→      low: lastHour.filter(a => a.severity === 'low').length
+   499→    },
+   500→    recent: fraudAlerts.slice(-10).map(a => ({
+   501→      userId: a.userId.slice(0, 8) + '...', // Partial ID for privacy
+   502→      reason: a.reason,
+   503→      severity: a.severity,
+   504→      timestamp: a.timestamp
+   505→    }))
+   506→  };
+   507→}
+   508→
+   509→function getCreatorSocket(creatorId: string): string {
+   510→  for (const [socketId, worker] of activeWorkers.entries()) {
+   511→    if (worker.userId === creatorId) {
+   512→      return socketId;
+   513→    }
+   514→  }
+   515→  return '';
+   516→}
+   517→
+   518→async function callMainAPI(endpoint: string, options: RequestInit = {}): Promise<any> {
+   519→  try {
+   520→    const response = await fetch(`${MAIN_API_URL}${endpoint}`, {
+   521→      ...options,
+   522→      headers: {
+   523→        'Content-Type': 'application/json',
+   524→        ...options.headers
+   525→      }
+   526→    });
+   527→    return await response.json();
+   528→  } catch (error) {
+   529→    console.error(`[Engine] API call failed: ${endpoint}`, error);
+   530→    return null;
+   531→  }
+   532→}
+   533→
+   534→// ============================================================================
+   535→// SOCKET.IO EVENT HANDLERS
+   536→// ============================================================================
+   537→
+   538→io.on("connection", async (socket: Socket) => {
+   539→  console.log(`[Engine] Worker connected: ${socket.id}`);
+   540→  
+   541→  /**
+   542→   * Worker authentication and registration
+   543→   */
+   544→  socket.on("worker:register", async (data: { userId: string; token?: string; ip?: string }) => {
+   545→    try {
+   546→      // Validate input
+   547→      if (!data || typeof data !== 'object') {
+   548→        socket.emit("error", { code: "INVALID_INPUT", message: "Invalid registration data" });
+   549→        socket.disconnect();
+   550→        return;
+   551→      }
+   552→      
+   553→      if (!isValidUserId(data.userId)) {
+   554→        socket.emit("error", { code: "INVALID_USER_ID", message: "Invalid user ID format" });
+   555→        socket.disconnect();
+   556→        return;
+   557→      }
+   558→      
+   559→      const sanitizedUserId = sanitize(data.userId, 30);
+   560→      
+   561→      // Check if already registered (prevent duplicate connections)
+   562→      for (const [existingSocketId, existingWorker] of activeWorkers.entries()) {
+   563→        if (existingWorker.userId === sanitizedUserId) {
+   564→          // Disconnect old connection
+   565→          console.log(`[Engine] Duplicate connection detected for user ${sanitizedUserId}, disconnecting old session`);
+   566→          io.sockets.sockets.get(existingSocketId)?.disconnect(true);
+   567→          break;
+   568→        }
+   569→      }
+   570→      
+   571→      // Verify user exists via main API
+   572→      const userResponse = await callMainAPI(`/api/user?userId=${sanitizedUserId}`);
+   573→      
+   574→      if (!userResponse || !userResponse.user || !userResponse.user.isActive) {
+   575→        socket.emit("error", { code: "AUTH_FAILED", message: "Invalid user or account inactive" });
+   576→        socket.disconnect();
+   577→        return;
+   578→      }
+   579→      
+   580→      const user = userResponse.user;
+   581→      
+   582→      // Register worker
+   583→      const worker: ActiveWorker = {
+   584→        socketId: socket.id,
+   585→        userId: sanitizedUserId,
+   586→        currentTaskId: null,
+   587→        lastHeartbeat: new Date(),
+   588→        tasksCompleted: 0,
+   589→        ip: data.ip ? sanitize(data.ip, 45) : undefined,
+   590→        name: user.name ? sanitize(user.name, 50) : (user.email ? sanitize(user.email.split('@')[0], 50) : 'User')
+   591→      };
+   592→      
+   593→      activeWorkers.set(socket.id, worker);
+   594→      
+   595→      // Track peak users
+   596→      if (activeWorkers.size > engineStats.peakConcurrentUsers) {
+   597→        engineStats.peakConcurrentUsers = activeWorkers.size;
+   598→      }
+   599→      
+   600→      socket.emit("worker:registered", {
+   601→        success: true,
+   602→        stats: getQueueStats(),
+   603→        user: { credits: user.credits, name: worker.name }
+   604→      });
+   605→      
+   606→      // Broadcast updated online count
+   607→      io.emit("stats:online", { count: activeWorkers.size });
+   608→      
+   609→      console.log(`[Engine] Worker registered: ${socket.id} (User: ${sanitizedUserId})`);
+   610→      
+   611→    } catch (error) {
+   612→      console.error("[Engine] Registration error:", error);
+   613→      socket.emit("error", { code: "SERVER_ERROR", message: "Registration failed" });
+   614→    }
+   615→  });
+   616→  
+   617→  /**
+   618→   * Request a task from the queue
+   619→   * Includes retry logic for race condition handling
+   620→   */
+   621→  socket.on("task:request", async (data: { userId: string; platform?: string }) => {
+   622→    try {
+   623→      const worker = activeWorkers.get(socket.id);
+   624→      if (!worker || worker.userId !== data.userId) {
+   625→        socket.emit("error", { code: "NOT_REGISTERED", message: "Please register first" });
+   626→        return;
+   627→      }
+   628→      
+   629→      // Check rate limit
+   630→      const rateLimitResult = checkWorkerRateLimit(socket.id, 'taskRequest');
+   631→      if (!rateLimitResult.allowed) {
+   632→        socket.emit("error", { 
+   633→          code: "RATE_LIMITED", 
+   634→          message: `Too many requests. Try again in ${rateLimitResult.retryAfter} seconds.`,
+   635→          retryAfter: rateLimitResult.retryAfter 
+   636→        });
+   637→        return;
+   638→      }
+   639→      
+   640→      // Check if worker already has a task
+   641→      if (worker.currentTaskId) {
+   642→        socket.emit("error", { code: "HAS_TASK", message: "Complete current task first" });
+   643→        return;
+   644→      }
+   645→      
+   646→      // Validate platform if provided
+   647→      if (data.platform && !isValidPlatform(data.platform)) {
+   648→        socket.emit("error", { code: "INVALID_PLATFORM", message: "Invalid platform specified" });
+   649→        return;
+   650→      }
+   651→      
+   652→      // Check session task limit (anti-fraud)
+   653→      if (worker.tasksCompleted >= CONFIG.MAX_TASKS_PER_SESSION) {
+   654→        socket.emit("error", { code: "SESSION_LIMIT", message: "Session limit reached. Please re-connect to continue." });
+   655→        // Don't disconnect, let them finish naturally
+   656→        return;
+   657→      }
+   658→      
+   659→      // Get next available task and atomically remove from queue
+   660→      const task = getNextTaskAndRemove(data.userId, data.platform);
+   661→      
+   662→      if (!task) {
+   663→        socket.emit("task:empty", { message: "No tasks available", retryIn: 5000 });
+   664→        return;
+   665→      }
+   666→      
+   667→      // Claim the task via API (with retry for race conditions)
+   668→      const MAX_RETRIES = 2;
+   669→      let claimResult: any = null;
+   670→      let claimed = false;
+   671→      
+   672→      for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+   673→        claimResult = await callMainAPI(`/api/tasks/${task.id}`, {
+   674→          method: 'PATCH',
+   675→          body: JSON.stringify({ action: 'claim', userId: data.userId })
+   676→        });
+   677→        
+   678→        if (claimResult && claimResult.success) {
+   679→          claimed = true;
+   680→          break;
+   681→        }
+   682→        
+   683→        // If claim failed due to status conflict, task was already claimed by another worker
+   684→        if (claimResult?.error?.includes('cannot claim') || claimResult?.currentStatus) {
+   685→          console.log(`[Engine] Task ${task.id} already claimed (attempt ${attempt + 1}), trying next task`);
+   686→          
+   687→          // Try to get another task
+   688→          const nextTask = getNextTaskAndRemove(data.userId, data.platform);
+   689→          if (nextTask) {
+   690→            Object.assign(task, nextTask); // Update task reference
+   691→            continue; // Retry with new task
+   692→          } else {
+   693→            socket.emit("task:empty", { message: "No tasks available", retryIn: 5000 });
+   694→            return;
+   695→          }
+   696→        }
+   697→        
+   698→        // Small delay before retry
+   699→        if (attempt < MAX_RETRIES) {
+   700→          await new Promise(resolve => setTimeout(resolve, 100 * (attempt + 1)));
+   701→        }
+   702→      }
+   703→      
+   704→      if (!claimed) {
+   705→        socket.emit("error", { code: "CLAIM_FAILED", message: claimResult?.error || "Failed to claim task after retries" });
+   706→        return;
+   707→      }
+   708→      
+   709→      // Update local state
+   710→      worker.currentTaskId = task.id;
+   711→      workerTasks.set(socket.id, task.id);
+   712→      
+   713→      // Generate verification code
+   714→      const verificationCode = generateVerificationCode();
+   715→      
+   716→      // Send task to worker
+   717→      socket.emit("task:assigned", {
+   718→        id: task.id,
+   719→        platform: task.platform,
+   720→        serviceType: task.serviceType,
+   721→        targetUrl: task.targetUrl,
+   722→        targetId: task.targetId,
+   723→        rewardCredits: task.rewardCredits,
+   724→        verificationCode,
+   725→        timeout: 120000 // 2 minutes to complete
+   726→      });
+   727→      
+   728→      // Notify task creator that work has started
+   729→      const creatorSocket = getCreatorSocket(task.creatorId);
+   730→      if (creatorSocket) {
+   731→        io.to(creatorSocket).emit("task:update", {
+   732→          taskId: task.id,
+   733→          status: "claimed",
+   734→          message: "A worker has started on your task"
+   735→        });
+   736→      }
+   737→      
+   738→      console.log(`[Engine] Task assigned: ${task.id} -> Worker ${socket.id}`);
+   739→      
+   740→    } catch (error) {
+   741→      console.error("[Engine] Task request error:", error);
+   742→      socket.emit("error", { code: "TASK_ERROR", message: "Failed to get task" });
+   743→    }
+   744→  });
+   745→  
+   746→  /**
+   747→   * Worker submits task completion
+   748→   */
+   749→  socket.on("task:complete", async (data: { 
+   750→    userId: string; 
+   751→    taskId: string; 
+   752→    timeSpentMs?: number;
+   753→    screenshot?: string;
+   754→  }) => {
+   755→    try {
+   756→      const worker = activeWorkers.get(socket.id);
+   757→      if (!worker || worker.userId !== data.userId) {
+   758→        socket.emit("error", { code: "NOT_REGISTERED", message: "Please register first" });
+   759→        return;
+   760→      }
+   761→      
+   762→      // Validate taskId format
+   763→      if (!isValidUserId(data.taskId)) {
+   764→        socket.emit("error", { code: "INVALID_TASK_ID", message: "Invalid task ID format" });
+   765→        return;
+   766→      }
+   767→      
+   768→      // Check rate limit for completions
+   769→      const rateLimitResult = checkWorkerRateLimit(socket.id, 'taskComplete');
+   770→      if (!rateLimitResult.allowed) {
+   771→        socket.emit("error", { 
+   772→          code: "RATE_LIMITED", 
+   773→          message: `Completing tasks too fast. Try again in ${rateLimitResult.retryAfter} seconds.`,
+   774→          retryAfter: rateLimitResult.retryAfter 
+   775→        });
+   776→        return;
+   777→      }
+   778→      
+   779→      // Anti-fraud: Check completion speed (bot detection)
+   780→      const timeSpent = data.timeSpentMs || 0;
+   781→      if (timeSpent > 0 && !checkCompletionSpeed(worker, timeSpent)) {
+   782→        socket.emit("error", { 
+   783→          code: "SUSPICIOUS_ACTIVITY", 
+   784→          message: "Task completed too quickly. Please take your time with tasks." 
+   785→        });
+   786→        // Don't disconnect but log the suspicious activity
+   787→        return;
+   788→      }
+   789→      
+   790→      // Complete task via API
+   791→      const completeResult = await callMainAPI(`/api/tasks/${data.taskId}`, {
+   792→        method: 'PATCH',
+   793→        body: JSON.stringify({ 
+   794→          action: 'complete', 
+   795→          userId: data.userId,
+   796→          timeSpentMs: data.timeSpentMs 
+   797→        })
+   798→      });
+   799→      
+   800→      if (!completeResult || !completeResult.success) {
+   801→        socket.emit("error", { code: "COMPLETION_ERROR", message: completeResult?.error || "Failed to complete task" });
+   802→        return;
+   803→      }
+   804→      
+   805→      // Clear worker's current task
+   806→      worker.currentTaskId = null;
+   807→      worker.tasksCompleted++;
+   808→      workerTasks.delete(socket.id);
+   809→      
+   810→      // Update stats
+   811→      engineStats.totalTasksProcessed++;
+   812→      engineStats.totalCreditsExchanged += completeResult.creditsEarned || 1;
+   813→      engineStats.tasksCompletedToday++;
+   814→      
+   815→      // Send success response to worker
+   816→      socket.emit("task:completed", {
+   817→        taskId: data.taskId,
+   818→        creditsEarned: completeResult.creditsEarned || 1,
+   819→        message: `Earned ${completeResult.creditsEarned || 1} credits!`
+   820→      });
+   821→      
+   822→      // Broadcast completion notification
+   823→      io.emit("task:verified", {
+   824→        taskId: data.taskId,
+   825→        status: "completed",
+   826→        completerName: worker.name || "Anonymous",
+   827→        message: "A task has been completed!"
+   828→      });
+   829→      
+   830→      // Broadcast stats update
+   831→      io.emit("stats:update", {
+   832→        tasksCompleted: engineStats.totalTasksProcessed,
+   833→        creditsExchanged: engineStats.totalCreditsExchanged,
+   834→        queueLength: taskQueue.length
+   835→      });
+   836→      
+   837→      console.log(`[Engine] Task completed: ${data.taskId} by User ${data.userId}`);
+   838→      
+   839→    } catch (error) {
+   840→      console.error("[Engine] Task completion error:", error);
+   841→      socket.emit("error", { code: "COMPLETION_ERROR", message: "Failed to complete task" });
+   842→    }
+   843→  });
+   844→  
+   845→  /**
+   846→   * Create new tasks from campaign
+   847→   */
+   848→  socket.on("tasks:create", async (data: {
+   849→    userId: string;
+   850→    campaignId: string;
+   851→    platform: string;
+   852→    serviceType: string;
+   853→    targetUrl: string;
+   854→    targetId: string;
+   855→    quantity: number;
+   856→    creditsPerTask: number;
+   857→  }) => {
+   858→    try {
+   859→      // Create tasks via API
+   860→      const createResult = await callMainAPI('/api/tasks', {
+   861→        method: 'POST',
+   862→        body: JSON.stringify(data)
+   863→      });
+   864→      
+   865→      if (!createResult || !createResult.success) {
+   866→        socket.emit("error", { code: "CREATION_ERROR", message: createResult?.error || "Failed to create tasks" });
+   867→        return;
+   868→      }
+   869→      
+   870→      // Get created tasks and add to queue
+   871→      const tasksResponse = await callMainAPI(`/api/tasks?userId=${data.userId}&status=my-created&limit=${data.quantity}`);
+   872→      
+   873→      if (tasksResponse && tasksResponse.tasks) {
+   874→        for (const task of tasksResponse.tasks.slice(-data.quantity)) {
+   875→          if (task.status === 'pending') {
+   876→            addTaskToQueue({
+   877→              id: task.id,
+   878→              campaignId: task.campaignId,
+   879→              creatorId: task.creatorId,
+   880→              platform: task.platform,
+   881→              serviceType: task.serviceType,
+   882→              targetUrl: task.targetUrl,
+   883→              targetId: task.targetId,
+   884→              rewardCredits: task.rewardCredits,
+   885→              priority: 1,
+   886→              createdAt: new Date(task.createdAt),
+   887→              expiresAt: task.expiresAt ? new Date(task.expiresAt) : undefined
+   888→            });
+   889→          }
+   890→        }
+   891→      }
+   892→      
+   893→      socket.emit("tasks:created", {
+   894→        success: true,
+   895→        quantity: data.quantity,
+   896→        totalCost: createResult.totalCost,
+   897→        creditsRemaining: createResult.creditsRemaining,
+   898→        message: `${data.quantity} tasks created and added to queue!`
+   899→      });
+   900→      
+   901→      console.log(`[Engine] Created ${data.quantity} tasks for campaign ${data.campaignId}`);
+   902→      
+   903→    } catch (error) {
+   904→      console.error("[Engine] Task creation error:", error);
+   905→      socket.emit("error", { code: "CREATION_ERROR", message: "Failed to create tasks" });
+   906→    }
+   907→  });
+   908→  
+   909→  /**
+   910→   * Get available tasks count
+   911→   */
+   912→  socket.on("queue:info", () => {
+   913→    socket.emit("queue:info", getQueueStats());
+   914→  });
+   915→  
+   916→  /**
+   917→   * Get user's active tasks
+   918→   */
+   919→  socket.on("tasks:my", async (data: { userId: string }) => {
+   920→    try {
+   921→      const [createdResponse, completingResponse] = await Promise.all([
+   922→        callMainAPI(`/api/tasks?userId=${data.userId}&status=my-created&limit=20`),
+   923→        callMainAPI(`/api/tasks?userId=${data.userId}&status=my-completing&limit=10`)
+   924→      ]);
+   925→      
+   926→      socket.emit("tasks:my", { 
+   927→        created: createdResponse?.tasks || [], 
+   928→        completing: completingResponse?.tasks || [] 
+   929→      });
+   930→    } catch (error) {
+   931→      socket.emit("error", { code: "QUERY_ERROR", message: "Failed to fetch tasks" });
+   932→    }
+   933→  });
+   934→  
+   935→  /**
+   936→   * Heartbeat / Keep-alive
+   937→   */
+   938→  socket.on("ping", () => {
+   939→    socket.emit("pong", { timestamp: Date.now() });
+   940→    
+   941→    const worker = activeWorkers.get(socket.id);
+   942→    if (worker) {
+   943→      worker.lastHeartbeat = new Date();
+   944→    }
+   945→  });
+   946→  
+   947→  /**
+   948→   * Cancel/abandon current task
+   949→   */
+   950→  socket.on("task:abandon", async (data: { userId: string; taskId: string }) => {
+   951→    try {
+   952→      const worker = activeWorkers.get(socket.id);
+   953→      if (!worker) return;
+   954→      
+   955→      // Use unified clearWorkerTask function
+   956→      await clearWorkerTask(worker, socket.id, true);
+   957→      
+   958→      socket.emit("task:abandoned", { taskId: data.taskId });
+   959→      console.log(`[Engine] Task abandoned: ${data.taskId}`);
+   960→      
+   961→    } catch (error) {
+   962→      console.error("[Engine] Abandon error:", error);
+   963→    }
+   964→  });
+   965→  
+   966→  /**
+   967→   * Handle disconnect
+   968→   */
+   969→  socket.on("disconnect", async () => {
+   970→    console.log(`[Engine] Worker disconnected: ${socket.id}`);
+   971→    
+   972→    const worker = activeWorkers.get(socket.id);
+   973→    if (worker) {
+   974→      // Use unified clearWorkerTask function to handle task re-queuing
+   975→      await clearWorkerTask(worker, socket.id, true);
+   976→      
+   977→      activeWorkers.delete(socket.id);
+   978→      workerTasks.delete(socket.id);
+   979→      
+   980→      // Broadcast updated online count
+   981→      io.emit("stats:online", { count: activeWorkers.size });
+   982→      
+   983→      console.log(`[Engine] Worker removed: ${socket.id} (Active workers: ${activeWorkers.size})`);
+   984→    }
+   985→  });
+   986→});
+   987→
+   988→// ============================================================================
+   989→// PERIODIC TASKS
+   990→// ============================================================================
+   991→
+   992→// Clean up expired tasks every 30 seconds
+   993→setInterval(async () => {
+   994→  const now = new Date();
+   995→  const expiredIndices: number[] = [];
+   996→  
+   997→  for (let i = 0; i < taskQueue.length; i++) {
+   998→    if (taskQueue[i].expiresAt && taskQueue[i].expiresAt <= now) {
+   999→      expiredIndices.push(i);
+  1000→    }
+  1001→  }
+  1002→  
+  1003→  // Remove expired tasks (reverse order to maintain indices)
+  1004→  for (let i = expiredIndices.length - 1; i >= 0; i--) {
+  1005→    const task = taskQueue[expiredIndices[i]];
+  1006→    taskQueue.splice(expiredIndices[i], 1);
+  1007→    
+  1008→    // Mark in database
+  1009→    await callMainAPI(`/api/tasks/${task.id}`, {
+  1010→      method: 'PATCH',
+  1011→      body: JSON.stringify({ action: 'cancel', userId: task.creatorId })
+  1012→    }).catch(() => {});
+  1013→  }
+  1014→  
+  1015→  if (expiredIndices.length > 0) {
+  1016→    console.log(`[Engine] Cleaned up ${expiredIndices.length} expired tasks`);
+  1017→  }
+  1018→}, 30000);
+  1019→
+  1020→// Clean up stale rate limit entries every 2 minutes
+  1021→setInterval(() => {
+  1022→  cleanupRateLimits();
+  1023→}, 2 * 60 * 1000);
+  1024→
+  1025→// Stale worker tracking with progressive warnings
+  1026→const workerWarnings = new Map<string, number>(); // socketId -> warning count
+  1027→
+  1028→// Check for stale workers (with progressive timeout)
+  1029→setInterval(() => {
+  1030→  const baseStaleTime = 2 * 60 * 1000; // 2 minutes base
+  1031→  const now = Date.now();
+  1032→  
+  1033→  for (const [socketId, worker] of activeWorkers.entries()) {
+  1034→    const timeSinceHeartbeat = now - worker.lastHeartbeat.getTime();
+  1035→    const warningCount = workerWarnings.get(socketId) || 0;
+  1036→    
+  1037→    // Progressive timeout: 2min, 3min, 4min (max)
+  1038→    const staleTime = baseStaleTime + (warningCount * 60 * 1000);
+  1039→    
+  1040→    if (timeSinceHeartbeat > staleTime) {
+  1041→      if (warningCount < 2) {
+  1042→        // Send warning first
+  1043→        const newWarningCount = warningCount + 1;
+  1044→        workerWarnings.set(socketId, newWarningCount);
+  1045→        console.log(`[Engine] Warning ${newWarningCount} for stale worker: ${socketId}`);
+  1046→        io.to(socketId).emit("warning", {
+  1047→          code: "STALE_CONNECTION",
+  1048→          message: "Connection appears unstable. Please check your network.",
+  1049→          warningCount: newWarningCount
+  1050→        });
+  1051→      } else {
+  1052→        // Disconnect after warnings
+  1053→        console.log(`[Engine] Disconnecting stale worker after warnings: ${socketId}`);
+  1054→        workerWarnings.delete(socketId);
+  1055→        io.sockets.sockets.get(socketId)?.disconnect(true);
+  1056→      }
+  1057→    }
+  1058→  }
+  1059→}, 60000);
+  1060→
+  1061→// Log stats every 5 minutes
+  1062→setInterval(() => {
+  1063→  const stats = getQueueStats();
+  1064→  console.log(`[Engine Stats] Queue: ${stats.queueLength} | Workers: ${stats.activeWorkers} | Processed: ${stats.totalTasksProcessed} | Credits Exchanged: ${stats.totalCreditsExchanged}`);
+  1065→}, 5 * 60 * 1000);
+  1066→
+  1067→// Reset daily counters at midnight
+  1068→setInterval(() => {
+  1069→  const now = new Date();
+  1070→  if (now.getHours() === 0 && now.getMinutes() === 0) {
+  1071→    engineStats.resetDailyCounters();
+  1072→  }
+  1073→}, 60000);
+  1074→
+  1075→// ============================================================================
+  1076→// GRACEFUL SHUTDOWN HANDLING
+  1077→// ============================================================================
+  1078→
+  1079→function gracefulShutdown(signal: string): void {
+  1080→  console.log(`\n[Engine] Received ${signal}. Starting graceful shutdown...`);
+  1081→  
+  1082→  // Stop accepting new connections
+  1083→  io.close(() => {
+  1084→    console.log('[Engine] Socket.io connections closed');
+  1085→  });
+  1086→  
+  1087→  // Close HTTP server
+  1088→  httpServer.close(() => {
+  1089→    console.log('[Engine] HTTP server closed');
+  1090→    
+  1091→    // Log final stats
+  1092→    console.log(`[Engine Final Stats]:
+  1093→      - Total Tasks Processed: ${engineStats.totalTasksProcessed}
+  1094→      - Total Credits Exchanged: ${engineStats.totalCreditsExchanged}
+  1095→      - Peak Concurrent Users: ${engineStats.peakConcurrentUsers}
+  1096→      - Uptime: ${engineStats.uptime()}s
+  1097→    `);
+  1098→    
+  1099→    process.exit(0);
+  1100→  });
+  1101→  
+  1102→  // Force shutdown after 10 seconds
+  1103→  setTimeout(() => {
+  1104→    console.error('[Engine] Forced shutdown after timeout');
+  1105→    process.exit(1);
+  1106→  }, 10000);
+  1107→}
+  1108→
+  1109→process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+  1110→process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+  1111→
+  1112→// Handle uncaught exceptions
+  1113→process.on('uncaughtException', (error) => {
+  1114→  console.error('[Engine] Uncaught Exception:', error);
+  1115→  gracefulShutdown('UNCAUGHT_EXCEPTION');
+  1116→});
+  1117→
+  1118→process.on('unhandledRejection', (reason, promise) => {
+  1119→  console.error('[Engine] Unhandled Rejection at:', promise, 'reason:', reason);
+  1120→});
+  1121→
+  1122→// ============================================================================
+  1123→// START SERVER
+  1124→// ============================================================================
+  1125→
+  1126→httpServer.listen(PORT, () => {
+  1127→  console.log(`
+  1128→╔═══════════════════════════════════════════════════════════╗
+  1129→║                                                           ║
+  1130→║   🚀 SocialBoost Engine v1.0                             ║
+  1131→║   ─────────────────────────────────                       ║
+  1132→║   Real-time Task Exchange System                          ║
+  1133→║                                                           ║
+  1134→║   Port:     ${PORT}                                          ║
+  1135→║   Status:   ✅ Running                                     ║
+  1136→║   Started:  ${new Date().toISOString()}         ║
+  1137→║                                                           ║
+  1138→║   Events:                                                  ║
+  1139→║   • worker:register     - Register worker                  ║
+  1140→║   • task:request       - Get next task                    ║
+  1141→║   • task:complete      - Submit completion                ║
+  1142→║   • tasks:create       - Batch create tasks               ║
+  1143→║   • queue:info         - Get queue stats                  ║
+  1144→║   • task:abandon       - Abandon current task             ║
+  1145→║                                                           ║
+  1146→╚═══════════════════════════════════════════════════════════╝
+  1147→  `);
+  1148→});
+  1149→
