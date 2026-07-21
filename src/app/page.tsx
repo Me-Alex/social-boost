@@ -121,6 +121,9 @@ import {
   MessageSquare,
   Rss,
   AlertCircle,
+  AlertTriangle,
+  Database,
+  Lightbulb,
   // Round 9 New Icons
   Linkedin,
   Phone,
@@ -1545,12 +1548,13 @@ function Dashboard({ user, onLogout, authToken }: DashboardProps) {
             { icon: <BarChart3 />, label: 'Analytics', id: 'analytics' },
             { icon: <Coins />, label: 'Credits', id: 'credits' },
             { icon: <ZapIcon />, label: 'Earn Credits', id: 'earn' },
+            { icon: <ShieldCheck />, label: 'Admin', id: 'admin', badge: true },
             { icon: <Settings />, label: 'Settings', id: 'settings' },
           ].map((item) => (
             <button
               key={item.id}
               onClick={() => setActiveDashboardTab(item.id)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all relative ${
                 activeDashboardTab === item.id 
                   ? 'bg-warm-500/20 text-warm-400 font-medium' 
                   : 'hover:bg-slate-800 text-slate-400 hover:text-white'
@@ -1558,6 +1562,9 @@ function Dashboard({ user, onLogout, authToken }: DashboardProps) {
             >
               {item.icon}
               {sidebarOpen && <span>{item.label}</span>}
+              {item.badge && (
+                <span className="absolute right-2 w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+              )}
             </button>
           ))}
         </nav>
@@ -1597,10 +1604,7 @@ function Dashboard({ user, onLogout, authToken }: DashboardProps) {
             </div>
             
             <div className="flex items-center gap-3">
-              <Button variant="outline" size="sm" className="gap-2">
-                <Bell className="w-4 h-4" />
-                Notifications
-              </Button>
+              <NotificationBellDropdown />
               <Button 
                 size="sm" 
                 className="gradient-bg text-white border-0 gap-2"
@@ -2289,6 +2293,11 @@ function Dashboard({ user, onLogout, authToken }: DashboardProps) {
                 </CardContent>
               </Card>
             </div>
+          )}
+
+          {/* ADMIN TAB - System Administration */}
+          {activeDashboardTab === 'admin' && (
+            <AdminPanel user={user} />
           )}
         </div>
       </main>
@@ -4473,6 +4482,558 @@ function PlatformStatsWidget() {
 }
 
 // ============================================================================
+// ============================================================================
+// ADMIN PANEL - System Administration & Monitoring
+// ============================================================================
+
+interface AdminPanelProps {
+  user: { id?: string; name: string; email: string; credits: number }
+}
+
+function AdminPanel({ user }: AdminPanelProps) {
+  const [systemStats, setSystemStats] = useState<any>(null)
+  const [auditLogs, setAuditLogs] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState<'overview' | 'logs' | 'security'>('overview')
+  
+  // Filter states
+  const [logFilter, setLogFilter] = useState({
+    category: 'all',
+    severity: 'all',
+    limit: 50
+  })
+  const [statsLoading, setStatsLoading] = useState(false)
+
+  // Fetch system stats
+  const fetchSystemStats = useCallback(async () => {
+    setStatsLoading(true)
+    try {
+      const response = await fetch('/api/admin/stats?stats=true')
+      if (response.ok) {
+        const data = await response.json()
+        setSystemStats(data.stats)
+      }
+    } catch (error) {
+      console.error('[Admin] Failed to fetch stats:', error)
+    } finally {
+      setStatsLoading(false)
+    }
+  }, [])
+
+  // Fetch audit logs
+  const fetchAuditLogs = useCallback(async () => {
+    try {
+      const params = new URLSearchParams({
+        limit: logFilter.limit.toString(),
+        ...(logFilter.category !== 'all' && { category: logFilter.category }),
+        ...(logFilter.severity !== 'all' && { severity: logFilter.severity })
+      })
+      const response = await fetch(`/api/admin/audit-logs?${params}`)
+      if (response.ok) {
+        const data = await response.json()
+        setAuditLogs(data.logs || [])
+      }
+    } catch (error) {
+      console.error('[Admin] Failed to fetch audit logs:', error)
+    }
+  }, [logFilter])
+
+  // Initial data load
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true)
+      await Promise.all([fetchSystemStats(), fetchAuditLogs()])
+      setLoading(false)
+    }
+    loadData()
+    
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(fetchSystemStats, 30000)
+    return () => clearInterval(interval)
+  }, [fetchSystemStats, fetchAuditLogs])
+
+  // Severity badge colors
+  const getSeverityBadge = (severity: string) => {
+    const styles: Record<string, string> = {
+      info: 'bg-blue-100 text-blue-700 border-blue-200',
+      warning: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+      error: 'bg-red-100 text-red-700 border-red-200',
+      critical: 'bg-red-200 text-red-800 border-red-300'
+    }
+    return styles[severity] || styles.info
+  }
+
+  // Category icons
+  const getCategoryIcon = (category: string) => {
+    switch (category) {
+      case 'auth': return <ShieldCheck className="w-4 h-4" />
+      case 'data': return <Database className="w-4 h-4" />
+      case 'api': return <Globe className="w-4 h-4" />
+      case 'security': return <AlertTriangle className="w-4 h-4" />
+      default: return <FileText className="w-4 h-4" />
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Admin Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold flex items-center gap-3">
+            <ShieldCheck className="w-8 h-8 text-warm-500" />
+            Administration Panel
+          </h2>
+          <p className="text-muted-foreground mt-1">System monitoring and security management</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={fetchSystemStats}
+            disabled={statsLoading}
+            className="gap-2"
+          >
+            <RefreshCw className={`w-4 h-4 ${statsLoading ? 'animate-spin' : ''}`} />
+            Refresh Stats
+          </Button>
+          <Badge variant="outline" className="gap-1 px-3 py-1">
+            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+            System Online
+          </Badge>
+        </div>
+      </div>
+
+      {/* Tab Navigation */}
+      <div className="flex gap-2 p-1 bg-gray-100 rounded-lg w-fit">
+        {[
+          { id: 'overview', label: 'Overview', icon: <LayoutDashboard className="w-4 h-4" /> },
+          { id: 'logs', label: 'Audit Logs', icon: <FileText className="w-4 h-4" /> },
+          { id: 'security', label: 'Security Events', icon: <AlertTriangle className="w-4 h-4" /> },
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id as any)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
+              activeTab === tab.id 
+                ? 'bg-white shadow-sm text-gray-900' 
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            {tab.icon}
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* OVERVIEW TAB */}
+      {activeTab === 'overview' && (
+        <div className="space-y-6">
+          {/* System Stats Grid */}
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {[...Array(8)].map((_, i) => (
+                <Card key={i} className="border-0 shadow-sm">
+                  <CardContent className="p-6">
+                    <div className="animate-pulse space-y-3">
+                      <div className="h-4 bg-gray-200 rounded w-24"></div>
+                      <div className="h-8 bg-gray-200 rounded w-16"></div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : systemStats ? (
+            <>
+              {/* User Statistics */}
+              <div>
+                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <Users className="w-5 h-5 text-blue-500" />
+                  User Statistics
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <Card className="border-0 shadow-sm border-l-4 border-l-blue-500">
+                    <CardContent className="p-4">
+                      <p className="text-sm text-muted-foreground">Total Users</p>
+                      <p className="text-3xl font-bold">{systemStats.users?.total?.toLocaleString() || '-'}</p>
+                      <p className="text-xs text-green-600 mt-1">+{systemStats.users?.createdToday || 0} today</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="border-0 shadow-sm border-l-4 border-l-green-500">
+                    <CardContent className="p-4">
+                      <p className="text-sm text-muted-foreground">Active Users</p>
+                      <p className="text-3xl font-bold text-green-600">{systemStats.users?.active?.toLocaleString() || '-'}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{Math.round(((systemStats.users?.active || 0) / (systemStats.users?.total || 1)) * 100)}% active rate</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="border-0 shadow-sm border-l-4 border-l-purple-500">
+                    <CardContent className="p-4">
+                      <p className="text-sm text-muted-foreground">Active Sessions</p>
+                      <p className="text-3xl font-bold text-purple-600">{systemStats.sessions?.totalActive || '-'}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{systemStats.sessions?.uniqueUsers || '-'} unique</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="border-0 shadow-sm border-l-4 border-l-amber-500">
+                    <CardContent className="p-4">
+                      <p className="text-sm text-muted-foreground">New This Week</p>
+                      <p className="text-3xl font-bold text-amber-600">{systemStats.users?.createdThisWeek?.toLocaleString() || '-'}</p>
+                      <p className="text-xs text-muted-foreground mt-1">7-day growth</p>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+
+              {/* Campaign & Task Statistics */}
+              <div>
+                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <Target className="w-5 h-5 text-warm-500" />
+                  Campaigns & Tasks
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <Card className="border-0 shadow-sm border-l-4 border-l-warm-500">
+                    <CardContent className="p-4">
+                      <p className="text-sm text-muted-foreground">Active Campaigns</p>
+                      <p className="text-3xl font-bold">{systemStats.campaigns?.active || '-'}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{systemStats.campaigns?.total || 0} total</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="border-0 shadow-sm border-l-4 border-l-cyan-500">
+                    <CardContent className="p-4">
+                      <p className="text-sm text-muted-foreground">Pending Tasks</p>
+                      <p className="text-3xl font-bold text-cyan-600">{systemStats.tasks?.pending || '-'}</p>
+                      <p className="text-xs text-muted-foreground mt-1">In queue</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="border-0 shadow-sm border-l-4 border-l-indigo-500">
+                    <CardContent className="p-4">
+                      <p className="text-sm text-muted-foreground">Completed Today</p>
+                      <p className="text-3xl font-bold text-indigo-600">{systemStats.tasks?.completedToday || '-'}</p>
+                      <p className="text-xs text-green-600 mt-1">+{Math.round((systemStats.tasks?.completedToday || 0) * 0.1)} est. credits</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="border-0 shadow-sm border-l-4 border-l-emerald-500">
+                    <CardContent className="p-4">
+                      <p className="text-sm text-muted-foreground">Total Completed</p>
+                      <p className="text-3xl font-bold text-emerald-600">{systemStats.tasks?.completed?.toLocaleString() || '-'}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{systemStats.tasks?.claimed || 0} in progress</p>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+
+              {/* Audit Log Summary */}
+              <div>
+                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-gray-500" />
+                  Audit Log Summary (Last 24h)
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <Card className="border-0 shadow-sm">
+                    <CardContent className="p-4">
+                      <p className="text-sm text-muted-foreground">Total Events</p>
+                      <p className="text-2xl font-bold">{systemStats.auditLogs?.totalLogs?.toLocaleString() || '-'}</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="border-0 shadow-sm border-l-4 border-l-red-500">
+                    <CardContent className="p-4">
+                      <p className="text-sm text-muted-foreground">Errors</p>
+                      <p className="text-2xl font-bold text-red-600">{systemStats.auditLogs?.recentErrors || 0}</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="border-0 shadow-sm">
+                    <CardContent className="p-4">
+                      <p className="text-sm text-muted-foreground">Unique Users</p>
+                      <p className="text-2xl font-bold">{systemStats.auditLogs?.uniqueUsers || '-'}</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="border-0 shadow-sm">
+                    <CardContent className="p-4">
+                      <p className="text-sm text-muted-foreground">Unique IPs</p>
+                      <p className="text-2xl font-bold">{systemStats.auditLogs?.uniqueIps || '-'}</p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Severity Distribution */}
+                <Card className="border-0 shadow-sm mt-4">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base">Severity Distribution</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex gap-4 flex-wrap">
+                      {Object.entries(systemStats.auditLogs?.bySeverity || {}).map(([severity, count]: [string, any]) => (
+                        <div key={severity} className="flex items-center gap-2">
+                          <Badge className={getSeverityBadge(severity)}>{severity}</Badge>
+                          <span className="font-medium">{count}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </>
+          ) : (
+            <Card className="border-0 shadow-sm p-12 text-center">
+              <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+              <h3 className="font-semibold text-lg">Failed to load system stats</h3>
+              <p className="text-muted-foreground mt-2">Please check your connection and try again.</p>
+              <Button className="mt-4" onClick={fetchSystemStats}>Retry</Button>
+            </Card>
+          )}
+        </div>
+      )}
+
+      {/* AUDIT LOGS TAB */}
+      {activeTab === 'logs' && (
+        <div className="space-y-4">
+          {/* Filters */}
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-4">
+              <div className="flex flex-wrap items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <Label className="text-sm">Category:</Label>
+                  <Select value={logFilter.category} onValueChange={(v) => setLogFilter(prev => ({ ...prev, category: v }))}>
+                    <SelectTrigger className="w-40">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Categories</SelectItem>
+                      <SelectItem value="auth">Authentication</SelectItem>
+                      <SelectItem value="data">Data</SelectItem>
+                      <SelectItem value="api">API</SelectItem>
+                      <SelectItem value="security">Security</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="system">System</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label className="text-sm">Severity:</Label>
+                  <Select value={logFilter.severity} onValueChange={(v) => setLogFilter(prev => ({ ...prev, severity: v }))}>
+                    <SelectTrigger className="w-36">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Levels</SelectItem>
+                      <SelectItem value="info">Info</SelectItem>
+                      <SelectItem value="warning">Warning</SelectItem>
+                      <SelectItem value="error">Error</SelectItem>
+                      <SelectItem value="critical">Critical</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label className="text-sm">Show:</Label>
+                  <Select value={logFilter.limit.toString()} onValueChange={(v) => setLogFilter(prev => ({ ...prev, limit: parseInt(v) }))}>
+                    <SelectTrigger className="w-24">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="25">25</SelectItem>
+                      <SelectItem value="50">50</SelectItem>
+                      <SelectItem value="100">100</SelectItem>
+                      <SelectItem value="200">200</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button variant="outline" size="sm" onClick={fetchAuditLogs} className="gap-2 ml-auto">
+                  <Filter className="w-4 h-4" />
+                  Apply Filters
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Logs Table */}
+          <Card className="border-0 shadow-sm overflow-hidden">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base">Recent Audit Logs</CardTitle>
+                <Badge variant="secondary">{auditLogs.length} entries</Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
+                <table className="w-full text-sm">
+                  <thead className="sticky top-0 bg-gray-50 border-b">
+                    <tr>
+                      <th className="px-4 py-3 text-left font-medium text-muted-foreground">Timestamp</th>
+                      <th className="px-4 py-3 text-left font-medium text-muted-foreground">Severity</th>
+                      <th className="px-4 py-3 text-left font-medium text-muted-foreground">Category</th>
+                      <th className="px-4 py-3 text-left font-medium text-muted-foreground">Action</th>
+                      <th className="px-4 py-3 text-left font-medium text-muted-foreground">User/IP</th>
+                      <th className="px-4 py-3 text-left font-medium text-muted-foreground">Details</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {auditLogs.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                          {loading ? 'Loading...' : 'No audit logs found'}
+                        </td>
+                      </tr>
+                    ) : (
+                      auditLogs.map((log, i) => (
+                        <tr key={i} className="hover:bg-gray-50 transition-colors">
+                          <td className="px-4 py-3 whitespace-nowrap text-xs">
+                            {new Date(log.createdAt).toLocaleString()}
+                          </td>
+                          <td className="px-4 py-3">
+                            <Badge className={`text-xs ${getSeverityBadge(log.severity)}`}>
+                              {log.severity}
+                            </Badge>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-1.5 text-muted-foreground">
+                              {getCategoryIcon(log.category)}
+                              <span className="capitalize text-xs">{log.category}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 font-mono text-xs max-w-[150px] truncate">
+                            {log.action}
+                          </td>
+                          <td className="px-4 py-3 text-xs text-muted-foreground max-w-[120px] truncate">
+                            {log.userId || log.ipAddress || '-'}
+                          </td>
+                          <td className="px-4 py-3 text-xs text-muted-foreground max-w-[200px] truncate">
+                            {log.message || log.details || '-'}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* SECURITY EVENTS TAB */}
+      {activeTab === 'security' && (
+        <div className="space-y-6">
+          {/* Security Overview Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card className="border-0 shadow-sm border-l-4 border-l-red-500">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-red-100 rounded-lg">
+                    <AlertCircle className="w-5 h-5 text-red-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Recent Errors</p>
+                    <p className="text-2xl font-bold text-red-600">{systemStats?.auditLogs?.recentErrors || 0}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-0 shadow-sm border-l-4 border-l-yellow-500">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-yellow-100 rounded-lg">
+                    <Shield className="w-5 h-5 text-yellow-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Security Events</p>
+                    <p className="text-2xl font-bold text-yellow-600">
+                      {systemStats?.recentSecurityEvents?.length || 0}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-0 shadow-sm border-l-4 border-l-green-500">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-green-100 rounded-lg">
+                    <ShieldCheck className="w-5 h-5 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">System Status</p>
+                    <p className="text-2xl font-bold text-green-600">Healthy</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Recent Security Events */}
+          <Card className="border-0 shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-yellow-500" />
+                Recent Security Events (Last 24 Hours)
+              </CardTitle>
+              <CardDescription>Authentication failures, suspicious activity, and security alerts</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {(systemStats?.recentSecurityEvents?.length === 0) ? (
+                <div className="text-center py-8">
+                  <ShieldCheck className="w-12 h-12 text-green-500 mx-auto mb-3" />
+                  <p className="font-medium text-green-600">No Security Events</p>
+                  <p className="text-sm text-muted-foreground mt-1">Your system is secure!</p>
+                </div>
+              ) : (
+                <div className="space-y-3 max-h-[400px] overflow-y-auto">
+                  {systemStats?.recentSecurityEvents?.map((event: any, i: number) => (
+                    <div key={i} className="flex items-start gap-3 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                      <div className={`p-1.5 rounded-full ${
+                        event.severity === 'critical' ? 'bg-red-100' :
+                        event.severity === 'error' ? 'bg-red-50' :
+                        'bg-yellow-100'
+                      }`}>
+                        <AlertCircle className={`w-4 h-4 ${
+                          event.severity === 'critical' ? 'text-red-600' :
+                          event.severity === 'error' ? 'text-red-500' :
+                          'text-yellow-600'
+                        }`} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm capitalize">{event.action.replace('security.', '').replace(/_/g, ' ')}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          User: {event.userId || 'Anonymous'} • {new Date(event.timestamp).toLocaleString()}
+                        </p>
+                      </div>
+                      <Badge className={`text-xs ${getSeverityBadge(event.severity)}`}>
+                        {event.severity}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Security Tips */}
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-blue-50 to-indigo-50">
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Lightbulb className="w-5 h-5 text-blue-500" />
+                Security Recommendations
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-2 text-sm">
+                {[
+                  'Enable two-factor authentication for all admin accounts',
+                  'Review failed login attempts daily for suspicious patterns',
+                  'Keep API keys rotated and stored securely',
+                  'Monitor rate limiting metrics for unusual spikes',
+                  'Set up alerts for critical security events'
+                ].map((tip, i) => (
+                  <li key={i} className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                    <span>{tip}</span>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // EARN CREDITS PANEL - Real-time Task Exchange Engine Integration
 // ============================================================================
 
