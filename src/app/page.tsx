@@ -134,7 +134,9 @@ import {
   Wifi,
   WifiOff,
   Power,
-  CircleDot
+  CircleDot,
+  // Accessibility & Keyboard
+  Keyboard
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useTheme } from 'next-themes'
@@ -658,26 +660,29 @@ function MagicNumberCard({
   return (
     <div 
       ref={ref}
-      className="glass-card rounded-2xl p-6 text-center group hover:-translate-y-2 transition-all duration-500 counter-glow"
+      className="glass-card-enhanced rounded-2xl p-6 lg:p-8 text-center group cursor-default counter-glow"
       style={{ animationDelay: `${delay}ms` }}
     >
-      {/* Icon */}
-      <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-gradient-to-br from-warm-500/20 to-orange-500/20 mb-4 group-hover:scale-110 group-hover:bg-gradient-to-br group-hover:from-warm-500 group-hover:to-orange-500 transition-all duration-300">
-        <Icon className="w-7 h-7 text-warm-500 group-hover:text-white transition-colors" />
+      {/* Icon Container - Enhanced with glow effect */}
+      <div className="inline-flex items-center justify-center w-16 h-16 lg:w-18 lg:h-18 rounded-2xl bg-gradient-to-br from-warm-500/20 to-orange-500/20 mb-5 icon-container-glow group-hover:scale-110 group-hover:bg-gradient-to-br group-hover:from-warm-500 group-hover:to-orange-500 transition-all duration-500 border border-white/10">
+        <Icon className="w-7 h-7 lg:w-8 lg:h-8 text-warm-500 group-hover:text-white transition-colors duration-300" />
       </div>
 
-      {/* Counter */}
-      <div className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white tabular-nums mb-2">
-        {Number.isInteger(value) ? Math.floor(count) : count.toFixed(1)}<span className="text-warm-400">{suffix}</span>
+      {/* Counter - Enhanced with gradient text */}
+      <div className="text-3xl sm:text-4xl lg:text-5xl font-black tabular-nums mb-2 magic-number-value">
+        {Number.isInteger(value) ? Math.floor(count) : count.toFixed(1)}<span className="text-warm-400 font-bold">{suffix}</span>
       </div>
 
       {/* Label */}
-      <h4 className="font-semibold text-white/90 mb-1">{label}</h4>
+      <h4 className="font-bold text-white/95 text-base lg:text-lg mb-1 tracking-tight">{label}</h4>
       
       {/* Description */}
       {description && (
-        <p className="text-sm text-gray-500">{description}</p>
+        <p className="text-sm text-gray-400 leading-relaxed mt-2">{description}</p>
       )}
+      
+      {/* Hover indicator line */}
+      <div className="mt-4 mx-auto w-12 h-0.5 bg-gradient-to-r from-transparent via-warm-500 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
     </div>
   )
 }
@@ -5900,6 +5905,9 @@ export default function Home() {
     return null
   })
   
+  // Keyboard Shortcuts State (Round 10 - Accessibility)
+  const [showShortcutsHelp, setShowShortcutsHelp] = useState(false)
+  
   // Newsletter handler
   const handleNewsletterSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
@@ -6023,6 +6031,24 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background overflow-x-hidden">
+      {/* Accessibility: Skip to Content Link */}
+      <SkipToContent />
+      
+      {/* Screen Reader Announcer for dynamic content */}
+      <LiveAnnouncer message={isLoggedIn ? `Logged in as ${currentUser.name}` : 'Not logged in'} />
+      
+      {/* Keyboard Shortcuts System */}
+      <KeyboardShortcuts shortcuts={[
+        { key: 'k', ctrl: true, description: 'Search FAQs', action: () => document.getElementById('faq')?.querySelector('input')?.focus() },
+        { key: '/', ctrl: true, shift: true, description: 'Show keyboard shortcuts help', action: () => setShowShortcutsHelp(prev => !prev) },
+        { key: 's', alt: true, description: 'Sign Up / Sign In', action: () => isLoggedIn ? null : setIsSignUpOpen(true) },
+        { key: 'p', alt: true, description: 'Go to Pricing', action: () => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' }) },
+        { key: 'f', alt: true, description: 'Go to Features', action: () => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' }) },
+      ]} />
+      
+      {/* Keyboard Shortcuts Help Modal */}
+      <ShortcutsHelp isOpen={showShortcutsHelp} onClose={() => setShowShortcutsHelp(false)} />
+      
       {/* Scroll Progress Bar */}
       <ScrollProgress />
 
@@ -6193,102 +6219,126 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="relative overflow-hidden py-20 lg:py-32">
-        {/* Background decorations */}
+      {/* Main Content - Target for Skip to Content link */}
+      <div id="main-content">
+      {/* Hero Section - Enhanced */}
+      <section className="relative overflow-hidden py-24 lg:py-40 noise-overlay" aria-label="Hero section">
+        {/* Background decorations - Enhanced with sophisticated gradients */}
         <div className="absolute inset-0 -z-10 overflow-hidden">
-          <div className="absolute top-20 left-10 w-72 h-72 bg-warm-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-float"></div>
-          <div className="absolute bottom-20 right-10 w-96 h-96 bg-warm-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-float" style={{ animationDelay: '1s' }}></div>
-          <div className="absolute top-40 right-1/4 w-64 h-64 bg-orange-200 rounded-full mix-blend-multiply filter blur-3xl opacity-25 animate-float" style={{ animationDelay: '2s' }}></div>
+          {/* Primary gradient orbs with hero gradient animation */}
+          <div className="absolute top-10 left-5 w-80 h-80 bg-warm-300 rounded-full mix-blend-multiply filter blur-3xl opacity-35 animate-float hero-gradient-bg" style={{ animationDuration: '20s' }}></div>
+          <div className="absolute bottom-10 right-5 w-[28rem] h-[28rem] bg-orange-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-float hero-gradient-bg" style={{ animationDelay: '2s', animationDuration: '25s' }}></div>
+          <div className="absolute top-1/3 right-1/4 w-72 h-72 bg-amber-200 rounded-full mix-blend-multiply filter blur-3xl opacity-25 animate-float hero-gradient-bg" style={{ animationDelay: '4s', animationDuration: '18s' }}></div>
+          <div className="absolute bottom-1/3 left-1/4 w-56 h-56 bg-yellow-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-float hero-gradient-bg" style={{ animationDelay: '6s', animationDuration: '22s' }}></div>
           
-          {/* Grid pattern overlay */}
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#f59e0b08_1px,transparent_1px),linear-gradient(to_bottom,#f59e0b08_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
+          {/* Floating particles for visual interest */}
+          <div className="floating-particle" style={{ '--tx': '30px', '--ty': '-120px', '--duration': '10s', '--delay': '0s' } as React.CSSProperties} ></div>
+          <div className="floating-particle" style={{ top: '20%', right: '15%', '--tx': '-25px', '--ty': '-100px', '--duration': '12s', '--delay': '2s' } as React.CSSProperties} ></div>
+          <div className="floating-particle" style={{ top: '60%', left: '10%', width: '8px', height: '8px', '--tx': '35px', '--ty': '-90px', '--duration': '9s', '--delay': '4s' } as React.CSSProperties} ></div>
+          <div className="floating-particle" style={{ bottom: '30%', right: '25%', width: '5px', height: '5px', '--tx': '-20px', '--ty': '-110px', '--duration': '14s', '--delay': '1s' } as React.CSSProperties} ></div>
+          <div className="floating-particle" style={{ top: '40%', left: '30%', width: '7px', height: '7px', '--tx': '25px', '--ty': '-95px', '--duration': '11s', '--delay': '3s' } as React.CSSProperties} ></div>
+          
+          {/* Grid pattern overlay - subtle */}
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#f59e0b06_1px,transparent_1px),linear-gradient(to_bottom,#f59e0b06_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
+          
+          {/* Radial gradient vignette for depth */}
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(28,25,23,0.05)_100%)]"></div>
         </div>
 
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto text-center">
-            {/* Badge */}
-            <Badge variant="secondary" className="mb-6 px-4 py-2 text-sm font-medium bg-gradient-to-r from-warm-100 to-warm-200 text-warm-800 hover:from-warm-200 hover:to-warm-300 border-warm-300 transition-all duration-300 shadow-sm animate-fadeIn">
-              <Flame className="w-4 h-4 mr-2 text-orange-500" />
+            {/* Badge - Enhanced with glow effect */}
+            <Badge variant="secondary" className="mb-8 px-5 py-2.5 text-sm font-semibold bg-gradient-to-r from-warm-100 via-amber-100 to-orange-100 text-warm-800 hover:from-warm-200 hover:to-orange-200 border border-warm-300/50 transition-all duration-500 shadow-lg shadow-warm-200/50 animate-fadeIn group cursor-default">
+              <Flame className="w-4 h-4 mr-2 text-orange-500 icon-pulse-ring" />
               #1 Social Media Growth Platform
-              <Sparkles className="w-4 h-4 ml-2 text-yellow-500" />
+              <Sparkles className="w-4 h-4 ml-2 text-yellow-500 group-hover:rotate-12 transition-transform duration-300" />
             </Badge>
 
-            {/* Main heading */}
-            <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold tracking-tight mb-6 leading-tight animate-fadeInUp">
+            {/* Main heading - Enhanced typography hierarchy */}
+            <h1 className="text-4xl sm:text-5xl lg:text-7xl xl:text-8xl font-black tracking-tight mb-8 leading-[1.1] animate-fadeInUp text-shadow-warm">
               Get Free{' '}
-              <span className="gradient-text relative inline-block">
+              <span className="text-animated-gradient relative inline-block">
                 YouTube & Instagram
-                <svg className="absolute -bottom-2 left-0 w-full" viewBox="0 0 200 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M2 8C50 2 150 2 198 8" stroke="#F59E0B" strokeWidth="3" strokeLinecap="round"/>
+                <svg className="absolute -bottom-1 left-0 w-full h-3" viewBox="0 0 200 12" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+                  <path d="M2 8C50 2 150 2 198 8" stroke="#F59E0B" strokeWidth="3" strokeLinecap="round" className="animate-pulse" style={{ animationDuration: '3s' }}/>
                 </svg>
               </span>{' '}
               <br className="hidden sm:block" />
-              Growth from Real Users
+              <span className="bg-gradient-to-r from-warm-600 via-orange-500 to-warm-600 bg-clip-text text-transparent">Growth</span>{' '}
+              <span className="text-foreground">from Real Users</span>
             </h1>
 
-            {/* Subheading */}
-            <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-8 leading-relaxed animate-fadeInUp" style={{ animationDelay: '100ms' }}>
+            {/* Subheading - Enhanced readability */}
+            <p className="text-lg sm:text-xl lg:text-2xl text-muted-foreground max-w-3xl mx-auto mb-10 leading-relaxed animate-fadeInUp text-shadow-warm" style={{ animationDelay: '100ms' }}>
               Boost your social media presence with authentic views, followers, likes, and comments. 
-              Our platform connects your content with <span className="font-semibold text-foreground">real users</span> who actively engage.
+              Our platform connects your content with{' '}
+              <span className="font-bold text-foreground animated-underline">real users</span>
+              {' '}who actively engage.
             </p>
 
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12 animate-fadeInUp" style={{ animationDelay: '200ms' }}>
+            {/* CTA Buttons - Enhanced with magnetic glow and shine effects */}
+            <div className="flex flex-col sm:flex-row gap-5 justify-center items-center mb-14 animate-fadeInUp stagger-fade-up" style={{ animationDelay: '200ms' }}>
               <Button 
                 size="lg" 
-                className="gradient-bg text-white border-0 hover:opacity-90 text-lg px-8 py-6 h-auto animate-pulse-glow group relative overflow-hidden"
+                className="cta-button-enhanced gradient-bg text-white border-0 text-lg px-10 py-7 h-auto font-bold group relative overflow-hidden btn-shine"
                 onClick={() => setIsSignUpOpen(true)}
               >
                 <span className="relative z-10 flex items-center">
-                  <Rocket className="w-5 h-5 mr-2 group-hover:translate-x-1 transition-transform" />
+                  <Rocket className="w-6 h-6 mr-3 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform duration-300" />
                   Start Growing Free
-                  <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+                  <ArrowRight className="w-6 h-6 ml-3 group-hover:translate-x-2 transition-transform duration-300" />
                 </span>
               </Button>
               <Button 
                 size="lg" 
                 variant="outline" 
-                className="text-lg px-8 py-6 h-auto border-2 hover:border-warm-400 hover:bg-warm-50 transition-all duration-300"
+                className="text-lg px-10 py-7 h-auto border-2 border-warm-300 hover:border-warm-400 hover:bg-warm-50/80 hover:shadow-lg hover:shadow-warm-100/50 transition-all duration-300 font-semibold group glass-card-enhanced"
                 onClick={() => document.getElementById('services')?.scrollIntoView({ behavior: 'smooth' })}
               >
                 View Services
-                <ChevronRight className="w-5 h-5 ml-2" />
+                <ChevronRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform duration-300" />
               </Button>
             </div>
 
-            {/* Trust indicators */}
-            <div className="flex flex-wrap justify-center items-center gap-6 text-sm text-muted-foreground animate-fadeInUp" style={{ animationDelay: '300ms' }}>
+            {/* Trust indicators - Enhanced with glassmorphism */}
+            <div className="flex flex-wrap justify-center items-center gap-4 sm:gap-6 text-sm text-muted-foreground animate-fadeInUp" style={{ animationDelay: '350ms' }}>
               {[
-                { icon: <CheckCircle2 className="w-5 h-5 text-green-500" />, text: 'No credit card required' },
-                { icon: <Shield className="w-5 h-5 text-green-500" />, text: '100% safe & secure' },
-                { icon: <Users className="w-5 h-5 text-green-500" />, text: '100K+ happy creators' },
-                { icon: <Timer className="w-5 h-5 text-green-500" />, text: 'Instant delivery' }
+                { icon: <CheckCircle2 className="w-5 h-5 text-emerald-500" />, text: 'No credit card required' },
+                { icon: <Shield className="w-5 h-5 text-emerald-500" />, text: '100% safe & secure' },
+                { icon: <Users className="w-5 h-5 text-emerald-500" />, text: '100K+ happy creators' },
+                { icon: <Timer className="w-5 h-5 text-emerald-500" />, text: 'Instant delivery' }
               ].map((item, i) => (
-                <div key={i} className="flex items-center gap-2 px-3 py-1.5 bg-white/60 backdrop-blur-sm rounded-full border border-border/50">
-                  {item.icon}
-                  <span>{item.text}</span>
+                <div key={i} className="flex items-center gap-2 px-4 py-2 bg-white/70 backdrop-blur-md rounded-full border border-white/50 shadow-sm hover:bg-white/90 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 group">
+                  <span className="group-hover:scale-110 transition-transform duration-300">{item.icon}</span>
+                  <span className="font-medium text-foreground/80">{item.text}</span>
                 </div>
               ))}
+            </div>
+            
+            {/* Scroll hint indicator */}
+            <div className="mt-16 flex flex-col items-center scroll-hint animate-fadeIn" style={{ animationDelay: '600ms' }}>
+              <span className="text-xs text-muted-foreground mb-2 font-medium uppercase tracking-wider">Scroll to explore</span>
+              <ChevronDown className="w-5 h-5 text-warm-500" />
             </div>
           </div>
         </div>
       </section>
 
-      {/* Stats Section */}
-      <section className="py-16 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-warm-600 via-warm-500 to-orange-500"></div>
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=%2260%22 height=%2260%22 viewBox=%220 0 60 60%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cg fill=%22none%22 fill-rule=%22evenodd%22%3E%3Cg fill=%22%23ffffff%22 fill-opacity=%220.05%22%3E%3Cpath d=%22M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-30"></div>
+      {/* Stats Section - Enhanced with animated gradient */}
+      <section className="py-20 relative overflow-hidden">
+        <div className="absolute inset-0 stats-gradient-overlay"></div>
+        {/* Pattern overlay for texture */}
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=%2260%22 height=%2260%22 viewBox=%220 0 60 60%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cg fill=%22none%22 fill-rule=%22evenodd%22%3E%3Cg fill=%22%23ffffff%22 fill-opacity=%220.08%22%3E%3Cpath d=%22M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-50"></div>
         
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 lg:gap-8">
             {stats.map((stat, index) => (
-              <div key={index} className="text-center group">
-                <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-white/10 mb-3 group-hover:bg-white/20 group-hover:scale-110 transition-all duration-300">
+              <div key={index} className="text-center group p-4 rounded-2xl bg-white/10 backdrop-blur-sm hover:bg-white/15 transition-all duration-500 hover:-translate-y-1 hover:shadow-xl hover:shadow-black/10">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/15 mb-4 group-hover:bg-white/25 group-hover:scale-110 transition-all duration-500 icon-container-glow">
                   {stat.icon}
                 </div>
                 <AnimatedCounter value={stat.value} suffix={stat.suffix} />
-                <div className="text-warm-100 text-sm mt-1 font-medium">{stat.label}</div>
+                <div className="text-white/90 text-sm mt-2 font-semibold tracking-wide">{stat.label}</div>
               </div>
             ))}
           </div>
@@ -6433,43 +6483,45 @@ export default function Home() {
               </TabsTrigger>
             </TabsList>
 
-            {/* YouTube Services */}
+            {/* YouTube Services - Enhanced */}
             <TabsContent value="youtube" className="animate-fadeIn">
-              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
                 {youtubeServices.map((service, idx) => (
                   <Card 
                     key={service.id} 
-                    className={`relative cursor-pointer transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl ${service.popular ? 'ring-2 ring-red-500 ring-offset-2' : ''} group`}
+                    className={`relative cursor-pointer transition-all duration-500 hover:-translate-y-3 hover:shadow-2xl hover:shadow-red-100/50 ${service.popular ? 'ring-2 ring-red-400 ring-offset-4 ring-offset-background' : ''} group glass-card-enhanced overflow-hidden`}
                     onClick={() => setSelectedService(service.id)}
                     style={{ animationDelay: `${idx * 100}ms` }}
                   >
                     {service.popular && (
-                      <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10">
-                        <Badge className="bg-red-500 text-white px-3 py-1 shadow-lg animate-bounce">
-                          <Star className="w-3 h-3 mr-1" /> Popular
+                      <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-20">
+                        <Badge className="bg-gradient-to-r from-red-500 to-orange-500 text-white px-4 py-1.5 shadow-lg shadow-red-300/50 animate-bounce font-semibold">
+                          <Star className="w-3 h-3 mr-1.5 fill-current" /> Popular
                         </Badge>
                       </div>
                     )}
-                    <CardHeader className="text-center pb-2 pt-8">
-                      <div className={`mx-auto w-16 h-16 rounded-2xl ${service.popular ? 'bg-gradient-to-br from-red-500 to-orange-500' : 'bg-red-100'} flex items-center justify-center ${service.popular ? 'text-white shadow-lg shadow-red-200' : 'text-red-600'} mb-3 group-hover:scale-110 transition-transform`}>
-                        {React.cloneElement(service.icon as React.ReactElement, { className: "w-7 h-7" })}
+                    {/* Gradient overlay on hover */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 to-orange-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                    <CardHeader className="text-center pb-3 pt-10 relative z-10">
+                      <div className={`mx-auto w-18 h-18 rounded-2xl ${service.popular ? 'bg-gradient-to-br from-red-500 via-red-600 to-orange-500 shadow-xl shadow-red-200' : 'bg-gradient-to-br from-red-100 to-orange-100'} flex items-center justify-center ${service.popular ? 'text-white' : 'text-red-600'} mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-md`}>
+                        {React.cloneElement(service.icon as React.ReactElement, { className: "w-8 h-8" })}
                       </div>
-                      <CardTitle className="text-lg">{service.name}</CardTitle>
+                      <CardTitle className="text-xl font-bold">{service.name}</CardTitle>
                     </CardHeader>
-                    <CardContent className="pt-0 pb-6">
-                      <CardDescription className="text-center mb-4 text-sm leading-relaxed">
+                    <CardContent className="pt-0 pb-8 relative z-10">
+                      <CardDescription className="text-center mb-5 text-sm leading-relaxed">
                         {service.description}
                       </CardDescription>
-                      <div className="text-center mb-4">
-                        <span className={`text-3xl font-black ${service.popular ? 'text-red-600' : 'text-red-500'}`}>Free</span>
-                        <p className="text-xs text-muted-foreground mt-1">with credits</p>
+                      <div className="text-center mb-5">
+                        <span className={`text-4xl font-black ${service.popular ? 'bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent' : 'text-red-500'}`}>Free</span>
+                        <p className="text-xs text-muted-foreground mt-1.5 font-medium">with credits</p>
                       </div>
                       <Button 
-                        className={`w-full ${service.popular ? 'bg-red-500 hover:bg-red-600 text-white' : 'border-2 border-red-500 text-red-600 hover:bg-red-50'}`}
+                        className={`w-full py-6 font-semibold transition-all duration-300 ${service.popular ? 'bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white shadow-lg shadow-red-200 hover:shadow-xl hover:shadow-red-300/50 hover:-translate-y-0.5' : 'border-2 border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400 hover:shadow-md'}`}
                         onClick={() => setIsSignUpOpen(true)}
                       >
                         Get Started
-                        <ArrowRight className="w-4 h-4 ml-2" />
+                        <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                       </Button>
                     </CardContent>
                   </Card>
@@ -6477,43 +6529,45 @@ export default function Home() {
               </div>
             </TabsContent>
 
-            {/* Instagram Services */}
+            {/* Instagram Services - Enhanced */}
             <TabsContent value="instagram" className="animate-fadeIn">
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 lg:gap-8">
                 {instagramServices.map((service, idx) => (
                   <Card 
                     key={service.id} 
-                    className={`relative cursor-pointer transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl ${service.popular ? 'ring-2 ring-pink-500 ring-offset-2' : ''} group`}
+                    className={`relative cursor-pointer transition-all duration-500 hover:-translate-y-3 hover:shadow-2xl hover:shadow-pink-100/50 ${service.popular ? 'ring-2 ring-pink-400 ring-offset-4 ring-offset-background' : ''} group glass-card-enhanced overflow-hidden`}
                     onClick={() => setSelectedService(service.id)}
                     style={{ animationDelay: `${idx * 100}ms` }}
                   >
                     {service.popular && (
-                      <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10">
-                        <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-3 py-1 shadow-lg">
-                          <Star className="w-3 h-3 mr-1" /> Popular
+                      <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-20">
+                        <Badge className="bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 text-white px-4 py-1.5 shadow-lg shadow-pink-300/50 font-semibold">
+                          <Star className="w-3 h-3 mr-1.5 fill-current" /> Popular
                         </Badge>
                       </div>
                     )}
-                    <CardHeader className="text-center pb-2 pt-8">
-                      <div className={`mx-auto w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 flex items-center justify-center text-white shadow-lg shadow-pink-200 mb-3 group-hover:scale-110 transition-transform`}>
-                        {React.cloneElement(service.icon as React.ReactElement, { className: "w-7 h-7" })}
+                    {/* Gradient overlay on hover */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                    <CardHeader className="text-center pb-3 pt-10 relative z-10">
+                      <div className="mx-auto w-18 h-18 rounded-2xl bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 flex items-center justify-center text-white shadow-xl shadow-pink-200 mb-4 group-hover:scale-110 group-hover:-rotate-3 transition-all duration-500">
+                        {React.cloneElement(service.icon as React.ReactElement, { className: "w-8 h-8" })}
                       </div>
-                      <CardTitle className="text-lg">{service.name}</CardTitle>
+                      <CardTitle className="text-xl font-bold">{service.name}</CardTitle>
                     </CardHeader>
-                    <CardContent className="pt-0 pb-6">
-                      <CardDescription className="text-center mb-4 text-sm leading-relaxed">
+                    <CardContent className="pt-0 pb-8 relative z-10">
+                      <CardDescription className="text-center mb-5 text-sm leading-relaxed">
                         {service.description}
                       </CardDescription>
-                      <div className="text-center mb-4">
-                        <span className="text-3xl font-black bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">Free</span>
-                        <p className="text-xs text-muted-foreground mt-1">with credits</p>
+                      <div className="text-center mb-5">
+                        <span className="text-4xl font-black bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 bg-clip-text text-transparent">Free</span>
+                        <p className="text-xs text-muted-foreground mt-1.5 font-medium">with credits</p>
                       </div>
                       <Button 
-                        className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 shadow-lg shadow-pink-200"
+                        className="w-full py-6 font-semibold bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 hover:from-purple-600 hover:via-pink-600 hover:to-orange-500 text-white border-0 shadow-lg shadow-pink-200 hover:shadow-xl hover:shadow-pink-300/50 hover:-translate-y-0.5 transition-all duration-300"
                         onClick={() => setIsSignUpOpen(true)}
                       >
                         Get Started
-                        <ArrowRight className="w-4 h-4 ml-2" />
+                        <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                       </Button>
                     </CardContent>
                   </Card>
@@ -6659,14 +6713,14 @@ export default function Home() {
               </div>
             </div>
 
-            {/* CTA Buttons Row */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-14">
+            {/* CTA Buttons Row - Enhanced */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-5 mt-16">
               <Button 
                 size="lg" 
-                className="gradient-bg text-white border-0 hover:opacity-90 px-8 shadow-lg shadow-warm-200 hover:shadow-warm-300 transition-shadow"
+                className="cta-button-enhanced gradient-bg text-white border-0 px-10 py-7 font-bold shadow-lg shadow-warm-200 hover:shadow-xl hover:shadow-warm-300 transition-all duration-300"
                 onClick={() => setIsSignUpOpen(true)}
               >
-                <Rocket className="w-5 h-5 mr-2" />
+                <Rocket className="w-5 h-5 mr-2 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
                 Start Now - It's Free
               </Button>
               <Dialog>
@@ -6674,7 +6728,7 @@ export default function Home() {
                   <Button 
                     variant="outline"
                     size="lg"
-                    className="gap-2 border-2 border-dashed border-warm-300 text-warm-700 hover:border-solid hover:bg-warm-50"
+                    className="gap-2 border-2 border-dashed border-warm-300 text-warm-700 hover:border-solid hover:border-warm-400 hover:bg-warm-50 hover:shadow-md glass-card-enhanced font-semibold px-8 py-7 transition-all duration-300"
                   >
                     <Video className="w-5 h-5" />
                     See Demo
@@ -6722,38 +6776,41 @@ export default function Home() {
             </p>
           </div>
 
-          {/* Pricing Cards */}
+          {/* Pricing Cards - Enhanced */}
           <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {pricingPlans.map((plan, idx) => (
               <Card 
                 key={plan.name}
-                className={`relative overflow-hidden transition-all duration-500 hover:-translate-y-2 ${
+                className={`relative overflow-hidden transition-all duration-500 hover:-translate-y-3 ${
                   plan.popular 
-                    ? 'ring-2 ring-warm-500 ring-offset-4 scale-105 shadow-2xl' 
-                    : 'hover:shadow-xl'
+                    ? 'ring-2 ring-warm-400 ring-offset-4 ring-offset-background scale-[1.02] sm:scale-105 shadow-2xl shadow-warm-200/50 glass-card-enhanced' 
+                    : 'hover:shadow-xl hover:shadow-black/5 glass-card-enhanced'
                 }`}
               >
                 {plan.popular && (
-                  <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-warm-500 to-orange-500"></div>
-                )}
-                {plan.popular && (
-                  <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 gradient-bg text-white border-0 shadow-lg z-10">
-                    <Star className="w-3 h-3 mr-1" /> Most Popular
-                  </Badge>
+                  <>
+                    <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-warm-500 via-orange-400 to-warm-500 bg-[length:200%_100%] animate-gradient-shift"></div>
+                    <Badge className="absolute -top-3.5 left-1/2 -translate-x-1/2 gradient-bg text-white border-0 shadow-lg shadow-warm-300/50 z-10 px-4 py-1.5 font-semibold text-sm">
+                      <Star className="w-3 h-3 mr-1.5 fill-current" /> Most Popular
+                    </Badge>
+                  </>
                 )}
                 
-                <CardContent className="pt-8 pb-8">
+                {/* Hover gradient overlay for non-popular cards */}
+                {!plan.popular && (
+                  <div className="absolute inset-0 bg-gradient-to-br from-warm-500/3 to-orange-500/3 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                )}
+                
+                <CardContent className="pt-10 pb-8 relative z-10">
                   <div className="text-center mb-6">
-                    <div className={`inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-4 ${plan.popular ? 'gradient-bg text-white' : 'bg-muted'} ${!plan.popular && 'text-muted-foreground'}`}>
+                    <div className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4 transition-all duration-300 ${plan.popular ? 'gradient-bg text-white shadow-lg shadow-warm-200' : 'bg-muted hover:bg-muted/80'} ${!plan.popular && 'text-muted-foreground'}`}>
                       {plan.icon}
                     </div>
                     <h3 className="text-2xl font-bold mb-1">{plan.name}</h3>
-                    <p className="text-sm text-muted-foreground mb-4">{plan.description}</p>
+                    <p className="text-sm text-muted-foreground mb-5">{plan.description}</p>
                     <div className="flex items-end justify-center gap-1">
                       {plan.price === 0 ? (
-                        <>
-                          <span className="text-5xl font-black gradient-text">Free</span>
-                        </>
+                        <span className="text-5xl font-black text-animated-gradient">Free</span>
                       ) : (
                         <>
                           <span className="text-5xl font-black">${plan.price}</span>
@@ -6773,17 +6830,17 @@ export default function Home() {
                   </ul>
 
                   <Button 
-                    className={`w-full ${
+                    className={`w-full py-6 font-semibold transition-all duration-300 ${
                       plan.popular 
-                        ? 'gradient-bg text-white border-0 hover:opacity-90 shadow-lg' 
+                        ? 'cta-button-enhanced gradient-bg text-white border-0 shadow-lg shadow-warm-200 hover:shadow-xl hover:shadow-warm-300/50' 
                         : plan.price === 0 
-                          ? 'border-2 border-warm-500 text-warm-600 hover:bg-warm-50'
-                          : ''
+                          ? 'border-2 border-warm-300 text-warm-600 hover:bg-warm-50 hover:border-warm-400 hover:shadow-md'
+                          : 'border-2 border-border hover:border-warm-400 hover:bg-muted'
                     }`}
                     onClick={() => plan.price === 0 ? setIsSignUpOpen(true) : toast.info(`${plan.name} plan coming soon!`)}
                   >
                     {plan.cta}
-                    {!plan.popular && <ArrowRight className="w-4 h-4 ml-2" />}
+                    {!plan.popular && <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />}
                   </Button>
                 </CardContent>
               </Card>
@@ -6797,39 +6854,55 @@ export default function Home() {
           ============================================ */}
       <PricingCalculator onSignUp={() => setIsSignUpOpen(true)} />
 
-      {/* Features + Live Demo Section */}
-      <section id="features" className="py-20 lg:py-28 bg-muted/50">
+      {/* Features + Live Demo Section - Enhanced */}
+      <section id="features" className="py-20 lg:py-28 bg-muted/30 relative overflow-hidden">
+        {/* Subtle background decoration */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-warm-200 rounded-full filter blur-3xl opacity-20 -z-10"></div>
+        <div className="absolute bottom-0 left-0 w-80 h-80 bg-orange-200 rounded-full filter blur-3xl opacity-15 -z-10"></div>
+        
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Section header */}
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <Badge variant="secondary" className="mb-4 bg-warm-100 text-warm-800">
+          {/* Section header - Enhanced */}
+          <div className="text-center max-w-3xl mx-auto mb-16 lg:mb-20">
+            <Badge variant="secondary" className="mb-4 px-4 py-2 bg-gradient-to-r from-warm-100 via-amber-100 to-orange-100 text-warm-800 border-warm-200 font-semibold shadow-sm">
+              <Sparkles className="w-3 h-3 mr-1.5 text-warm-500" />
               Why Choose Us
             </Badge>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
-              Features That <span className="gradient-text">Set Us Apart</span>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold mb-4 tracking-tight text-shadow-warm">
+              Features That{' '}
+              <span className="text-animated-gradient">Set Us Apart</span>
             </h2>
-            <p className="text-lg text-muted-foreground">
+            <p className="text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
               Advanced tools and security measures for optimal growth
             </p>
           </div>
 
           <div className="grid lg:grid-cols-5 gap-8 max-w-7xl mx-auto">
-            {/* Features Grid - 3 columns */}
-            <div className="lg:col-span-3 grid md:grid-cols-2 gap-6">
+            {/* Features Grid - 3 columns - Enhanced */}
+            <div className="lg:col-span-3 grid md:grid-cols-2 gap-6 lg:gap-8">
               {features.map((feature, index) => (
                 <Card 
                   key={index} 
-                  className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group bg-card overflow-hidden"
+                  className="border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 group bg-card overflow-hidden glass-card-enhanced"
                 >
-                  <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${feature.gradient}`}></div>
-                  <CardContent className="pt-8">
-                    <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${feature.gradient} bg-opacity-10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
-                      <div className={`bg-gradient-to-br ${feature.gradient} bg-clip-text text-transparent`}>
-                        {feature.icon}
-                      </div>
+                  {/* Gradient line at top with animation */}
+                  <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${feature.gradient} opacity-80 group-hover:opacity-100 transition-opacity`}></div>
+                  
+                  {/* Hover gradient overlay */}
+                  <div className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-500`}></div>
+                  
+                  <CardContent className="pt-8 pb-8 relative z-10">
+                    <div className={`w-18 h-18 rounded-2xl bg-gradient-to-br ${feature.gradient.replace('to-', 'to-/').replace('from-', 'from-/')}bg-opacity-10 flex items-center justify-center mb-5 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-md icon-container-glow`} style={{ background: `linear-gradient(135deg, var(--${feature.gradient.includes('blue') ? 'blue' : feature.gradient.includes('green') ? 'green' : 'yellow'}-100), var(--${feature.gradient.includes('blue') ? 'cyan' : feature.gradient.includes('green') ? 'emerald' : 'orange'}-100))` }}>
+                      {feature.icon}
                     </div>
-                    <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
-                    <p className="text-muted-foreground">{feature.description}</p>
+                    <h3 className="text-xl font-bold mb-2.5 group-hover:text-foreground transition-colors">{feature.title}</h3>
+                    <p className="text-muted-foreground leading-relaxed">{feature.description}</p>
+                    
+                    {/* Learn more link on hover */}
+                    <div className="mt-4 h-0 overflow-hidden group-hover:h-8 transition-all duration-300">
+                      <a href="#" className={`inline-flex items-center gap-1 text-sm font-medium bg-gradient-to-r ${feature.gradient} bg-clip-text text-transparent`}>
+                        Learn more <ArrowRight className="w-3 h-3" />
+                      </a>
+                    </div>
                   </CardContent>
                 </Card>
               ))}
@@ -7675,7 +7748,8 @@ export default function Home() {
       </div>
 
       {/* Footer - Enhanced for Round 8 */}
-      <footer className="bg-foreground text-background py-16 mt-auto relative">
+      </div> {/* End Main Content */}
+      <footer className="bg-foreground text-background py-16 mt-auto relative" role="contentinfo">
         {/* Decorative Gradient Line at Top */}
         <div className="footer-gradient-line absolute top-0 left-0 right-0"></div>
         
@@ -7876,6 +7950,168 @@ export default function Home() {
 
       {/* Quick Start Wizard - NEW FEATURE (Floating Widget) */}
       <QuickStartWizard />
+    </div>
+  )
+}
+
+// ============================================
+// ROUND 10: KEYBOARD SHORTCUTS & ACCESSIBILITY
+// ============================================
+
+interface Shortcut {
+  key: string
+  ctrl?: boolean
+  shift?: boolean
+  alt?: boolean
+  description: string
+  action: () => void
+}
+
+function KeyboardShortcuts({ 
+  shortcuts 
+}: { 
+  shortcuts: Shortcut[]
+}) {
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger shortcuts when typing in input fields
+      const target = e.target as HTMLElement
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || target.isContentEditable) {
+        return
+      }
+
+      for (const shortcut of shortcuts) {
+        const ctrlMatch = shortcut.ctrl ? (e.ctrlKey || e.metaKey) : !e.ctrlKey && !e.metaKey
+        const shiftMatch = shortcut.shift ? e.shiftKey : !e.shiftKey
+        const altMatch = shortcut.alt ? e.altKey : !e.altKey
+        const keyMatch = e.key.toLowerCase() === shortcut.key.toLowerCase()
+
+        if (ctrlMatch && shiftMatch && altMatch && keyMatch) {
+          e.preventDefault()
+          shortcut.action()
+          return
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [shortcuts])
+
+  return null
+}
+
+// Keyboard Shortcuts Help Modal
+function ShortcutsHelp({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+  const allShortcuts = [
+    { keys: ['Ctrl', 'K'], description: 'Search FAQs' },
+    { keys: ['Ctrl', '/', '⇧'], description: 'Show this help' },
+    { keys: ['Alt', 'S'], description: 'Sign Up / Sign In' },
+    { keys: ['Alt', 'P'], description: 'Go to Pricing' },
+    { keys: ['Alt', 'F'], description: 'Go to Features' },
+    { keys: ['Esc'], description: 'Close modal/dialog' },
+  ]
+
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    if (isOpen) {
+      window.addEventListener('keydown', handleEsc)
+      document.body.style.overflow = 'hidden'
+    }
+    return () => {
+      window.removeEventListener('keydown', handleEsc)
+      document.body.style.overflow = ''
+    }
+  }, [isOpen, onClose])
+
+  if (!isOpen) return null
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" onClick={onClose}>
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fadeIn" />
+      
+      {/* Modal */}
+      <div 
+        className="relative w-full max-w-lg bg-background border border-border rounded-2xl shadow-2xl animate-scaleIn"
+        onClick={e => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="shortcuts-title"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-border">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-warm-500 to-orange-500 flex items-center justify-center">
+              <Keyboard className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h2 id="shortcuts-title" className="font-bold text-lg">Keyboard Shortcuts</h2>
+              <p className="text-xs text-muted-foreground">Press Esc to close</p>
+            </div>
+          </div>
+          <Button variant="ghost" size="sm" onClick={onClose} className="h-8 w-8 p-0">
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
+
+        {/* Shortcuts List */}
+        <div className="p-6 space-y-3 max-h-[400px] overflow-y-auto">
+          {allShortcuts.map((shortcut, idx) => (
+            <div 
+              key={idx}
+              className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+            >
+              <span className="text-sm font-medium">{shortcut.description}</span>
+              <div className="flex items-center gap-1">
+                {shortcut.keys.map((key, i) => (
+                  <React.Fragment key={i}>
+                    {i > 0 && <span className="text-xs text-muted-foreground">+</span>}
+                    <kbd className="inline-flex items-center justify-center min-w-[28px] h-7 px-2 text-xs font-mono font-semibold bg-background border border-border rounded-md shadow-sm">
+                      {key}
+                    </kbd>
+                  </React.Fragment>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Footer */}
+        <div className="p-4 border-t border-border bg-muted/30 rounded-b-2xl">
+          <p className="text-xs text-center text-muted-foreground">
+            Tip: Press <kbd className="px-1 py-0.5 text-xs font-mono bg-background border border-border rounded">?</kbd> while holding <kbd className="px-1 py-0.5 text-xs font-mono bg-background border border-border rounded">Ctrl+Shift</kbd> to toggle this help
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Skip to Content Link (Accessibility)
+function SkipToContent() {
+  return (
+    <a
+      href="#main-content"
+      className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-warm-500 focus:text-white focus:rounded-lg focus:font-semibold focus:shadow-lg focus:outline-none"
+    >
+      Skip to main content
+    </a>
+  )
+}
+
+// Announcer for screen readers (for dynamic content changes)
+function LiveAnnouncer({ message, priority = 'polite' }: { message: string; priority?: 'polite' | 'assertive' }) {
+  return (
+    <div 
+      role="status" 
+      aria-live={priority} 
+      aria-atomic="true"
+      className="sr-only"
+    >
+      {message}
     </div>
   )
 }

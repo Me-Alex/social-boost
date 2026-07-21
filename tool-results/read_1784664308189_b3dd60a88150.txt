@@ -1,0 +1,2002 @@
+     1→'use client'
+     2→
+     3→import React, { useState, useEffect, useRef, useCallback } from 'react'
+     4→// socket.io-client will be dynamically imported to avoid SSR issues
+     5→import { Button } from '@/components/ui/button'
+     6→import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+     7→import { Input } from '@/components/ui/input'
+     8→import { Label } from '@/components/ui/label'
+     9→import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+    10→import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
+    11→import { Badge } from '@/components/ui/badge'
+    12→import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+    13→import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+    14→import { Separator } from '@/components/ui/separator'
+    15→import { Switch } from '@/components/ui/switch'
+    16→import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+    17→import { 
+    18→  AreaChart,
+    19→  Area,
+    20→  XAxis,
+    21→  YAxis,
+    22→  CartesianGrid,
+    23→  Tooltip,
+    24→  ResponsiveContainer,
+    25→  BarChart,
+    26→  Bar,
+    27→  PieChart,
+    28→  Pie,
+    29→  Cell,
+    30→  LineChart,
+    31→  Line,
+    32→  Legend
+    33→} from 'recharts'
+    34→import { 
+    35→  Play, 
+    36→  Users, 
+    37→  Heart, 
+    38→  MessageCircle, 
+    39→  Eye, 
+    40→  Instagram, 
+    41→  Youtube,
+    42→  Zap,
+    43→  Shield,
+    44→  Globe,
+    45→  TrendingUp,
+    46→  Clock,
+    47→  CheckCircle2,
+    48→  ArrowRight,
+    49→  Star,
+    50→  BarChart3,
+    51→  Target,
+    52→  Lock,
+    53→  Rocket,
+    54→  ChevronRight,
+    55→  ChevronLeft,
+    56→  Menu,
+    57→  X,
+    58→  Sparkles,
+    59→  Gift,
+    60→  Award,
+    61→  Headphones,
+    62→  Crown,
+    63→  Infinity,
+    64→  Check,
+    65→  Mail,
+    66→  ArrowDown,
+    67→  ArrowUp,
+    68→  Activity,
+    69→  Timer,
+    70→  Flame,
+    71→  Building2,
+    72→  Send,
+    73→  Loader2,
+    74→  LayoutDashboard,
+    75→  Plus,
+    76→  Settings,
+    77→  LogOut,
+    78→  Coins,
+    79→  Video,
+    80→  Image as ImageIcon,
+    81→  Pause,
+    82→  PlayCircle,
+    83→  MoreHorizontal,
+    84→  Filter,
+    85→  Download,
+    86→  RefreshCw,
+    87→  Calendar,
+    88→  DollarSign,
+    89→  Percent,
+    90→  ArrowUpRight,
+    91→  ArrowDownRight,
+    92→  ArrowDownLeft,
+    93→  User,
+    94→  Bell,
+    95→  Search,
+    96→  ChevronDown,
+    97→  ExternalLink,
+    98→  Copy,
+    99→  Trash2,
+   100→  Edit3,
+   101→  Sun,
+   102→  Moon,
+   103→  Share2,
+   104→  UserPlus,
+   105→  Footprints,
+   106→  ShieldCheck,
+   107→  BadgeCheck,
+   108→  Headphones as HeadphonesIcon,
+   109→  // Round 8 New Icons
+   110→  Calculator,
+   111→  Cookie,
+   112→  MapPin,
+   113→  FastForward,
+   114→  GitBranch,
+   115→  FileText,
+   116→  BookOpen,
+   117→  Code,
+   118→  CreditCard,
+   119→  Twitter,
+   120→  Facebook,
+   121→  MessageSquare,
+   122→  Rss,
+   123→  AlertCircle,
+   124→  AlertTriangle,
+   125→  Database,
+   126→  Lightbulb,
+   127→  // Round 9 New Icons
+   128→  Linkedin,
+   129→  Phone,
+   130→  Clock as ClockIcon,
+   131→  // Engine Icons
+   132→  Zap as ZapIcon,
+   133→  Radio,
+   134→  Wifi,
+   135→  WifiOff,
+   136→  Power,
+   137→  CircleDot
+   138→} from 'lucide-react'
+   139→import { toast } from 'sonner'
+   140→import { useTheme } from 'next-themes'
+   141→import { cn } from '@/lib/utils'
+   142→
+   143→// Types
+   144→interface Service {
+   145→  id: string
+   146→  name: string
+   147→  description: string
+   148→  icon: React.ReactNode
+   149→  platform: 'youtube' | 'instagram'
+   150→  price: number
+   151→  popular?: boolean
+   152→}
+   153→
+   154→interface FAQ {
+   155→  question: string
+   156→  answer: string
+   157→  category: 'all' | 'getting-started' | 'pricing' | 'security' | 'technical'
+   158→}
+   159→
+   160→interface PricingPlan {
+   161→  name: string
+   162→  price: number
+   163→  period: string
+   164→  description: string
+   165→  features: string[]
+   166→  cta: string
+   167→  popular?: boolean
+   168→  icon: React.ReactNode
+   169→}
+   170→
+   171→// Dashboard Types
+   172→interface Campaign {
+   173→  id: string
+   174→  name: string
+   175→  platform: 'youtube' | 'instagram'
+   176→  serviceType: string
+   177→  targetUrl: string
+   178→  quantity: number
+   179→  completedCount: number
+   180→  status: 'active' | 'paused' | 'completed' | 'pending'
+   181→  creditsSpent: number
+   182→  createdAt: string
+   183→  progress: number
+   184→}
+   185→
+   186→interface UserStats {
+   187→  totalCredits: number
+   188→  usedCredits: number
+   189→  activeCampaigns: number
+   190→  totalCampaigns: number
+   191→  totalViews: number
+   192→  totalFollowers: number
+   193→  engagementRate: number
+   194→}
+   195→
+   196→// Data
+   197→const youtubeServices: Service[] = [
+   198→  {
+   199→    id: 'views',
+   200→    name: 'Video Views',
+   201→    description: 'Boost your video watch count with real user views. Improve your video ranking and visibility.',
+   202→    icon: <Eye className="w-6 h-6" />,
+   203→    platform: 'youtube',
+   204→    price: 1,
+   205→    popular: true
+   206→  },
+   207→  {
+   208→    id: 'subscribers',
+   209→    name: 'Subscribers',
+   210→    description: 'Grow your channel with genuine subscribers who engage with your content.',
+   211→    icon: <Users className="w-6 h-6" />,
+   212→    platform: 'youtube',
+   213→    price: 5
+   214→  },
+   215→  {
+   216→    id: 'likes',
+   217→    name: 'Video Likes',
+   218→    description: 'Increase engagement signals with authentic likes from real users.',
+   219→    icon: <Heart className="w-6 h-6" />,
+   220→    platform: 'youtube',
+   221→    price: 2
+   222→  },
+   223→  {
+   224→    id: 'comments',
+   225→    name: 'Comments',
+   226→    description: 'Spark conversations and boost engagement with meaningful comments.',
+   227→    icon: <MessageCircle className="w-6 h-6" />,
+   228→    platform: 'youtube',
+   229→    price: 3
+   230→  }
+   231→]
+   232→
+   233→const instagramServices: Service[] = [
+   234→  {
+   235→    id: 'followers',
+   236→    name: 'Followers',
+   237→    description: 'Expand your Instagram presence with real, active followers.',
+   238→    icon: <Users className="w-6 h-6" />,
+   239→    platform: 'instagram',
+   240→    price: 5,
+   241→    popular: true
+   242→  },
+   243→  {
+   244→    id: 'likes',
+   245→    name: 'Post Likes',
+   246→    description: 'Increase your post engagement and reach more users.',
+   247→    icon: <Heart className="w-6 h-6" />,
+   248→    platform: 'instagram',
+   249→    price: 2
+   250→  },
+   251→  {
+   252→    id: 'comments',
+   253→    name: 'Comments',
+   254→    description: 'Drive authentic conversations on your posts.',
+   255→    icon: <MessageCircle className="w-6 h-6" />,
+   256→    platform: 'instagram',
+   257→    price: 3
+   258→  },
+   259→  {
+   260→    id: 'reels_views',
+   261→    name: 'Reels Views',
+   262→    description: 'Boost your Reels visibility and reach the Explore page.',
+   263→    icon: <Play className="w-6 h-6" />,
+   264→    platform: 'instagram',
+   265→    price: 1
+   266→  },
+   267→  {
+   268→    id: 'story_views',
+   269→    name: 'Story Views',
+   270→    description: 'Get more eyes on your Stories for better engagement.',
+   271→    icon: <Eye className="w-6 h-6" />,
+   272→    platform: 'instagram',
+   273→    price: 1
+   274→  }
+   275→]
+   276→
+   277→const faqs: FAQ[] = [
+   278→  {
+   279→    question: "How can I get free YouTube or Instagram growth?",
+   280→    answer: "Simply sign up for a free account and you'll receive complimentary credits to start promoting your content. You can earn more credits by engaging with other users' content through our exchange system.",
+   281→    category: 'getting-started'
+   282→  },
+   283→  {
+   284→    question: "Are the followers and engagement real?",
+   285→    answer: "Yes! All engagement comes from real, active users in our community. We use advanced verification systems to ensure authenticity and maintain high-quality interactions.",
+   286→    category: 'security'
+   287→  },
+   288→  {
+   289→    question: "Is it safe to use this platform?",
+   290→    answer: "Absolutely. We use industry-standard security measures including anti-bot detection, traffic validation, and encrypted connections. Your account safety is our top priority.",
+   291→    category: 'security'
+   292→  },
+   293→  {
+   294→    question: "Why does engagement improve visibility?",
+   295→    answer: "Social media algorithms prioritize content with high engagement. When your posts receive more likes, comments, and views, platforms recognize it as valuable content and show it to more people.",
+   296→    category: 'getting-started'
+   297→  },
+   298→  {
+   299→    question: "Do I need to pay to start?",
+   300→    answer: "No! Our platform is free to use. You get bonus credits upon signup and can earn more by participating in our community. Premium plans are available for faster results.",
+   301→    category: 'pricing'
+   302→  },
+   303→  {
+   304→    question: "How fast can I see results?",
+   305→    answer: "Results begin within hours of starting a campaign. Delivery speed depends on your chosen settings and current network activity. Most campaigns show significant progress within 24-48 hours.",
+   306→    category: 'technical'
+   307→  },
+   308→  {
+   309→    question: "What targeting options are available?",
+   310→    answer: "We offer geo-targeting to specific countries, delivery speed controls (slow/normal/fast), daily limits, and quality filters to ensure you reach your ideal audience.",
+   311→    category: 'technical'
+   312→  },
+   313→  {
+   314→    question: "Can I run multiple campaigns at once?",
+   315→    answer: "Yes! You can run multiple campaigns across different platforms and services simultaneously. Your dashboard gives you full control over all active campaigns.",
+   316→    category: 'technical'
+   317→  },
+   318→  // Round 8 - New Technical FAQs
+   319→  {
+   320→    question: "What's the difference between Fast and Slow delivery?",
+   321→    answer: "Fast delivery completes your order within 24 hours but may cost additional credits due to priority processing. Slow delivery takes up to 7 days but costs less and appears more natural to algorithms. Normal delivery (3 days) offers a balanced approach with standard pricing.",
+   322→    category: 'technical'
+   323→  },
+   324→  {
+   325→    question: "Can I pause or cancel my campaign?",
+   326→    answer: "Yes! You have full control over your campaigns at any time. Paused campaigns retain their progress and can be resumed later without losing any completed engagements. Cancelled campaigns will refund unused credits based on the remaining quantity not yet delivered.",
+   327→    category: 'technical'
+   328→  },
+   329→  {
+   330→    question: "Do you offer refunds?",
+   331→    answer: "We offer a satisfaction guarantee with partial refunds for undelivered orders. If we fail to complete your campaign within the estimated timeframe, you'll automatically receive credit back. For other refund requests, contact our support team within 48 hours of purchase.",
+   332→    category: 'pricing'
+   333→  },
+   334→  {
+   335→    question: "How does geo-targeting work?",
+   336→    answer: "Geo-targeting allows you to specify which countries or regions your engagement comes from. We maintain a global user pool and route traffic from users in your selected locations. Premium geo-targeted options are available for specific high-value markets like USA, UK, Germany, and Japan with an additional 20% credit cost.",
+   337→    category: 'technical'
+   338→  }
+   339→]
+   340→
+   341→const features = [
+   342→  {
+   343→    icon: <Globe className="w-8 h-8 text-warm-600" />,
+   344→    title: "Geo-Targeted Traffic",
+   345→    description: "Reach audiences from specific regions based on your content strategy.",
+   346→    gradient: "from-blue-500 to-cyan-500"
+   347→  },
+   348→  {
+   349→    icon: <Shield className="w-8 h-8 text-warm-600" />,
+   350→    title: "Quality & Trust",
+   351→    description: "Multiple verification systems ensure authentic engagement.",
+   352→    gradient: "from-green-500 to-emerald-500"
+   353→  },
+   354→  {
+   355→    icon: <Zap className="w-8 h-8 text-warm-600" />,
+   356→    title: "Instant Start",
+   357→    description: "Campaigns begin processing immediately after creation.",
+   358→    gradient: "from-yellow-500 to-orange-500"
+   359→  },
+   360→  {
+   361→    icon: <Headphones className="w-8 h-8 text-warm-600" />,
+   362→    title: "24/7 Support",
+   363→    description: "Our team is always here to help you succeed.",
+   364→    gradient: "from-purple-500 to-pink-500"
+   365→  },
+   366→  {
+   367→    icon: <Gift className="w-8 h-8 text-warm-600" />,
+   368→    title: "Free Credits",
+   369→    description: "Start with bonus credits - no payment required.",
+   370→    gradient: "from-red-500 to-rose-500"
+   371→  },
+   372→  {
+   373→    icon: <TrendingUp className="w-8 h-8 text-warm-600" />,
+   374→    title: "Real Growth",
+   375→    description: "Organic-looking growth that algorithms love.",
+   376→    gradient: "from-indigo-500 to-violet-500"
+   377→  }
+   378→]
+   379→
+   380→const pricingPlans: PricingPlan[] = [
+   381→  {
+   382→    name: "Starter",
+   383→    price: 0,
+   384→    period: "forever",
+   385→    description: "Perfect for trying out our platform",
+   386→    features: [
+   387→      "500 free credits monthly",
+   388→      "Basic analytics",
+   389→      "Email support",
+   390→      "3 active campaigns",
+   391→      "Standard delivery speed"
+   392→    ],
+   393→    cta: "Get Started Free",
+   394→    icon: <Gift className="w-6 h-6" />
+   395→  },
+   396→  {
+   397→    name: "Pro",
+   398→    price: 29,
+   399→    period: "month",
+   400→    description: "For serious content creators",
+   401→    features: [
+   402→      "10,000 credits monthly",
+   403→      "Advanced analytics & insights",
+   404→      "Priority support",
+   405→      "Unlimited campaigns",
+   406→      "Fast delivery speed",
+   407→      "Geo-targeting included",
+   408→      "API access"
+   409→    ],
+   410→    cta: "Start Pro Trial",
+   411→    popular: true,
+   412→    icon: <Zap className="w-6 h-6" />
+   413→  },
+   414→  {
+   415→    name: "Enterprise",
+   416→    price: 99,
+   417→    period: "month",
+   418→    description: "For agencies and large creators",
+   419→    features: [
+   420→      "50,000 credits monthly",
+   421→      "White-label dashboard",
+   422→      "Dedicated account manager",
+   423→      "Unlimited everything",
+   424→      "Lightning-fast delivery",
+   425→      "Custom integrations",
+   426→      "SLA guarantee",
+   427→      "Team collaboration"
+   428→    ],
+   429→    cta: "Contact Sales",
+   430→    icon: <Building2 className="w-6 h-6" />
+   431→  }
+   432→]
+   433→
+   434→const stats = [
+   435→  { value: 50, suffix: 'M+', label: 'Views Delivered', icon: <Eye className="w-5 h-5" /> },
+   436→  { value: 5, suffix: 'M+', label: 'Followers Gained', icon: <Users className="w-5 h-5" /> },
+   437→  { value: 100, suffix: 'K+', label: 'Happy Creators', icon: <Star className="w-5 h-5" /> },
+   438→  { value: 99.9, suffix: '%', label: 'Uptime', icon: <Activity className="w-5 h-5" /> }
+   439→]
+   440→
+   441→// Dashboard Mock Data
+   442→const mockUserStats: UserStats = {
+   443→  totalCredits: 1250,
+   444→  usedCredits: 425,
+   445→  activeCampaigns: 3,
+   446→  totalCampaigns: 12,
+   447→  totalViews: 45230,
+   448→  totalFollowers: 3280,
+   449→  engagementRate: 8.7
+   450→}
+   451→
+   452→const mockCampaigns: Campaign[] = [
+   453→  {
+   454→    id: 'camp1',
+   455→    name: 'Product Review Video',
+   456→    platform: 'youtube',
+   457→    serviceType: 'views',
+   458→    targetUrl: 'https://youtube.com/watch?v=example1',
+   459→    quantity: 10000,
+   460→    completedCount: 7234,
+   461→    status: 'active',
+   462→    creditsSpent: 72,
+   463→    createdAt: '2024-01-15',
+   464→    progress: 72
+   465→  },
+   466→  {
+   467→    id: 'camp2',
+   468→    name: 'Summer Collection Post',
+   469→    platform: 'instagram',
+   470→    serviceType: 'followers',
+   471→    targetUrl: 'https://instagram.com/p/example2',
+   472→    quantity: 5000,
+   473→    completedCount: 5000,
+   474→    status: 'completed',
+   475→    creditsSpent: 250,
+   476→    createdAt: '2024-01-10',
+   477→    progress: 100
+   478→  },
+   479→  {
+   480→    id: 'camp3',
+   481→    name: 'Tutorial Series Ep.5',
+   482→    platform: 'youtube',
+   483→    serviceType: 'subscribers',
+   484→    targetUrl: 'https://youtube.com/watch?v=example3',
+   485→    quantity: 2000,
+   486→    completedCount: 1456,
+   487→    status: 'active',
+   488→    creditsSpent: 73,
+   489→    createdAt: '2024-01-18',
+   490→    progress: 73
+   491→  },
+   492→  {
+   493→    id: 'camp4',
+   494→    name: 'Behind the Scenes Reel',
+   495→    platform: 'instagram',
+   496→    serviceType: 'reels_views',
+   497→    targetUrl: 'https://instagram.com/reel/example4',
+   498→    quantity: 15000,
+   499→    completedCount: 8920,
+   500→    status: 'active',
+   501→    creditsSpent: 89,
+   502→    createdAt: '2024-01-20',
+   503→    progress: 59
+   504→  },
+   505→  {
+   506→    id: 'camp5',
+   507→    name: 'Q&A Live Stream',
+   508→    platform: 'youtube',
+   509→    serviceType: 'comments',
+   510→    targetUrl: 'https://youtube.com/watch?v=example5',
+   511→    quantity: 500,
+   512→    completedCount: 0,
+   513→    status: 'paused',
+   514→    creditsSpent: 15,
+   515→    createdAt: '2024-01-22',
+   516→    progress: 0
+   517→  }
+   518→]
+   519→
+   520→const chartDataViews = [
+   521→  { date: 'Mon', views: 4200, followers: 120 },
+   522→  { date: 'Tue', views: 5800, followers: 180 },
+   523→  { date: 'Wed', views: 4500, followers: 95 },
+   524→  { date: 'Thu', views: 7200, followers: 250 },
+   525→  { date: 'Fri', views: 6100, followers: 210 },
+   526→  { date: 'Sat', views: 8900, followers: 320 },
+   527→  { date: 'Sun', views: 7500, followers: 280 },
+   528→]
+   529→
+   530→const chartDataEngagement = [
+   531→  { name: 'Likes', value: 4500, color: '#ef4444' },
+   532→  { name: 'Comments', value: 850, color: '#f59e0b' },
+   533→  { name: 'Shares', value: 320, color: '#10b981' },
+   534→  { name: 'Saves', value: 180, color: '#8b5cf6' },
+   535→]
+   536→
+   537→const chartDataWeekly = [
+   538→  { name: 'Week 1', youtube: 4200, instagram: 3100 },
+   539→  { name: 'Week 2', youtube: 5800, instagram: 4200 },
+   540→  { name: 'Week 3', youtube: 6500, instagram: 4800 },
+   541→  { name: 'Week 4', youtube: 7800, instagram: 5200 },
+   542→]
+   543→
+   544→// Animated Counter Component
+   545→function AnimatedCounter({ value, suffix, duration = 2000 }: { value: number; suffix: string; duration?: number }) {
+   546→  const [count, setCount] = useState(0)
+   547→  const [isVisible, setIsVisible] = useState(false)
+   548→  const ref = useRef<HTMLDivElement>(null)
+   549→
+   550→  useEffect(() => {
+   551→    const observer = new IntersectionObserver(
+   552→      ([entry]) => {
+   553→        if (entry.isIntersecting && !isVisible) {
+   554→          setIsVisible(true)
+   555→        }
+   556→      },
+   557→      { threshold: 0.3 }
+   558→    )
+   559→
+   560→    if (ref.current) {
+   561→      observer.observe(ref.current)
+   562→    }
+   563→
+   564→    return () => observer.disconnect()
+   565→  }, [isVisible])
+   566→
+   567→  useEffect(() => {
+   568→    if (!isVisible) return
+   569→
+   570→    const startTime = Date.now()
+   571→    const endTime = startTime + duration
+   572→
+   573→    const animate = () => {
+   574→      const now = Date.now()
+   575→      const progress = Math.min((now - startTime) / duration, 1)
+   576→      
+   577→      // Easing function
+   578→      const easeOutQuart = 1 - Math.pow(1 - progress, 4)
+   579→      
+   580→      setCount(value * easeOutQuart)
+   581→
+   582→      if (now < endTime) {
+   583→        requestAnimationFrame(animate)
+   584→      }
+   585→    }
+   586→
+   587→    requestAnimationFrame(animate)
+   588→  }, [isVisible, value, duration])
+   589→
+   590→  return (
+   591→    <div ref={ref} className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white tabular-nums">
+   592→      {Number.isInteger(value) ? Math.floor(count) : count.toFixed(1)}{suffix}
+   593→    </div>
+   594→  )
+   595→}
+   596→
+   597→// Magic Number Card Component for Enhanced Stats Section
+   598→function MagicNumberCard({ 
+   599→  value, 
+   600→  suffix, 
+   601→  label, 
+   602→  icon: Icon, 
+   603→  description,
+   604→  delay = 0
+   605→}: { 
+   606→  value: number; 
+   607→  suffix: string; 
+   608→  label: string; 
+   609→  icon: React.ElementType; 
+   610→  description?: string;
+   611→  delay?: number;
+   612→}) {
+   613→  const [count, setCount] = useState(0)
+   614→  const [isVisible, setIsVisible] = useState(false)
+   615→  const ref = useRef<HTMLDivElement>(null)
+   616→
+   617→  useEffect(() => {
+   618→    const observer = new IntersectionObserver(
+   619→      ([entry]) => {
+   620→        if (entry.isIntersecting && !isVisible) {
+   621→          setIsVisible(true)
+   622→        }
+   623→      },
+   624→      { threshold: 0.3 }
+   625→    )
+   626→
+   627→    if (ref.current) {
+   628→      observer.observe(ref.current)
+   629→    }
+   630→
+   631→    return () => observer.disconnect()
+   632→  }, [isVisible])
+   633→
+   634→  useEffect(() => {
+   635→    if (!isVisible) return
+   636→
+   637→    const startTime = Date.now()
+   638→    const duration = 2500
+   639→    const endTime = startTime + duration
+   640→
+   641→    const animate = () => {
+   642→      const now = Date.now()
+   643→      const progress = Math.min((now - startTime) / duration, 1)
+   644→      const easeOutQuart = 1 - Math.pow(1 - progress, 4)
+   645→      
+   646→      setCount(value * easeOutQuart)
+   647→
+   648→      if (now < endTime) {
+   649→        requestAnimationFrame(animate)
+   650→      }
+   651→    }
+   652→
+   653→    setTimeout(() => {
+   654→      requestAnimationFrame(animate)
+   655→    }, delay)
+   656→  }, [isVisible, value, delay])
+   657→
+   658→  return (
+   659→    <div 
+   660→      ref={ref}
+   661→      className="glass-card rounded-2xl p-6 text-center group hover:-translate-y-2 transition-all duration-500 counter-glow"
+   662→      style={{ animationDelay: `${delay}ms` }}
+   663→    >
+   664→      {/* Icon */}
+   665→      <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-gradient-to-br from-warm-500/20 to-orange-500/20 mb-4 group-hover:scale-110 group-hover:bg-gradient-to-br group-hover:from-warm-500 group-hover:to-orange-500 transition-all duration-300">
+   666→        <Icon className="w-7 h-7 text-warm-500 group-hover:text-white transition-colors" />
+   667→      </div>
+   668→
+   669→      {/* Counter */}
+   670→      <div className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white tabular-nums mb-2">
+   671→        {Number.isInteger(value) ? Math.floor(count) : count.toFixed(1)}<span className="text-warm-400">{suffix}</span>
+   672→      </div>
+   673→
+   674→      {/* Label */}
+   675→      <h4 className="font-semibold text-white/90 mb-1">{label}</h4>
+   676→      
+   677→      {/* Description */}
+   678→      {description && (
+   679→        <p className="text-sm text-gray-500">{description}</p>
+   680→      )}
+   681→    </div>
+   682→  )
+   683→}
+   684→
+   685→// Live Activity Component
+   686→function LiveActivity() {
+   687→  const activities = [
+   688→    { user: 'Sarah M.', action: 'received 1,250 views', time: 'Just now' },
+   689→    { user: 'Mike T.', action: 'gained 89 followers', time: '2 min ago' },
+   690→    { user: 'Emily R.', action: 'got 342 likes', time: '4 min ago' },
+   691→    { user: 'Alex K.', action: 'earned 150 credits', time: '5 min ago' },
+   692→  ]
+   693→
+   694→  const [currentActivities, setCurrentActivities] = useState(activities.slice(0, 3))
+   695→
+   696→  useEffect(() => {
+   697→    const interval = setInterval(() => {
+   698→      setCurrentActivities(prev => {
+   699→        const next = [...prev.slice(1), activities[Math.floor(Math.random() * activities.length)]]
+   700→        return next
+   701→      })
+   702→    }, 4000)
+   703→
+   704→    return () => clearInterval(interval)
+   705→  }, [])
+   706→
+   707→  return (
+   708→    <div className="space-y-3">
+   709→      {currentActivities.map((activity, i) => (
+   710→        <div 
+   711→          key={`${activity.user}-${i}`}
+   712→          className="flex items-center gap-3 p-3 bg-white/80 rounded-lg backdrop-blur-sm animate-fadeIn"
+   713→          style={{ animationDelay: `${i * 100}ms` }}
+   714→        >
+   715→          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-warm-400 to-warm-600 flex items-center justify-center text-white text-xs font-bold">
+   716→            {activity.user[0]}
+   717→          </div>
+   718→          <div className="flex-1 min-w-0">
+   719→            <p className="text-sm font-medium truncate">
+   720→              <span className="text-warm-700">{activity.user}</span>{' '}
+   721→              <span className="text-gray-600">{activity.action}</span>
+   722→            </p>
+   723→            <p className="text-xs text-gray-400">{activity.time}</p>
+   724→          </div>
+   725→          <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
+   726→        </div>
+   727→      ))}
+   728→    </div>
+   729→  )
+   730→}
+   731→
+   732→// ============================================
+   733→// ROUND 8: INTERACTIVE PRICING CALCULATOR
+   734→// ============================================
+   735→interface PricingCalculatorProps {
+   736→  onSignUp: () => void
+   737→}
+   738→
+   739→function PricingCalculator({ onSignUp }: PricingCalculatorProps) {
+   740→  const [platform, setPlatform] = useState<'youtube' | 'instagram'>('youtube')
+   741→  const [serviceType, setServiceType] = useState('views')
+   742→  const [quantity, setQuantity] = useState(1000)
+   743→  const [deliverySpeed, setDeliverySpeed] = useState<'slow' | 'normal' | 'fast'>('normal')
+   744→  const [geoTargeting, setGeoTargeting] = useState(false)
+   745→
+   746→  // Service pricing per unit
+   747→  const servicePrices: Record<string, number> = {
+   748→    // YouTube
+   749→    views: 1,
+   750→    subscribers: 5,
+   751→    likes: 2,
+   752→    comments: 3,
+   753→    // Instagram
+   754→    followers: 5,
+   755→    likes_instagram: 2,
+   756→    comments_instagram: 3,
+   757→    reels_views: 1,
+   758→    story_views: 1
+   759→  }
+   760→
+   761→  // Speed multipliers
+   762→  const speedMultipliers = {
+   763→    slow: 0.8,
+   764→    normal: 1,
+   765→    fast: 1.5
+   766→  }
+   767→
+   768→  // Delivery times in hours
+   769→  const deliveryTimes = {
+   770→    slow: { youtube: 168, instagram: 168 }, // 7 days
+   771→    normal: { youtube: 72, instagram: 72 }, // 3 days
+   772→    fast: { youtube: 24, instagram: 24 } // 24 hours
+   773→  }
+   774→
+   775→  // Geo-targeting fee (20% extra)
+   776→  const geoFee = 0.2
+   777→
+   778→  const getServiceOptions = () => {
+   779→    if (platform === 'youtube') {
+   780→      return [
+   781→        { value: 'views', label: 'Video Views', icon: <Eye className="w-4 h-4" /> },
+   782→        { value: 'subscribers', label: 'Subscribers', icon: <Users className="w-4 h-4" /> },
+   783→        { value: 'likes', label: 'Video Likes', icon: <Heart className="w-4 h-4" /> },
+   784→        { value: 'comments', label: 'Comments', icon: <MessageCircle className="w-4 h-4" /> }
+   785→      ]
+   786→    }
+   787→    return [
+   788→      { value: 'followers', label: 'Followers', icon: <Users className="w-4 h-4" /> },
+   789→      { value: 'likes_instagram', label: 'Post Likes', icon: <Heart className="w-4 h-4" /> },
+   790→      { value: 'comments_instagram', label: 'Comments', icon: <MessageCircle className="w-4 h-4" /> },
+   791→      { value: 'reels_views', label: 'Reels Views', icon: <Play className="w-4 h-4" /> },
+   792→      { value: 'story_views', label: 'Story Views', icon: <Eye className="w-4 h-4" /> }
+   793→    ]
+   794→  }
+   795→
+   796→  // Compute default service type based on platform (derived value, not state in effect)
+   797→  const getDefaultServiceType = (p: typeof platform) => p === 'youtube' ? 'views' : 'followers'
+   798→  
+   799→  // Use a key that changes when platform changes - this forces Select to reset
+   800→  const selectKey = `${platform}-${serviceType}`
+   801→
+   802→  // Animation state management using ref for timing
+   803→  const [isAnimating, setIsAnimating] = useState(false)
+   804→  const prevValuesRef = useRef({ quantity, serviceType, deliverySpeed, geoTargeting })
+   805→  
+   806→  // Check if values changed and trigger animation
+   807→  useEffect(() => {
+   808→    const prev = prevValuesRef.current
+   809→    const valuesChanged = 
+   810→      prev.quantity !== quantity || 
+   811→      prev.serviceType !== serviceType || 
+   812→      prev.deliverySpeed !== deliverySpeed || 
+   813→      prev.geoTargeting !== geoTargeting
+   814→    
+   815→    if (valuesChanged) {
+   816→      // Use requestAnimationFrame to avoid synchronous setState
+   817→      const rafId = requestAnimationFrame(() => {
+   818→        setIsAnimating(true)
+   819→        setTimeout(() => setIsAnimating(false), 300)
+   820→      })
+   821→      return () => cancelAnimationFrame(rafId)
+   822→    }
+   823→    
+   824→    prevValuesRef.current = { quantity, serviceType, deliverySpeed, geoTargeting }
+   825→  }, [quantity, serviceType, deliverySpeed, geoTargeting])
+   826→
+   827→  // Calculate costs
+   828→  const baseCost = Math.ceil((quantity / 100) * (servicePrices[serviceType] || 1))
+   829→  const speedCost = Math.round(baseCost * (speedMultipliers[deliverySpeed] - 1))
+   830→  const geoCost = geoTargeting ? Math.round(baseCost * geoFee) : 0
+   831→  const totalCredits = baseCost + speedCost + geoCost
+   832→  const estimatedDelivery = deliveryTimes[deliverySpeed][platform]
+   833→
+   834→  const formatDeliveryTime = (hours: number) => {
+   835→    if (hours <= 24) return `${hours} hours`
+   836→    if (hours <= 48) return `${Math.round(hours / 24)} days`
+   837→    return `${Math.round(hours / 24)} days`
+   838→  }
+   839→
+   840→  return (
+   841→    <section id="pricing-calculator" className="py-20 lg:py-28 bg-muted/30 relative overflow-hidden">
+   842→      {/* Decorative floating orbs */}
+   843→      <div className="floating-orb floating-orb-1"></div>
+   844→      <div className="floating-orb floating-orb-2"></div>
+   845→      
+   846→      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+   847→        {/* Section header */}
+   848→        <div className="text-center max-w-3xl mx-auto mb-12">
+   849→          <Badge variant="secondary" className="mb-4 bg-gradient-to-r from-warm-100 to-orange-100 text-warm-800 border-0">
+   850→            <Calculator className="w-3 h-3 mr-1" />
+   851→            Smart Calculator
+   852→          </Badge>
+   853→          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
+   854→            Calculate Your <span className="gradient-text">Growth Package</span>
+   855→          </h2>
+   856→          <p className="text-lg text-muted-foreground">
+   857→            Get instant price estimates for your growth needs
+   858→          </p>
+   859→        </div>
+   860→
+   861→        {/* Calculator Card */}
+   862→        <div className="max-w-5xl mx-auto">
+   863→          <Card className="border-0 shadow-2xl overflow-hidden glass-card">
+   864→            <CardContent className="p-6 md:p-10">
+   865→              <div className="grid lg:grid-cols-2 gap-10">
+   866→                {/* Left Side - Inputs */}
+   867→                <div className="space-y-6">
+   868→                  <h3 className="text-xl font-semibold flex items-center gap-2 mb-6">
+   869→                    <Settings className="w-5 h-5 text-warm-500" />
+   870→                    Configure Your Campaign
+   871→                  </h3>
+   872→
+   873→                  {/* Platform Selector */}
+   874→                  <div className="space-y-2">
+   875→                    <Label className="text-sm font-medium">Select Platform</Label>
+   876→                    <Tabs 
+   877→                      value={platform} 
+   878→                      onValueChange={(v) => setPlatform(v as 'youtube' | 'instagram')}
+   879→                      className="w-full"
+   880→                    >
+   881→                      <TabsList className="grid w-full grid-cols-2">
+   882→                        <TabsTrigger value="youtube" className="gap-2 data-[state=active]:bg-red-500 data-[state=active]:text-white">
+   883→                          <Youtube className="w-4 h-4" />
+   884→                          YouTube
+   885→                        </TabsTrigger>
+   886→                        <TabsTrigger value="instagram" className="gap-2 data-[state=active]:bg-pink-500 data-[state=active]:text-white">
+   887→                          <Instagram className="w-4 h-4" />
+   888→                          Instagram
+   889→                        </TabsTrigger>
+   890→                      </TabsList>
+   891→                    </Tabs>
+   892→                  </div>
+   893→
+   894→                  {/* Service Type Selector */}
+   895→                  <div className="space-y-2">
+   896→                    <Label className="text-sm font-medium">Service Type</Label>
+   897→                    <Select 
+   898→                      key={platform}
+   899→                      value={serviceType} 
+   900→                      onValueChange={(val) => {
+   901→                        // Only set if value is valid for current platform
+   902→                        const validOptions = getServiceOptions().map(o => o.value)
+   903→                        if (validOptions.includes(val)) {
+   904→                          setServiceType(val)
+   905→                        } else {
+   906→                          // Reset to default if invalid
+   907→                          setServiceType(getDefaultServiceType(platform))
+   908→                        }
+   909→                      }}
+   910→                    >
+   911→                      <SelectTrigger className="w-full">
+   912→                        <SelectValue placeholder="Select service" />
+   913→                      </SelectTrigger>
+   914→                      <SelectContent>
+   915→                        {getServiceOptions().map((option) => (
+   916→                          <SelectItem key={option.value} value={option.value}>
+   917→                            <span className="flex items-center gap-2">
+   918→                              {option.icon}
+   919→                              {option.label}
+   920→                            </span>
+   921→                          </SelectItem>
+   922→                        ))}
+   923→                      </SelectContent>
+   924→                    </Select>
+   925→                  </div>
+   926→
+   927→                  {/* Quantity Input */}
+   928→                  <div className="space-y-2">
+   929→                    <Label className="text-sm font-medium">
+   930→                      Quantity ({quantity.toLocaleString()})
+   931→                    </Label>
+   932→                    <div className="flex items-center gap-3">
+   933→                      <Input
+   934→                        type="number"
+   935→                        min={1}
+   936→                        max={1000000}
+   937→                        value={quantity}
+   938→                        onChange={(e) => setQuantity(Math.min(1000000, Math.max(1, Number(e.target.value))))}
+   939→                        className="flex-1"
+   940→                      />
+   941→                      <Button
+   942→                        variant="outline"
+   943→                        size="sm"
+   944→                        onClick={() => setQuantity(prev => Math.max(1, Math.round(prev / 2)))}
+   945→                      >
+   946→                        Halve
+   947→                      </Button>
+   948→                      <Button
+   949→                        variant="outline"
+   950→                        size="sm"
+   951→                        onClick={() => setQuantity(prev => Math.min(1000000, prev * 2))}
+   952→                      >
+   953→                        Double
+   954→                      </Button>
+   955→                    </div>
+   956→                    <input
+   957→                      type="range"
+   958→                      min={100}
+   959→                      max={100000}
+   960→                      value={quantity}
+   961→                      onChange={(e) => setQuantity(Number(e.target.value))}
+   962→                      className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-warm-500"
+   963→                    />
+   964→                    <div className="flex justify-between text-xs text-muted-foreground">
+   965→                      <span>100</span>
+   966→                      <span>100K+</span>
+   967→                    </div>
+   968→                  </div>
+   969→
+   970→                  {/* Delivery Speed Selector */}
+   971→                  <div className="space-y-2">
+   972→                    <Label className="text-sm font-medium">Delivery Speed</Label>
+   973→                    <Tabs 
+   974→                      value={deliverySpeed} 
+   975→                      onValueChange={(v) => setDeliverySpeed(v as 'slow' | 'normal' | 'fast')}
+   976→                      className="w-full"
+   977→                    >
+   978→                      <TabsList className="grid w-full grid-cols-3 h-auto">
+   979→                        <TabsTrigger value="slow" className="gap-1 py-2 data-[state=active]:bg-green-500 data-[state=active]:text-white">
+   980→                          <Clock className="w-3 h-3" />
+   981→                          <span className="text-xs">Slow<br/>7 days</span>
+   982→                        </TabsTrigger>
+   983→                        <TabsTrigger value="normal" className="gap-1 py-2 data-[state=active]:bg-warm-500 data-[state=active]:text-white">
+   984→                          <Timer className="w-3 h-3" />
+   985→                          <span className="text-xs">Normal<br/>3 days</span>
+   986→                        </TabsTrigger>
+   987→                        <TabsTrigger value="fast" className="gap-1 py-2 data-[state=active]:bg-red-500 data-[state=active]:text-white">
+   988→                          <FastForward className="w-3 h-3" />
+   989→                          <span className="text-xs">Fast<br/>24 hrs</span>
+   990→                        </TabsTrigger>
+   991→                      </TabsList>
+   992→                    </Tabs>
+   993→                  </div>
+   994→
+   995→                  {/* Geo-targeting Toggle */}
+   996→                  <div className="flex items-center justify-between p-4 rounded-xl bg-muted/50 border border-border">
+   997→                    <div className="flex items-center gap-3">
+   998→                      <MapPin className="w-5 h-5 text-warm-500" />
+   999→                      <div>
+  1000→                        <p className="font-medium text-sm">Geo-Targeting</p>
+  1001→                        <p className="text-xs text-muted-foreground">Target specific regions (+20% cost)</p>
+  1002→                      </div>
+  1003→                    </div>
+  1004→                    <Switch checked={geoTargeting} onCheckedChange={setGeoTargeting} />
+  1005→                  </div>
+  1006→                </div>
+  1007→
+  1008→                {/* Right Side - Results */}
+  1009→                <div className="space-y-6">
+  1010→                  <h3 className="text-xl font-semibold flex items-center gap-2 mb-6">
+  1011→                    <CreditCard className="w-5 h-5 text-warm-500" />
+  1012→                    Price Breakdown
+  1013→                  </h3>
+  1014→
+  1015→                  {/* Visual Breakdown Card */}
+  1016→                  <Card className={`border-2 transition-all duration-300 ${isAnimating ? 'neon-border-strong scale-[1.02]' : 'border-warm-200'} bg-gradient-to-br from-warm-50/50 to-orange-50/50`}>
+  1017→                    <CardContent className="p-6 space-y-4">
+  1018→                      {/* Base Cost */}
+  1019→                      <div className="flex items-center justify-between">
+  1020→                        <span className="text-sm text-muted-foreground flex items-center gap-2">
+  1021→                          <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
+  1022→                            <Target className="w-4 h-4 text-blue-600" />
+  1023→                          </div>
+  1024→                          Base Cost
+  1025→                        </span>
+  1026→                        <span className={`font-semibold calculator-value ${isAnimating ? 'calculator-value-updating' : ''}`}>
+  1027→                          {baseCost} credits
+  1028→                        </span>
+  1029→                      </div>
+  1030→
+  1031→                      {/* Speed Adjustment */}
+  1032→                      <div className="flex items-center justify-between">
+  1033→                        <span className="text-sm text-muted-foreground flex items-center gap-2">
+  1034→                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+  1035→                            deliverySpeed === 'fast' ? 'bg-red-100' :
+  1036→                            deliverySpeed === 'normal' ? 'bg-yellow-100' : 'bg-green-100'
+  1037→                          }`}>
+  1038→                            {deliverySpeed === 'fast' ? <FastForward className="w-4 h-4 text-red-600" /> :
+  1039→                             deliverySpeed === 'normal' ? <Timer className="w-4 h-4 text-yellow-600" /> :
+  1040→                             <Clock className="w-4 h-4 text-green-600" />}
+  1041→                          </div>
+  1042→                          Speed Multiplier
+  1043→                          <Badge variant="outline" className="text-xs ml-1">
+  1044→                            x{speedMultipliers[deliverySpeed]}
+  1045→                          </Badge>
+  1046→                        </span>
+  1047→                        <span className={`font-semibold ${speedCost > 0 ? 'text-orange-600' : speedCost < 0 ? 'text-green-600' : ''} calculator-value ${isAnimating ? 'calculator-value-updating' : ''}`}>
+  1048→                          {speedCost > 0 ? '+' : ''}{speedCost} credits
+  1049→                        </span>
+  1050→                      </div>
+  1051→
+  1052→                      {/* Geo Targeting Fee */}
+  1053→                      <div className="flex items-center justify-between">
+  1054→                        <span className="text-sm text-muted-foreground flex items-center gap-2">
+  1055→                          <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
+  1056→                            <MapPin className="w-4 h-4 text-purple-600" />
+  1057→                          </div>
+  1058→                          Geo-Targeting Fee
+  1059→                        </span>
+  1060→                        <span className={`font-semibold ${geoTargeting ? 'text-purple-600' : 'text-muted-foreground'} calculator-value ${isAnimating ? 'calculator-value-updating' : ''}`}>
+  1061→                          {geoTargeting ? `+${geoCost}` : '0'} credits
+  1062→                        </span>
+  1063→                      </div>
+  1064→
+  1065→                      <Separator />
+  1066→
+  1067→                      {/* Total */}
+  1068→                      <div className="flex items-center justify-between pt-2">
+  1069→                        <span className="font-bold text-base flex items-center gap-2">
+  1070→                          <Coins className="w-5 h-5 text-warm-500" />
+  1071→                          Total Credits Required
+  1072→                        </span>
+  1073→                        <span className={`text-2xl font-black gradient-text calculator-value ${isAnimating ? 'calculator-value-updating' : ''}`}>
+  1074→                          {totalCredits.toLocaleString()}
+  1075→                        </span>
+  1076→                      </div>
+  1077→
+  1078→                      {/* Estimated Delivery */}
+  1079→                      <div className="mt-4 p-3 rounded-lg bg-background border border-border">
+  1080→                        <p className="text-sm text-muted-foreground flex items-center gap-2">
+  1081→                          <Clock className="w-4 h-4" />
+  1082→                          Estimated Delivery:
+  1083→                          <span className="font-semibold text-foreground ml-auto">
+  1084→                            {formatDeliveryTime(estimatedDelivery)}
+  1085→                          </span>
+  1086→                        </p>
+  1087→                      </div>
+  1088→                    </CardContent>
+  1089→                  </Card>
+  1090→
+  1091→                  {/* CTA Button */}
+  1092→                  <Button 
+  1093→                    className="w-full h-14 text-base font-semibold btn-shine gradient-bg text-white border-0 hover:opacity-90 shadow-lg"
+  1094→                    onClick={() => {
+  1095→                      toast.success('Campaign configured!', {
+  1096→                        description: `${quantity.toLocaleString()} ${getServiceOptions().find(s => s.value === serviceType)?.label} for ${platform} - ${totalCredits} credits`
+  1097→                      })
+  1098→                      onSignUp()
+  1099→                    }}
+  1100→                  >
+  1101→                    <Rocket className="w-5 h-5 mr-2" />
+  1102→                    Start This Campaign
+  1103→                  </Button>
+  1104→
+  1105→                  {/* Quick Info */}
+  1106→                  <div className="grid grid-cols-3 gap-3">
+  1107→                    <div className="text-center p-3 rounded-lg bg-muted/50">
+  1108→                      <ShieldCheck className="w-5 h-5 mx-auto mb-1 text-green-500" />
+  1109→                      <p className="text-xs font-medium">Safe & Secure</p>
+  1110→                    </div>
+  1111→                    <div className="text-center p-3 rounded-lg bg-muted/50">
+  1112→                      <RefreshCw className="w-5 h-5 mx-auto mb-1 text-blue-500" />
+  1113→                      <p className="text-xs font-medium">Real-time Updates</p>
+  1114→                    </div>
+  1115→                    <div className="text-center p-3 rounded-lg bg-muted/50">
+  1116→                      <HeadphonesIcon className="w-5 h-5 mx-auto mb-1 text-warm-500" />
+  1117→                      <p className="text-xs font-medium">24/7 Support</p>
+  1118→                    </div>
+  1119→                  </div>
+  1120→                </div>
+  1121→              </div>
+  1122→            </CardContent>
+  1123→          </Card>
+  1124→        </div>
+  1125→      </div>
+  1126→    </section>
+  1127→  )
+  1128→}
+  1129→
+  1130→// ============================================
+  1131→// ROUND 8: COOKIE CONSENT BANNER
+  1132→// ============================================
+  1133→function CookieConsentBanner() {
+  1134→  const [isVisible, setIsVisible] = useState(false)
+  1135→  const [isClosing, setIsClosing] = useState(false)
+  1136→
+  1137→  useEffect(() => {
+  1138→    // Check if user has already consented
+  1139→    const consent = localStorage.getItem('cookie-consent')
+  1140→    if (!consent) {
+  1141→      // Show after a short delay for better UX
+  1142→      const timer = setTimeout(() => setIsVisible(true), 1500)
+  1143→      return () => clearTimeout(timer)
+  1144→    }
+  1145→  }, [])
+  1146→
+  1147→  const handleAcceptAll = () => {
+  1148→    localStorage.setItem('cookie-consent', 'all')
+  1149→    handleClose()
+  1150→  }
+  1151→
+  1152→  const handleNecessaryOnly = () => {
+  1153→    localStorage.setItem('cookie-consent', 'necessary')
+  1154→    handleClose()
+  1155→  }
+  1156→
+  1157→  const handleCustomize = () => {
+  1158→    toast.info('Cookie preferences panel coming soon!')
+  1159→    handleAcceptAll() // For now, just accept all
+  1160→  }
+  1161→
+  1162→  const handleClose = () => {
+  1163→    setIsClosing(true)
+  1164→    setTimeout(() => setIsVisible(false), 300)
+  1165→  }
+  1166→
+  1167→  if (!isVisible) return null
+  1168→
+  1169→  return (
+  1170→    <div className={`fixed bottom-0 left-0 right-0 z-50 px-4 pb-4 ${isClosing ? 'slide-down-cookie' : 'slide-up-cookie'}`}>
+  1171→      <div className="max-w-4xl mx-auto">
+  1172→        <div className="glass rounded-2xl shadow-2xl border border-white/20 p-4 md:p-6">
+  1173→          <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
+  1174→            {/* Icon and Content */}
+  1175→            <div className="flex items-start gap-3 flex-1">
+  1176→              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-warm-400 to-orange-500 flex items-center justify-center flex-shrink-0 mt-0.5">
+  1177→                <Cookie className="w-5 h-5 text-white" />
+  1178→              </div>
+  1179→              <div className="flex-1">
+  1180→                <h4 className="font-semibold text-sm mb-1">We value your privacy 🍪</h4>
+  1181→                <p className="text-xs text-muted-foreground leading-relaxed">
+  1182→                  We use cookies to enhance your browsing experience, serve personalized content, and analyze our traffic. 
+  1183→                  By clicking "Accept All", you consent to our use of cookies.
+  1184→                </p>
+  1185→              </div>
+  1186→            </div>
+  1187→
+  1188→            {/* Buttons */}
+  1189→            <div className="flex items-center gap-2 flex-shrink-0 w-full md:w-auto">
+  1190→              <Button 
+  1191→                size="sm" 
+  1192→                onClick={handleNecessaryOnly}
+  1193→                variant="outline"
+  1194→                className="text-xs whitespace-nowrap"
+  1195→              >
+  1196→                Necessary Only
+  1197→              </Button>
+  1198→              <Button 
+  1199→                size="sm" 
+  1200→                onClick={handleCustomize}
+  1201→                variant="ghost"
+  1202→                className="text-xs whitespace-nowrap hidden sm:flex"
+  1203→              >
+  1204→                Customize
+  1205→              </Button>
+  1206→              <Button 
+  1207→                size="sm" 
+  1208→                onClick={handleAcceptAll}
+  1209→                className="gradient-bg text-white border-0 text-xs whitespace-nowrap btn-shine"
+  1210→              >
+  1211→                Accept All
+  1212→              </Button>
+  1213→            </div>
+  1214→          </div>
+  1215→        </div>
+  1216→      </div>
+  1217→    </div>
+  1218→  )
+  1219→}
+  1220→
+  1221→// ============================================
+  1222→// ROUND 8: SKELETON LOADING COMPONENTS
+  1223→// ============================================
+  1224→interface SkeletonProps {
+  1225→  className?: string
+  1226→}
+  1227→
+  1228→function SkeletonCard({ className }: SkeletonProps) {
+  1229→  return (
+  1230→    <div className={`skeleton skeleton-card ${className || ''}`}>
+  1231→      <div className="space-y-3 pt-2">
+  1232→        <div className="skeleton skeleton-text w-3/4"></div>
+  1233→        <div className="skeleton skeleton-text-sm w-full"></div>
+  1234→        <div className="skeleton skeleton-text-sm w-5/6"></div>
+  1235→      </div>
+  1236→    </div>
+  1237→  )
+  1238→}
+  1239→
+  1240→function SkeletonText({ lines = 3, className }: { lines?: number; className?: string }) {
+  1241→  return (
+  1242→    <div className={`space-y-2 ${className || ''}`}>
+  1243→      {[...Array(lines)].map((_, i) => (
+  1244→        <div 
+  1245→          key={i} 
+  1246→          className={`skeleton ${i === lines - 1 ? 'skeleton-text-sm' : 'skeleton-text'}`}
+  1247→          style={{ width: i === lines - 1 ? '75%' : '100%' }}
+  1248→        ></div>
+  1249→      ))}
+  1250→    </div>
+  1251→  )
+  1252→}
+  1253→
+  1254→function SkeletonAvatar({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
+  1255→  const sizeClasses = {
+  1256→    sm: 'w-8 h-8',
+  1257→    md: 'w-12 h-12',
+  1258→    lg: 'w-16 h-16'
+  1259→  }
+  1260→  
+  1261→  return (
+  1262→    <div className={`skeleton ${sizeClasses[size]} rounded-full`}></div>
+  1263→  )
+  1264→}
+  1265→
+  1266→function SkeletonButton({ width = 'w-24' }: { width?: string }) {
+  1267→  return <div className={`skeleton skeleton-button ${width}`}></div>
+  1268→}
+  1269→
+  1270→// Export a combined Skeleton component with variants
+  1271→function Skeleton({ variant = 'text', ...props }: SkeletonProps & { variant?: 'card' | 'text' | 'avatar' | 'button' }) {
+  1272→  switch (variant) {
+  1273→    case 'card':
+  1274→      return <SkeletonCard {...props} />
+  1275→    case 'avatar':
+  1276→      return <SkeletonAvatar {...props} />
+  1277→    case 'button':
+  1278→      return <SkeletonButton {...props} />
+  1279→    default:
+  1280→      return <SkeletonText {...props} />
+  1281→  }
+  1282→}
+  1283→
+  1284→// ============================================
+  1285→// ROUND 8: ENHANCED FAQ WITH SEARCH & CATEGORIES
+  1286→// ============================================
+  1287→function EnhancedFAQ() {
+  1288→  const [searchQuery, setSearchQuery] = useState('')
+  1289→  const [selectedCategory, setSelectedCategory] = useState<string>('all')
+  1290→  
+  1291→  const categories = [
+  1292→    { id: 'all', label: 'All', icon: <Filter className="w-3 h-3" /> },
+  1293→    { id: 'getting-started', label: 'Getting Started', icon: <Rocket className="w-3 h-3" /> },
+  1294→    { id: 'pricing', label: 'Pricing', icon: <DollarSign className="w-3 h-3" /> },
+  1295→    { id: 'security', label: 'Security', icon: <Shield className="w-3 h-3" /> },
+  1296→    { id: 'technical', label: 'Technical', icon: <Code className="w-3 h-3" /> }
+  1297→  ]
+  1298→
+  1299→  // Filter FAQs based on search query and category
+  1300→  const filteredFaqs = faqs.filter(faq => {
+  1301→    const matchesSearch = searchQuery === '' || 
+  1302→      faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  1303→      faq.answer.toLowerCase().includes(searchQuery.toLowerCase())
+  1304→    
+  1305→    const matchesCategory = selectedCategory === 'all' || faq.category === selectedCategory
+  1306→    
+  1307→    return matchesSearch && matchesCategory
+  1308→  })
+  1309→
+  1310→  // Highlight matching text in question
+  1311→  const highlightText = (text: string, query: string) => {
+  1312→    if (!query) return text
+  1313→    const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi')
+  1314→    const parts = text.split(regex)
+  1315→    return parts.map((part, i) => 
+  1316→      regex.test(part) ? <span key={i} className="faq-highlight">{part}</span> : part
+  1317→    )
+  1318→  }
+  1319→
+  1320→  return (
+  1321→    <div className="space-y-6">
+  1322→      {/* Search Box */}
+  1323→      <div className="relative">
+  1324→        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+  1325→        <Input
+  1326→          type="text"
+  1327→          placeholder="Search questions..."
+  1328→          value={searchQuery}
+  1329→          onChange={(e) => setSearchQuery(e.target.value)}
+  1330→          className="pl-12 pr-4 py-6 text-base rounded-xl border-2 focus-visible:border-warm-500 transition-colors"
+  1331→        />
+  1332→        {searchQuery && (
+  1333→          <Button
+  1334→            variant="ghost"
+  1335→            size="sm"
+  1336→            className="absolute right-2 top-1/2 -translate-y-1/2"
+  1337→            onClick={() => setSearchQuery('')}
+  1338→          >
+  1339→            <X className="w-4 h-4" />
+  1340→          </Button>
+  1341→        )}
+  1342→      </div>
+  1343→
+  1344→      {/* Category Pills */}
+  1345→      <div className="flex flex-wrap gap-2">
+  1346→        {categories.map((category) => (
+  1347→          <button
+  1348→            key={category.id}
+  1349→            onClick={() => setSelectedCategory(category.id)}
+  1350→            className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 flex items-center gap-1.5 ${
+  1351→              selectedCategory === category.id
+  1352→                ? 'category-pill-active'
+  1353→                : 'bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground border border-transparent hover:border-border'
+  1354→            }`}
+  1355→          >
+  1356→            {category.icon}
+  1357→            {category.label}
+  1358→          </button>
+  1359→        ))}
+  1360→      </div>
+  1361→
+  1362→      {/* Results Count */}
+  1363→      <p className="text-sm text-muted-foreground">
+  1364→        Showing{' '}
+  1365→        <span className="font-semibold text-foreground">{filteredFaqs.length}</span>
+  1366→        {' '}of{' '}
+  1367→        <span className="font-semibold text-foreground">{faqs.length}</span>
+  1368→        {' '}questions
+  1369→        {(searchQuery || selectedCategory !== 'all') && (
+  1370→          <>
+  1371→            {' '}for "
+  1372→            <span className="text-warm-600 font-medium">
+  1373→              {searchQuery || categories.find(c => c.id === selectedCategory)?.label}
+  1374→            </span>
+  1375→            "
+  1376→          </>
+  1377→        )}
+  1378→      </p>
+  1379→
+  1380→      {/* FAQ Accordion */}
+  1381→      {filteredFaqs.length > 0 ? (
+  1382→        <Accordion type="single" collapsible className="space-y-4 smooth-accordion">
+  1383→          {filteredFaqs.map((faq, index) => {
+  1384→            // Find original index for stable accordion values
+  1385→            const originalIndex = faqs.indexOf(faq)
+  1386→            return (
+  1387→              <AccordionItem 
+  1388→                key={`${faq.category}-${index}`}
+  1389→                value={`faq-${originalIndex}`}
+  1390→                className="bg-card rounded-2xl px-6 shadow-sm border-0 hover:shadow-md transition-all data-[state=open]:shadow-lg data-[state=open]:scale-[1.01]"
+  1391→              >
+  1392→                <AccordionTrigger className="text-left font-semibold hover:no-underline text-base py-5">
+  1393→                  {highlightText(faq.question, searchQuery)}
+  1394→                  {/* Category Badge */}
+  1395→                  <Badge variant="outline" className="ml-2 text-xs shrink-0 hidden sm:inline-flex">
+  1396→                    {categories.find(c => c.id === faq.category)?.icon}
+  1397→                    <span className="ml-1 capitalize">
+  1398→                      {categories.find(c => c.id === faq.category)?.label}
+  1399→                    </span>
+  1400→                  </Badge>
+  1401→                </AccordionTrigger>
+  1402→                <AccordionContent className="text-muted-foreground pb-5 leading-relaxed">
+  1403→                  {highlightText(faq.answer, searchQuery)}
+  1404→                </AccordionContent>
+  1405→              </AccordionItem>
+  1406→            )
+  1407→          })}
+  1408→        </Accordion>
+  1409→      ) : (
+  1410→        /* No Results State */
+  1411→        <Card className="border-dashed border-2 border-muted-foreground/20 p-12 text-center">
+  1412→          <AlertCircle className="w-12 h-12 mx-auto mb-4 text-muted-foreground/50" />
+  1413→          <h3 className="font-semibold text-lg mb-2">No results found</h3>
+  1414→          <p className="text-muted-foreground text-sm max-w-md mx-auto">
+  1415→            We couldn't find any questions matching "{searchQuery}". Try adjusting your search or selecting a different category.
+  1416→          </p>
+  1417→          <Button 
+  1418→            variant="outline" 
+  1419→            size="sm" 
+  1420→            className="mt-4"
+  1421→            onClick={() => { setSearchQuery(''); setSelectedCategory('all') }}
+  1422→          >
+  1423→            Clear filters
+  1424→          </Button>
+  1425→        </Card>
+  1426→      )}
+  1427→    </div>
+  1428→  )
+  1429→}
+  1430→
+  1431→// ==================== DASHBOARD COMPONENT ====================
+  1432→interface DashboardProps {
+  1433→  user: { name: string; email: string }
+  1434→  onLogout: () => void
+  1435→  authToken: string | null
+  1436→}
+  1437→
+  1438→function Dashboard({ user, onLogout, authToken }: DashboardProps) {
+  1439→  const [sidebarOpen, setSidebarOpen] = useState(true)
+  1440→  const [activeDashboardTab, setActiveDashboardTab] = useState('overview')
+  1441→  const [campaigns, setCampaigns] = useState<Campaign[]>(mockCampaigns)
+  1442→  const [isNewCampaignOpen, setIsNewCampaignOpen] = useState(false)
+  1443→  const [selectedCampaigns, setSelectedCampaigns] = useState<string[]>([])
+  1444→
+  1445→  // New Campaign Form State
+  1446→  const [newCampaign, setNewCampaign] = useState({
+  1447→    name: '',
+  1448→    platform: 'youtube' as 'youtube' | 'instagram',
+  1449→    serviceType: 'views',
+  1450→    targetUrl: '',
+  1451→    quantity: 1000,
+  1452→    speed: 'normal',
+  1453→    geoTarget: 'all'
+  1454→  })
+  1455→
+  1456→  // Stats calculations
+  1457→  const availableCredits = mockUserStats.totalCredits - mockUserStats.usedCredits
+  1458→  const creditsPercentage = Math.round((mockUserStats.usedCredits / mockUserStats.totalCredits) * 100)
+  1459→
+  1460→  const handleCreateCampaign = () => {
+  1461→    if (!newCampaign.name || !newCampaign.targetUrl) {
+  1462→      toast.error('Please fill in all required fields')
+  1463→      return
+  1464→    }
+  1465→
+  1466→    const creditsNeeded = Math.ceil(newCampaign.quantity / 100)
+  1467→    if (creditsNeeded > availableCredits) {
+  1468→      toast.error(`Insufficient credits. You need ${creditsNeeded} but have ${availableCredits}`)
+  1469→      return
+  1470→    }
+  1471→
+  1472→    const campaign: Campaign = {
+  1473→      id: `camp${Date.now()}`,
+  1474→      name: newCampaign.name,
+  1475→      platform: newCampaign.platform,
+  1476→      serviceType: newCampaign.serviceType,
+  1477→      targetUrl: newCampaign.targetUrl,
+  1478→      quantity: newCampaign.quantity,
+  1479→      completedCount: 0,
+  1480→      status: 'pending',
+  1481→      creditsSpent: creditsNeeded,
+  1482→      createdAt: new Date().toISOString().split('T')[0],
+  1483→      progress: 0
+  1484→    }
+  1485→
+  1486→    setCampaigns([campaign, ...campaigns])
+  1487→    setIsNewCampaignOpen(false)
+  1488→    toast.success('Campaign created successfully!', { description: `${newCampaign.name} is now processing` })
+  1489→    
+  1490→    // Reset form
+  1491→    setNewCampaign({
+  1492→      name: '',
+  1493→      platform: 'youtube',
+  1494→      serviceType: 'views',
+  1495→      targetUrl: '',
+  1496→      quantity: 1000,
+  1497→      speed: 'normal',
+  1498→      geoTarget: 'all'
+  1499→    })
+  1500→  }
+  1501→
+  1502→  const handleToggleCampaignStatus = (id: string) => {
+  1503→    setCampaigns(campaigns.map(c => 
+  1504→      c.id === id 
+  1505→        ? { ...c, status: c.status === 'active' ? 'paused' : c.status === 'paused' ? 'active' : c.status }
+  1506→        : c
+  1507→    ))
+  1508→  }
+  1509→
+  1510→  const handleDeleteCampaign = (id: string) => {
+  1511→    setCampaigns(campaigns.filter(c => c.id !== id))
+  1512→    toast.success('Campaign deleted')
+  1513→  }
+  1514→
+  1515→  const getStatusBadge = (status: string) => {
+  1516→    const styles: Record<string, string> = {
+  1517→      active: 'bg-green-100 text-green-700 border-green-200',
+  1518→      paused: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+  1519→      completed: 'bg-blue-100 text-blue-700 border-blue-200',
+  1520→      pending: 'bg-gray-100 text-gray-700 border-gray-200'
+  1521→    }
+  1522→    return styles[status] || styles.pending
+  1523→  }
+  1524→
+  1525→  const getPlatformIcon = (platform: string) => {
+  1526→    return platform === 'youtube' 
+  1527→      ? <Youtube className="w-4 h-4 text-red-500" />
+  1528→      : <Instagram className="w-4 h-4 text-pink-500" />
+  1529→  }
+  1530→
+  1531→  return (
+  1532→    <div className="min-h-screen flex bg-gray-50">
+  1533→      {/* Sidebar */}
+  1534→      <aside className={`${sidebarOpen ? 'w-64' : 'w-20'} bg-slate-900 text-white transition-all duration-300 flex flex-col fixed h-screen z-40`}>
+  1535→        {/* Logo */}
+  1536→        <div className="p-4 border-b border-slate-800 flex items-center gap-3">
+  1537→          <div className="w-10 h-10 rounded-xl gradient-bg flex items-center justify-center flex-shrink-0">
+  1538→            <Rocket className="w-6 h-6 text-white" />
+  1539→          </div>
+  1540→          {sidebarOpen && <span className="font-bold text-lg gradient-text">SocialBoost</span>}
+  1541→        </div>
+  1542→
+  1543→        {/* Navigation */}
+  1544→        <nav className="flex-1 p-4 space-y-2">
+  1545→          {[
+  1546→            { icon: <LayoutDashboard />, label: 'Overview', id: 'overview' },
+  1547→            { icon: <Target />, label: 'Campaigns', id: 'campaigns' },
+  1548→            { icon: <BarChart3 />, label: 'Analytics', id: 'analytics' },
+  1549→            { icon: <Coins />, label: 'Credits', id: 'credits' },
+  1550→            { icon: <ZapIcon />, label: 'Earn Credits', id: 'earn' },
+  1551→            { icon: <ShieldCheck />, label: 'Admin', id: 'admin', badge: true },
+  1552→            { icon: <Settings />, label: 'Settings', id: 'settings' },
+  1553→          ].map((item) => (
+  1554→            <button
+  1555→              key={item.id}
+  1556→              onClick={() => setActiveDashboardTab(item.id)}
+  1557→              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all relative ${
+  1558→                activeDashboardTab === item.id 
+  1559→                  ? 'bg-warm-500/20 text-warm-400 font-medium' 
+  1560→                  : 'hover:bg-slate-800 text-slate-400 hover:text-white'
+  1561→              }`}
+  1562→            >
+  1563→              {item.icon}
+  1564→              {sidebarOpen && <span>{item.label}</span>}
+  1565→              {item.badge && (
+  1566→                <span className="absolute right-2 w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+  1567→              )}
+  1568→            </button>
+  1569→          ))}
+  1570→        </nav>
+  1571→
+  1572→        {/* User Section */}
+  1573→        <div className="p-4 border-t border-slate-800">
+  1574→          <div className={`flex items-center ${sidebarOpen ? 'gap-3' : 'justify-center'}`}>
+  1575→            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-warm-400 to-warm-600 flex items-center justify-center text-white font-bold">
+  1576→              {user.name.charAt(0)}
+  1577→            </div>
+  1578→            {sidebarOpen && (
+  1579→              <div className="flex-1 min-w-0">
+  1580→                <p className="font-medium truncate">{user.name}</p>
+  1581→                <p className="text-xs text-slate-400 truncate">{user.email}</p>
+  1582→              </div>
+  1583→            )}
+  1584→            <button onClick={onLogout} className="p-2 hover:bg-slate-800 rounded-lg transition-colors" title="Logout">
+  1585→              <LogOut className="w-5 h-5 text-slate-400" />
+  1586→            </button>
+  1587→          </div>
+  1588→        </div>
+  1589→      </aside>
+  1590→
+  1591→      {/* Main Content */}
+  1592→      <main className={`flex-1 ${sidebarOpen ? 'ml-64' : 'ml-20'} transition-all duration-300`}>
+  1593→        {/* Top Header */}
+  1594→        <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b px-6 py-4">
+  1595→          <div className="flex items-center justify-between">
+  1596→            <div className="flex items-center gap-4">
+  1597→              <button 
+  1598→                onClick={() => setSidebarOpen(!sidebarOpen)}
+  1599→                className="p-2 hover:bg-gray-100 rounded-lg"
+  1600→              >
+  1601→                <Menu className="w-5 h-5" />
+  1602→              </button>
+  1603→              <h1 className="text-xl font-bold capitalize">{activeDashboardTab}</h1>
+  1604→            </div>
+  1605→            
+  1606→            <div className="flex items-center gap-3">
+  1607→              <NotificationBellDropdown />
+  1608→              <Button 
+  1609→                size="sm" 
+  1610→                className="gradient-bg text-white border-0 gap-2"
+  1611→                onClick={() => setIsNewCampaignOpen(true)}
+  1612→              >
+  1613→                <Plus className="w-4 h-4" />
+  1614→                New Campaign
+  1615→              </Button>
+  1616→            </div>
+  1617→          </div>
+  1618→        </header>
+  1619→
+  1620→        {/* Dashboard Content */}
+  1621→        <div className="p-6">
+  1622→          {/* OVERVIEW TAB */}
+  1623→          {activeDashboardTab === 'overview' && (
+  1624→            <div className="space-y-6">
+  1625→              {/* Stats Grid */}
+  1626→              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+  1627→                <Card className="border-0 shadow-sm overflow-hidden">
+  1628→                  <CardContent className="p-6">
+  1629→                    <div className="flex items-start justify-between">
+  1630→                      <div>
+  1631→                        <p className="text-sm text-muted-foreground">Available Credits</p>
+  1632→                        <p className="text-3xl font-bold mt-1">{availableCredits.toLocaleString()}</p>
+  1633→                        <p className="text-xs text-muted-foreground mt-1">{creditsPercentage}% used</p>
+  1634→                      </div>
+  1635→                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-warm-400 to-orange-500 flex items-center justify-center">
+  1636→                        <Coins className="w-6 h-6 text-white" />
+  1637→                      </div>
+  1638→                    </div>
+  1639→                    <div className="mt-3 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+  1640→                      <div className="h-full gradient-bg rounded-full" style={{ width: `${creditsPercentage}%` }}></div>
+  1641→                    </div>
+  1642→                  </CardContent>
+  1643→                </Card>
+  1644→
+  1645→                <Card className="border-0 shadow-sm">
+  1646→                  <CardContent className="p-6">
+  1647→                    <div className="flex items-start justify-between">
+  1648→                      <div>
+  1649→                        <p className="text-sm text-muted-foreground">Active Campaigns</p>
+  1650→                        <p className="text-3xl font-bold mt-1">{mockUserStats.activeCampaigns}</p>
+  1651→                        <p className="text-xs text-green-600 flex items-center gap-1 mt-1">
+  1652→                          <ArrowUpRight className="w-3 h-3" /> +2 this week
+  1653→                        </p>
+  1654→                      </div>
+  1655→                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-400 to-cyan-500 flex items-center justify-center">
+  1656→                        <Target className="w-6 h-6 text-white" />
+  1657→                      </div>
+  1658→                    </div>
+  1659→                  </CardContent>
+  1660→                </Card>
+  1661→
+  1662→                <Card className="border-0 shadow-sm">
+  1663→                  <CardContent className="p-6">
+  1664→                    <div className="flex items-start justify-between">
+  1665→                      <div>
+  1666→                        <p className="text-sm text-muted-foreground">Total Views</p>
+  1667→                        <p className="text-3xl font-bold mt-1">{(mockUserStats.totalViews / 1000).toFixed(1)}K</p>
+  1668→                        <p className="text-xs text-green-600 flex items-center gap-1 mt-1">
+  1669→                          <ArrowUpRight className="w-3 h-3" /> +18% vs last week
+  1670→                        </p>
+  1671→                      </div>
+  1672→                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-400 to-violet-500 flex items-center justify-center">
+  1673→                        <Eye className="w-6 h-6 text-white" />
+  1674→                      </div>
+  1675→                    </div>
+  1676→                  </CardContent>
+  1677→                </Card>
+  1678→
+  1679→                <Card className="border-0 shadow-sm">
+  1680→                  <CardContent className="p-6">
+  1681→                    <div className="flex items-start justify-between">
+  1682→                      <div>
+  1683→                        <p className="text-sm text-muted-foreground">Engagement Rate</p>
+  1684→                        <p className="text-3xl font-bold mt-1">{mockUserStats.engagementRate}%</p>
+  1685→                        <p className="text-xs text-green-600 flex items-center gap-1 mt-1">
+  1686→                          <ArrowUpRight className="w-3 h-3" /> +2.3% improvement
+  1687→                        </p>
+  1688→                      </div>
+  1689→                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center">
+  1690→                        <TrendingUp className="w-6 h-6 text-white" />
+  1691→                      </div>
+  1692→                    </div>
+  1693→                  </CardContent>
+  1694→                </Card>
+  1695→              </div>
+  1696→
+  1697→              {/* Charts Row */}
+  1698→              <div className="grid lg:grid-cols-3 gap-6">
+  1699→                {/* Views Chart */}
+  1700→                <Card className="lg:col-span-2 border-0 shadow-sm">
+  1701→                  <CardHeader className="pb-2">
+  1702→                    <div className="flex items-center justify-between">
+  1703→                      <CardTitle className="text-base">Views & Followers Trend</CardTitle>
+  1704→                      <Select defaultValue="7d">
+  1705→                        <SelectTrigger className="w-28 h-8 text-xs" />
+  1706→                        <SelectContent>
+  1707→                          <SelectItem value="7d">Last 7 days</SelectItem>
+  1708→                          <SelectItem value="30d">Last 30 days</SelectItem>
+  1709→                          <SelectItem value="90d">Last 90 days</SelectItem>
+  1710→                        </SelectContent>
+  1711→                      </Select>
+  1712→                    </div>
+  1713→                  </CardHeader>
+  1714→                  <CardContent>
+  1715→                    <ResponsiveContainer width="100%" height={280}>
+  1716→                      <AreaChart data={chartDataViews}>
+  1717→                        <defs>
+  1718→                          <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
+  1719→                            <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3}/>
+  1720→                            <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/>
+  1721→                          </linearGradient>
+  1722→                          <linearGradient id="colorFollowers" x1="0" y1="0" x2="0" y2="1">
+  1723→                            <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3}/>
+  1724→                            <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
+  1725→                          </linearGradient>
+  1726→                        </defs>
+  1727→                        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+  1728→                        <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
+  1729→                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
+  1730→                        <Tooltip 
+  1731→                          contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+  1732→                        />
+  1733→                        <Area type="monotone" dataKey="views" stroke="#f59e0b" strokeWidth={2} fillOpacity={1} fill="url(#colorViews)" />
+  1734→                        <Area type="monotone" dataKey="followers" stroke="#8b5cf6" strokeWidth={2} fillOpacity={1} fill="url(#colorFollowers)" />
+  1735→                      </AreaChart>
+  1736→                    </ResponsiveContainer>
+  1737→                  </CardContent>
+  1738→                </Card>
+  1739→
+  1740→                {/* Engagement Pie Chart */}
+  1741→                <Card className="border-0 shadow-sm">
+  1742→                  <CardHeader className="pb-2">
+  1743→                    <CardTitle className="text-base">Engagement Breakdown</CardTitle>
+  1744→                  </CardHeader>
+  1745→                  <CardContent>
+  1746→                    <ResponsiveContainer width="100%" height={200}>
+  1747→                      <PieChart>
+  1748→                        <Pie
+  1749→                          data={chartDataEngagement}
+  1750→                          cx="50%"
+  1751→                          cy="50%"
+  1752→                          innerRadius={50}
+  1753→                          outerRadius={80}
+  1754→                          paddingAngle={5}
+  1755→                          dataKey="value"
+  1756→                        >
+  1757→                          {chartDataEngagement.map((entry, index) => (
+  1758→                            <Cell key={`cell-${index}`} fill={entry.color} />
+  1759→                          ))}
+  1760→                        </Pie>
+  1761→                        <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
+  1762→                      </PieChart>
+  1763→                    </ResponsiveContainer>
+  1764→                    <div className="space-y-2 mt-4">
+  1765→                      {chartDataEngagement.map((item, i) => (
+  1766→                        <div key={i} className="flex items-center justify-between text-sm">
+  1767→                          <div className="flex items-center gap-2">
+  1768→                            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }}></div>
+  1769→                            <span>{item.name}</span>
+  1770→                          </div>
+  1771→                          <span className="font-medium">{item.value.toLocaleString()}</span>
+  1772→                        </div>
+  1773→                      ))}
+  1774→                    </div>
+  1775→                  </CardContent>
+  1776→                </Card>
+  1777→              </div>
+  1778→
+  1779→              {/* Recent Activity */}
+  1780→              <Card className="border-0 shadow-sm">
+  1781→                <CardHeader>
+  1782→                  <div className="flex items-center justify-between">
+  1783→                    <CardTitle className="text-base">Recent Campaign Activity</CardTitle>
+  1784→                    <Button variant="ghost" size="sm" className="text-warm-600">
+  1785→                      View All <ArrowRight className="w-4 h-4 ml-1" />
+  1786→                    </Button>
+  1787→                  </div>
+  1788→                </CardHeader>
+  1789→                <CardContent>
+  1790→                  <div className="overflow-x-auto">
+  1791→                    <table className="w-full">
+  1792→                      <thead>
+  1793→                        <tr className="text-left text-sm text-muted-foreground border-b">
+  1794→                          <th className="pb-3 font-medium">Campaign</th>
+  1795→                          <th className="pb-3 font-medium">Platform</th>
+  1796→                          <th className="pb-3 font-medium">Progress</th>
+  1797→                          <th className="pb-3 font-medium">Status</th>
+  1798→                          <th className="pb-3 font-medium">Actions</th>
+  1799→                        </tr>
+  1800→                      </thead>
+  1801→                      <tbody>
+  1802→                        {campaigns.slice(0, 5).map((campaign) => (
+  1803→                          <tr key={campaign.id} className="border-b last:border-0">
+  1804→                            <td className="py-3">
+  1805→                              <div>
+  1806→                                <p className="font-medium text-sm">{campaign.name}</p>
+  1807→                                <p className="text-xs text-muted-foreground">{campaign.createdAt}</p>
+  1808→                              </div>
+  1809→                            </td>
+  1810→                            <td className="py-3">
+  1811→                              <div className="flex items-center gap-1">
+  1812→                                {getPlatformIcon(campaign.platform)}
+  1813→                                <span className="text-sm capitalize">{campaign.serviceType}</span>
+  1814→                              </div>
+  1815→                            </td>
+  1816→                            <td className="py-3">
+  1817→                              <div className="flex items-center gap-2">
+  1818→                                <div className="w-20 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+  1819→                                  <div 
+  1820→                                    className="h-full gradient-bg rounded-full" 
+  1821→                                    style={{ width: `${campaign.progress}%` }}
+  1822→                                  ></div>
+  1823→                                </div>
+  1824→                                <span className="text-xs text-muted-foreground">{campaign.progress}%</span>
+  1825→                              </div>
+  1826→                            </td>
+  1827→                            <td className="py-3">
+  1828→                              <Badge variant="outline" className={getStatusBadge(campaign.status)}>
+  1829→                                {campaign.status}
+  1830→                              </Badge>
+  1831→                            </td>
+  1832→                            <td className="py-3">
+  1833→                              <div className="flex items-center gap-1">
+  1834→                                <button 
+  1835→                                  onClick={() => handleToggleCampaignStatus(campaign.id)}
+  1836→                                  className="p-1.5 hover:bg-gray-100 rounded-lg"
+  1837→                                >
+  1838→                                  {campaign.status === 'active' ? <Pause className="w-4 h-4" /> : <PlayCircle className="w-4 h-4" />}
+  1839→                                </button>
+  1840→                                <button className="p-1.5 hover:bg-gray-100 rounded-lg">
+  1841→                                  <MoreHorizontal className="w-4 h-4" />
+  1842→                                </button>
+  1843→                              </div>
+  1844→                            </td>
+  1845→                          </tr>
+  1846→                        ))}
+  1847→                      </tbody>
+  1848→                    </table>
+  1849→                  </div>
+  1850→                </CardContent>
+  1851→              </Card>
+  1852→            </div>
+  1853→          )}
+  1854→
+  1855→          {/* CAMPAIGNS TAB */}
+  1856→          {activeDashboardTab === 'campaigns' && (
+  1857→            <div className="space-y-6">
+  1858→              {/* Filters Bar */}
+  1859→              <Card className="border-0 shadow-sm">
+  1860→                <CardContent className="p-4">
+  1861→                  <div className="flex flex-wrap items-center gap-4">
+  1862→                    <div className="relative flex-1 min-w-[200px]">
+  1863→                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+  1864→                      <Input placeholder="Search campaigns..." className="pl-9" />
+  1865→                    </div>
+  1866→                    <Select defaultValue="all-platforms">
+  1867→                      <SelectTrigger className="w-40" />
+  1868→                      <SelectContent>
+  1869→                        <SelectItem value="all-platforms">All Platforms</SelectItem>
+  1870→                        <SelectItem value="youtube">YouTube</SelectItem>
+  1871→                        <SelectItem value="instagram">Instagram</SelectItem>
+  1872→                      </SelectContent>
+  1873→                    </Select>
+  1874→                    <Select defaultValue="all-statuses">
+  1875→                      <SelectTrigger className="w-36" />
+  1876→                      <SelectContent>
+  1877→                        <SelectItem value="all-statuses">All Status</SelectItem>
+  1878→                        <SelectItem value="active">Active</SelectItem>
+  1879→                        <SelectItem value="paused">Paused</SelectItem>
+  1880→                        <SelectItem value="completed">Completed</SelectItem>
+  1881→                        <SelectItem value="pending">Pending</SelectItem>
+  1882→                      </SelectContent>
+  1883→                    </Select>
+  1884→                    <Button variant="outline" size="sm" className="gap-2">
+  1885→                      <Filter className="w-4 h-4" /> More Filters
+  1886→                    </Button>
+  1887→                  </div>
+  1888→                </CardContent>
+  1889→              </Card>
+  1890→
+  1891→              {/* Campaigns Table */}
+  1892→              <Card className="border-0 shadow-sm">
+  1893→                <CardHeader>
+  1894→                  <div className="flex items-center justify-between">
+  1895→                    <div className="flex items-center gap-2">
+  1896→                      <CardTitle className="text-base">All Campaigns</CardTitle>
+  1897→                      <Badge variant="secondary">{campaigns.length} total</Badge>
+  1898→                    </div>
+  1899→                    <div className="flex items-center gap-2">
+  1900→                      <Button variant="outline" size="sm" className="gap-2">
+  1901→                        <Download className="w-4 h-4" /> Export
+  1902→                      </Button>
+  1903→                      <Button variant="outline" size="sm" className="gap-2">
+  1904→                        <RefreshCw className="w-4 h-4" /> Refresh
+  1905→                      </Button>
+  1906→                    </div>
+  1907→                  </div>
+  1908→                </CardHeader>
+  1909→                <CardContent>
+  1910→                  <div className="overflow-x-auto">
+  1911→                    <table className="w-full">
+  1912→                      <thead>
+  1913→                        <tr className="text-left text-sm text-muted-foreground border-b bg-gray-50">
+  1914→                          <th className="p-3 font-medium w-10">
+  1915→                            <input type="checkbox" className="rounded" />
+  1916→                          </th>
+  1917→                          <th className="p-3 font-medium">Campaign Name</th>
+  1918→                          <th className="p-3 font-medium">Platform</th>
+  1919→                          <th className="p-3 font-medium">Service Type</th>
+  1920→                          <th className="p-3 font-medium">Target URL</th>
+  1921→                          <th className="p-3 font-medium">Progress</th>
+  1922→                          <th className="p-3 font-medium">Credits</th>
+  1923→                          <th className="p-3 font-medium">Status</th>
+  1924→                          <th className="p-3 font-medium">Created</th>
+  1925→                          <th className="p-3 font-medium">Actions</th>
+  1926→                        </tr>
+  1927→                      </thead>
+  1928→                      <tbody>
+  1929→                        {campaigns.map((campaign) => (
+  1930→                          <tr key={campaign.id} className="border-b hover:bg-gray-50/50 transition-colors group">
+  1931→                            <td className="p-3">
+  1932→                              <input 
+  1933→                                type="checkbox" 
+  1934→                                checked={selectedCampaigns.includes(campaign.id)}
+  1935→                                onChange={(e) => {
+  1936→                                  if (e.target.checked) {
+  1937→                                    setSelectedCampaigns([...selectedCampaigns, campaign.id])
+  1938→                                  } else {
+  1939→                                    setSelectedCampaigns(selectedCampaigns.filter(id => id !== campaign.id))
+  1940→                                  }
+  1941→                                }}
+  1942→                                className="rounded"
+  1943→                              />
+  1944→                            </td>
+  1945→                            <td className="p-3">
+  1946→                              <p className="font-medium text-sm">{campaign.name}</p>
+  1947→                            </td>
+  1948→                            <td className="p-3">
+  1949→                              <div className="flex items-center gap-1.5">
+  1950→                                {getPlatformIcon(campaign.platform)}
+  1951→                                <span className="text-sm capitalize">{campaign.platform}</span>
+  1952→                              </div>
+  1953→                            </td>
+  1954→                            <td className="p-3">
+  1955→                              <span className="text-sm bg-gray-100 px-2 py-1 rounded capitalize">{campaign.serviceType.replace('_', ' ')}</span>
+  1956→                            </td>
+  1957→                            <td className="p-3 max-w-[200px]">
+  1958→                              <a href={campaign.targetUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-warm-600 hover:text-warm-700 flex items-center gap-1 truncate" title={campaign.targetUrl}>
+  1959→                                <span className="truncate">{campaign.targetUrl.replace(/^https?:\/\/(www\.)?/, '')}</span>
+  1960→                                <ExternalLink className="w-3 h-3 flex-shrink-0" />
+  1961→                              </a>
+  1962→                            </td>
+  1963→                            <td className="p-3">
+  1964→                              <div className="space-y-1">
+  1965→                                <div className="flex justify-between text-xs">
+  1966→                                  <span>{campaign.completedCount.toLocaleString()} / {campaign.quantity.toLocaleString()}</span>
+  1967→                                  <span>{campaign.progress}%</span>
+  1968→                                </div>
+  1969→                                <div className="w-24 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+  1970→                                  <div 
+  1971→                                    className={`h-full rounded-full ${
+  1972→                                      campaign.progress === 100 ? 'bg-green-500' : 'gradient-bg'
+  1973→                                    }`}
+  1974→                                    style={{ width: `${campaign.progress}%` }}
+  1975→                                  ></div>
+  1976→                                </div>
+  1977→                              </div>
+  1978→                            </td>
+  1979→                            <td className="p-3">
+  1980→                              <span className="text-sm font-medium">{campaign.creditsSpent}</span>
+  1981→                              <Coins className="w-3 h-3 inline ml-1 text-warm-500" />
+  1982→                            </td>
+  1983→                            <td className="p-3">
+  1984→                              <Badge variant="outline" className={getStatusBadge(campaign.status)}>
+  1985→                                {campaign.status}
+  1986→                              </Badge>
+  1987→                            </td>
+  1988→                            <td className="p-3 text-sm text-muted-foreground">
+  1989→                              {campaign.createdAt}
+  1990→                            </td>
+  1991→                            <td className="p-3">
+  1992→                              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+  1993→                                <button 
+  1994→                                  onClick={() => handleToggleCampaignStatus(campaign.id)}
+  1995→                                  className="p-1.5 hover:bg-gray-100 rounded-lg"
+  1996→                                  title={campaign.status === 'active' ? 'Pause' : 'Resume'}
+  1997→                                >
+  1998→                                  {campaign.status === 'active' ? <Pause className="w-4 h-4" /> : campaign.status === 'paused' ? <PlayCircle className="w-4 h-4" /> : null}
+  1999→                                </button>
+  2000→                                <button className="p-1.5 hover:bg-gray-100 rounded-lg" title="Edit">
+
+[showing lines 1-2000 of 7884; use offset=2001 with limit to continue reading]

@@ -65,7 +65,6 @@ async function processPendingDbWrites(): Promise<void> {
   try {
     await db.auditLog.createMany({
       data: batch,
-      skipDuplicates: true,
     });
   } catch (error) {
     // If DB write fails, put entries back (up to a limit)
