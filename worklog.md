@@ -1984,3 +1984,140 @@ Stage Summary:
 - Environment issue: Dev server connectivity intermittent (system-level, not code)
 - Consider: Migrate middleware.ts to proxy.ts (Next.js deprecation warning)
 - Consider: Add rate limiting to /api/auth/verify endpoint
+
+---
+Task ID: 9
+Agent: Main Developer (Round 12 - Epic Text Animations & Hero Section Overhaul)
+Task: Add impressive text animations and fix hero section
+
+Work Log:
+
+### 1. CSS Text Animations Added (~310 lines of new animations)
+
+#### A. Typewriter Effect
+- Classic typewriter with blinking cursor
+- Steps-based character reveal
+- Amber cursor color matching theme
+
+#### B. Gradient Text Animation
+- Multi-color gradient that shifts horizontally
+- Uses background-clip for text fill
+- Smooth infinite loop
+
+#### C. Glitch Effect
+- Cyberpunk-style glitch with red/cyan offsets
+- Clip-path based distortion
+- Dual layer pseudo-elements
+
+#### D. Wave Text Animation
+- Each letter bounces up and down
+- Staggered delays for wave effect
+- Supports up to 12 characters
+
+#### E. Neon Glow Text
+- Pulsing glow effect with multiple shadows
+- Warm amber color scheme
+- Intensity alternates
+
+#### F. Text Reveal Animation
+- Clip-path based reveal from left to right
+- Smooth cubic-bezier timing
+
+#### G. Character Stagger Animation
+- Each letter flies in from below
+- 3D rotation effect on each char
+
+#### H. Shimmer Text Effect
+- Gradient shine sweeps across text
+- Gold/amber color palette
+
+#### I. Bounce In Text
+- Elastic bounce entrance animation
+- Overshoots then settles
+
+#### J. Scale Up Text
+- Scales horizontally from left origin
+- Spring-like easing
+
+#### K. Floating Letters Effect
+- Letters gently float up/down
+- Slight rotation for organic feel
+- Different timings per letter
+
+#### L. Highlight Sweep Animation
+- Light sweep passes over text
+- Repeats every 3 seconds
+
+#### M. Pulse Border Text
+- Animated gradient border
+- Mask-based implementation
+- Continuous rotation effect
+
+### 2. Hero Section Complete Overhaul
+
+#### Changes Made:
+- **Background**: Fixed warm amber gradient (was causing green issue)
+- **Morphing blobs**: Added animated blob backgrounds
+- **Floating particles**: 8 random positioned particles with float animation
+- **Badge**: 
+  - Bounce-in entrance animation
+  - Shimmer text effect on badge content
+  - Pulse border animation
+  - Icon pulse ring effect
+  
+- **Main Heading**:
+  - Line 1: Scale-up animation + gradient-animated text + highlight sweep
+  - Line 2: Bounce-in animation + neon glow on "Real Users"
+  - Larger font sizes (xl:text-8xl)
+  
+- **Subheading**:
+  - Wave text animation on "authentic"
+  - Floating letters animation on "real users"
+  - Gradient animated text
+  - Scale-up entrance
+  
+- **CTA Buttons**:
+  - Enhanced glassmorphism styling
+  - Shine effect on primary button
+  - Icon hover translations
+  
+- **Trust Indicators**:
+  - Glassmorphism pill design
+  - Hover lift effect
+  - Icon scale on hover
+  - Staggered entrance animations
+  
+- **Scroll Hint**:
+  - Bouncing chevron indicator
+  - "Scroll to explore" label
+
+### Verification Results:
+- ESLint: ✓ Passing (0 errors)
+- Dev Server: ✓ Running, compiling successfully
+- All animations properly defined in CSS
+
+Stage Summary:
+- **Project Status**: Round 12 complete - Epic text animations deployed
+- **Key Results**:
+  - 13 new text animation types added
+  - Hero section completely revamped
+  - Background color issue fixed (warm amber gradient)
+  - Multiple layered animations for visual impact
+- **New Animations**:
+  - Typewriter, Gradient Shift, Glitch, Wave
+  - Neon Glow, Text Reveal, Character Stagger
+  - Shimmer, Bounce In, Scale Up
+  - Floating Letters, Highlight Sweep, Pulse Border
+- **Design Improvements**:
+  - Morphing blob backgrounds
+  - Floating particle effects
+  - Enhanced glassmorphism trust badges
+  - Scroll hint indicator
+- **Files Modified**:
+  - `/home/z/my-project/src/app/globals.css` - +310 lines of animations
+  - `/home/z/my-project/src/app/page.tsx` - Hero section overhaul (~140 lines changed)
+
+### Risks / Next Steps:
+- Consider: Add reduced-motion media query for accessibility
+- Consider: Add more sections with these animations
+- Consider: Performance optimization if needed

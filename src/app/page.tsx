@@ -5559,83 +5559,139 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="relative overflow-hidden py-20 lg:py-32">
-        {/* Background decorations */}
+      {/* Hero Section - EPIC VERSION with Text Animations */}
+      <section 
+        className="relative overflow-hidden py-24 lg:py-40" 
+        style={{ background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 50%, #fff7ed 100%)' }}
+      >
+        {/* Animated Background Orbs */}
         <div className="absolute inset-0 -z-10 overflow-hidden">
-          <div className="absolute top-20 left-10 w-72 h-72 bg-warm-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-float"></div>
-          <div className="absolute bottom-20 right-10 w-96 h-96 bg-warm-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-float" style={{ animationDelay: '1s' }}></div>
-          <div className="absolute top-40 right-1/4 w-64 h-64 bg-orange-200 rounded-full mix-blend-multiply filter blur-3xl opacity-25 animate-float" style={{ animationDelay: '2s' }}></div>
+          <div className="morphing-bg">
+            <div className="morphing-blob"></div>
+            <div className="morphing-blob"></div>
+            <div className="morphing-blob"></div>
+          </div>
           
           {/* Grid pattern overlay */}
           <div className="absolute inset-0 bg-[linear-gradient(to_right,#f59e0b08_1px,transparent_1px),linear-gradient(to_bottom,#f59e0b08_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
+          
+          {/* Floating particles */}
+          {[...Array(8)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute w-2 h-2 rounded-full bg-warm-400/40"
+              style={{
+                top: `${20 + Math.random() * 60}%`,
+                left: `${10 + Math.random() * 80}%`,
+                animation: `float ${3 + Math.random() * 4}s ease-in-out infinite`,
+                animationDelay: `${Math.random() * 2}s`
+              }}
+            />
+          ))}
         </div>
 
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-4xl mx-auto text-center">
-            {/* Badge */}
-            <Badge variant="secondary" className="mb-6 px-4 py-2 text-sm font-medium bg-gradient-to-r from-warm-100 to-warm-200 text-warm-800 hover:from-warm-200 hover:to-warm-300 border-warm-300 transition-all duration-300 shadow-sm animate-fadeIn">
-              <Flame className="w-4 h-4 mr-2 text-orange-500" />
-              #1 Social Media Growth Platform
-              <Sparkles className="w-4 h-4 ml-2 text-yellow-500" />
-            </Badge>
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="max-w-5xl mx-auto text-center">
+            
+            {/* Badge with bounce animation */}
+            <div className="bounce-in-text mb-8" style={{ animationDelay: '0s' }}>
+              <Badge 
+                variant="secondary" 
+                className="mb-4 px-5 py-2.5 text-sm font-semibold bg-gradient-to-r from-warm-100 via-amber-100 to-orange-100 text-warm-800 hover:from-warm-200 hover:to-orange-200 border border-warm-300/50 transition-all duration-500 shadow-lg shadow-warm-200/50 group cursor-default pulse-border-text"
+              >
+                <Flame className="w-4 h-4 mr-2 text-orange-500 animate-pulse icon-pulse-ring" />
+                <span className="shimmer-text">#1 Social Media Growth Platform</span>
+                <Sparkles className="w-4 h-4 ml-2 text-yellow-500 group-hover:rotate-12 transition-transform duration-300" />
+              </Badge>
+            </div>
 
-            {/* Main heading */}
-            <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold tracking-tight mb-6 leading-tight animate-fadeInUp">
-              Get Free{' '}
-              <span className="gradient-text relative inline-block">
-                YouTube & Instagram
-                <svg className="absolute -bottom-2 left-0 w-full" viewBox="0 0 200 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M2 8C50 2 150 2 198 8" stroke="#F59E0B" strokeWidth="3" strokeLinecap="round"/>
-                </svg>
-              </span>{' '}
+            {/* Main Heading - EPIC ANIMATED */}
+            <h1 className="text-4xl sm:text-5xl lg:text-7xl xl:text-8xl font-black tracking-tight mb-8 leading-[1.1]">
+              
+              {/* Line 1 - Scale up animation */}
+              <div className="scale-up-text" style={{ animationDelay: '0.2s' }}>
+                Get Free{' '}
+                <span className="gradient-text-animated relative inline-block highlight-sweep">
+                  YouTube & Instagram
+                  <svg className="absolute -bottom-1 left-0 w-full h-3" viewBox="0 0 200 12" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+                    <path d="M2 8C50 2 150 2 198 8" stroke="#F59E0B" strokeWidth="3" strokeLinecap="round" className="animate-pulse" style={{ animationDuration: '3s' }}/>
+                  </svg>
+                </span>
+              </div>
+              
+              {/* Line 2 - Bounce in animation */}
               <br className="hidden sm:block" />
-              Growth from Real Users
+              <div className="bounce-in-text" style={{ animationDelay: '0.4s' }}>
+                <span className="text-foreground">Growth from</span>{' '}
+                <span className="neon-text-glow font-black">Real Users</span>
+              </div>
             </h1>
 
-            {/* Subheading */}
-            <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-8 leading-relaxed animate-fadeInUp" style={{ animationDelay: '100ms' }}>
-              Boost your social media presence with authentic views, followers, likes, and comments. 
-              Our platform connects your content with <span className="font-semibold text-foreground">real users</span> who actively engage.
+            {/* Subheading - Wave text effect for key words */}
+            <p className="text-lg sm:text-xl lg:text-2xl text-muted-foreground max-w-3xl mx-auto mb-10 leading-relaxed scale-up-text" style={{ animationDelay: '0.6s' }}>
+              Boost your social media presence with{' '}
+              <span className="wave-text font-bold text-foreground">
+                {'authentic'.split('').map((char, i) => (
+                  <span key={i} className="inline-block">{char}</span>
+                ))}
+              </span>{' '}
+              views, followers, likes, and comments. 
+              Our platform connects your content with{' '}
+              <span className="floating-letters font-bold gradient-text-animated">
+                {'real users'.split('').map((char, i) => (
+                  <span key={i}>{char}</span>
+                ))}
+              </span>{' '}
+              who actively engage.
             </p>
 
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12 animate-fadeInUp" style={{ animationDelay: '200ms' }}>
+            {/* CTA Buttons - With enhanced effects */}
+            <div className="flex flex-col sm:flex-row gap-5 justify-center items-center mb-14 stagger-fade-up" style={{ animationDelay: '0.8s' }}>
               <Button 
                 size="lg" 
-                className="gradient-bg text-white border-0 hover:opacity-90 text-lg px-8 py-6 h-auto animate-pulse-glow group relative overflow-hidden"
+                className="cta-button-enhanced gradient-bg text-white border-0 text-lg px-10 py-7 h-auto font-bold group relative overflow-hidden btn-shine"
                 onClick={() => setIsSignUpOpen(true)}
               >
                 <span className="relative z-10 flex items-center">
-                  <Rocket className="w-5 h-5 mr-2 group-hover:translate-x-1 transition-transform" />
+                  <Rocket className="w-6 h-6 mr-3 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform duration-300" />
                   Start Growing Free
-                  <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+                  <ArrowRight className="w-6 h-6 ml-3 group-hover:translate-x-2 transition-transform duration-300" />
                 </span>
               </Button>
               <Button 
                 size="lg" 
                 variant="outline" 
-                className="text-lg px-8 py-6 h-auto border-2 hover:border-warm-400 hover:bg-warm-50 transition-all duration-300"
+                className="text-lg px-10 py-7 h-auto border-2 border-warm-300 hover:border-warm-400 hover:bg-warm-50/80 hover:shadow-lg hover:shadow-warm-100/50 transition-all duration-300 font-semibold group glass-card-enhanced"
                 onClick={() => document.getElementById('services')?.scrollIntoView({ behavior: 'smooth' })}
               >
                 View Services
-                <ChevronRight className="w-5 h-5 ml-2" />
+                <ChevronRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform duration-300" />
               </Button>
             </div>
 
-            {/* Trust indicators */}
-            <div className="flex flex-wrap justify-center items-center gap-6 text-sm text-muted-foreground animate-fadeInUp" style={{ animationDelay: '300ms' }}>
+            {/* Trust indicators - Enhanced glassmorphism */}
+            <div className="flex flex-wrap justify-center items-center gap-4 sm:gap-6 text-sm text-muted-foreground stagger-fade-up" style={{ animationDelay: '1s' }}>
               {[
-                { icon: <CheckCircle2 className="w-5 h-5 text-green-500" />, text: 'No credit card required' },
-                { icon: <Shield className="w-5 h-5 text-green-500" />, text: '100% safe & secure' },
-                { icon: <Users className="w-5 h-5 text-green-500" />, text: '100K+ happy creators' },
-                { icon: <Timer className="w-5 h-5 text-green-500" />, text: 'Instant delivery' }
+                { icon: <CheckCircle2 className="w-5 h-5 text-emerald-500" />, text: 'No credit card required' },
+                { icon: <Shield className="w-5 h-5 text-emerald-500" />, text: '100% safe & secure' },
+                { icon: <Users className="w-5 h-5 text-emerald-500" />, text: '100K+ happy creators' },
+                { icon: <Timer className="w-5 h-5 text-emerald-500" />, text: 'Instant delivery' }
               ].map((item, i) => (
-                <div key={i} className="flex items-center gap-2 px-3 py-1.5 bg-white/60 backdrop-blur-sm rounded-full border border-border/50">
-                  {item.icon}
-                  <span>{item.text}</span>
+                <div 
+                  key={i} 
+                  className="flex items-center gap-2 px-4 py-2 bg-white/70 backdrop-blur-md rounded-full border border-white/50 shadow-sm hover:bg-white/90 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 group"
+                  style={{ animationDelay: `${1.1 + i * 0.1}s` }}
+                >
+                  <span className="group-hover:scale-110 transition-transform duration-300">{item.icon}</span>
+                  <span className="font-medium text-foreground/80">{item.text}</span>
                 </div>
               ))}
+            </div>
+            
+            {/* Scroll hint indicator */}
+            <div className="mt-16 flex flex-col items-center animate-fadeIn" style={{ animationDelay: '1.5s' }}>
+              <span className="text-xs text-muted-foreground mb-2 font-medium uppercase tracking-wider">Scroll to explore</span>
+              <ChevronDown className="w-5 h-5 text-warm-500 animate-bounce" />
             </div>
           </div>
         </div>
