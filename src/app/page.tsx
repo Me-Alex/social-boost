@@ -6221,15 +6221,19 @@ export default function Home() {
 
       {/* Main Content - Target for Skip to Content link */}
       <div id="main-content">
-      {/* Hero Section - Enhanced */}
-      <section className="relative overflow-hidden py-24 lg:py-40 noise-overlay" aria-label="Hero section">
-        {/* Background decorations - Enhanced with sophisticated gradients */}
+      {/* Hero Section - Fixed with Explicit Warm Theme Colors */}
+      <section 
+        className="relative overflow-hidden py-24 lg:py-40" 
+        aria-label="Hero section"
+        style={{ background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 50%, #fff7ed 100%)' }}
+      >
+        {/* Background decorations - Warm amber/orange theme */}
         <div className="absolute inset-0 -z-10 overflow-hidden">
-          {/* Primary gradient orbs with hero gradient animation */}
-          <div className="absolute top-10 left-5 w-80 h-80 bg-warm-300 rounded-full mix-blend-multiply filter blur-3xl opacity-35 animate-float hero-gradient-bg" style={{ animationDuration: '20s' }}></div>
-          <div className="absolute bottom-10 right-5 w-[28rem] h-[28rem] bg-orange-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-float hero-gradient-bg" style={{ animationDelay: '2s', animationDuration: '25s' }}></div>
-          <div className="absolute top-1/3 right-1/4 w-72 h-72 bg-amber-200 rounded-full mix-blend-multiply filter blur-3xl opacity-25 animate-float hero-gradient-bg" style={{ animationDelay: '4s', animationDuration: '18s' }}></div>
-          <div className="absolute bottom-1/3 left-1/4 w-56 h-56 bg-yellow-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-float hero-gradient-bg" style={{ animationDelay: '6s', animationDuration: '22s' }}></div>
+          {/* Primary warm gradient orbs */}
+          <div className="absolute top-10 left-5 w-80 h-80 rounded-full filter blur-3xl animate-float" style={{ background: 'radial-gradient(circle, rgba(252,211,77,0.6) 0%, rgba(251,191,36,0.4) 50%, transparent 70%)' }}></div>
+          <div className="absolute bottom-10 right-5 w-[28rem] h-[28rem] rounded-full filter blur-3xl animate-float" style={{ animationDelay: '2s', background: 'radial-gradient(circle, rgba(253,186,116,0.5) 0%, rgba(251,146,60,0.35) 50%, transparent 70%)' }}></div>
+          <div className="absolute top-1/3 right-1/4 w-72 h-72 rounded-full filter blur-3xl animate-float" style={{ animationDelay: '4s', background: 'radial-gradient(circle, rgba(254,243,199,0.5) 0%, rgba(252,211,77,0.3) 50%, transparent 70%)' }}></div>
+          <div className="absolute bottom-1/3 left-1/4 w-56 h-56 rounded-full filter blur-3xl animate-float" style={{ animationDelay: '6s', background: 'radial-gradient(circle, rgba(254,249,195,0.4) 0%, rgba(252,211,77,0.25) 50%, transparent 70%)' }}></div>
           
           {/* Floating particles for visual interest */}
           <div className="floating-particle" style={{ '--tx': '30px', '--ty': '-120px', '--duration': '10s', '--delay': '0s' } as React.CSSProperties} ></div>
@@ -6239,10 +6243,10 @@ export default function Home() {
           <div className="floating-particle" style={{ top: '40%', left: '30%', width: '7px', height: '7px', '--tx': '25px', '--ty': '-95px', '--duration': '11s', '--delay': '3s' } as React.CSSProperties} ></div>
           
           {/* Grid pattern overlay - subtle */}
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#f59e0b06_1px,transparent_1px),linear-gradient(to_bottom,#f59e0b06_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#f59e0b08_1px,transparent_1px),linear-gradient(to_bottom,#f59e0b08_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
           
-          {/* Radial gradient vignette for depth */}
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(28,25,23,0.05)_100%)]"></div>
+          {/* Subtle radial gradient vignette */}
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(251,191,36,0.08)_100%)]"></div>
         </div>
 
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -7265,7 +7269,7 @@ export default function Home() {
       {/* Newsletter Section */}
       <section className="py-20 lg:py-28 bg-muted/50">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <Card className="border-0 overflow-hidden max-w-4xl mx-auto shadow-xl">
+          <Card className="border-0 overflow-hidden max-w-4xl mx-auto shadow-xl relative">
             <div className="absolute inset-0 bg-gradient-to-r from-warm-500 via-orange-400 to-warm-500"></div>
             <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=%2260%22 height=%2260%22 viewBox=%220 0 60 60%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cg fill=%22none%22 fill-rule=%22evenodd%22%3E%3Cg fill=%22%23ffffff%22 fill-opacity=%220.1%22%3E%3Cpath d=%22M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-50"></div>
             
@@ -7394,8 +7398,8 @@ export default function Home() {
 
             <div className="grid lg:grid-cols-2 gap-8 items-center">
               {/* Referral Info Card */}
-              <Card className="border-0 shadow-xl overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-green-500 to-emerald-600"></div>
+              <Card className="border-0 shadow-xl overflow-hidden relative">
+                <div className="absolute inset-0 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg"></div>
                 <CardContent className="relative p-8 text-white">
                   <div className="flex items-center gap-3 mb-6">
                     <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">

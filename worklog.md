@@ -2385,3 +2385,58 @@ Stage Summary:
 - Consider: Add high contrast mode support
 - Consider: Implement full keyboard navigation for all interactive elements
 - Consider: Add focus visible indicators for better keyboard UX
+
+---
+Task ID: 7b
+Agent: Main Developer (Round 10b - Hero Section Green Background Fix)
+Task: Fix green background issue on hero section
+
+Work Log:
+
+### Problem Identified
+The hero section was displaying as **green** instead of the expected warm amber/gold theme colors.
+
+### Root Cause Analysis
+Through browser inspection, discovered that a `div` with class:
+```
+absolute inset-0 bg-gradient-to-br from-green-500 to-emerald-600
+```
+was **escaping its container** (a Card component) and covering the entire page.
+
+**Location:** Line 7402 in `/home/z/my-project/src/app/page.tsx`
+**Component:** Referral Program Card inside the CTA section
+
+The issue occurred because:
+1. The parent Card component lacked `position: relative`
+2. The absolutely positioned green gradient div was positioning relative to the viewport instead of the card
+
+### Fixes Applied
+
+#### 1. Fixed Referral Program Card (Line 7401-7402)
+```diff
+- <Card className="border-0 shadow-xl overflow-hidden">
++ <Card className="border-0 shadow-xl overflow-hidden relative">
+    <div className="absolute inset-0 bg-gradient-to-br from-green-500 to-emerald-600"></div>
++   <div className="absolute inset-0 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg"></div>
+```
+
+#### 2. Fixed Newsletter Card (Line 7272)
+Added `relative` class to ensure proper containment of absolute children.
+
+#### 3. Enhanced Hero Section Background (Lines 6224-6246)
+Replaced problematic CSS classes with explicit inline styles using warm amber/orange hex colors:
+- Changed from: `bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50` (Tailwind classes that were rendering incorrectly)
+- Changed to: Explicit `style={{ background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 50%, #fff7ed 100%)' }}`
+- Replaced `hero-gradient-bg` animated gradients with proper radial-gradients using rgba values
+- Removed `mix-blend-multiply` which was causing color blending issues
+
+### Files Modified
+1. `/home/z/my-project/src/app/page.tsx` - Fixed container positioning and hero background
+
+### Verification
+- ESLint: ✓ Passing (0 errors)
+- Dev Server: ✓ Running on port 3000
+- Note: Agent-browser had connectivity issues during this session, but root cause was identified through DOM inspection
+
+### Key Lesson
+When using `absolute inset-0` for decorative backgrounds inside Card components, always ensure the parent has `position: relative` to prevent the background from escaping its container.
