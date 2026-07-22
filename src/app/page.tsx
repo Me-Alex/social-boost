@@ -130,7 +130,9 @@ import {
   Radio,
   Wifi,
   Power,
-  CircleDot
+  CircleDot,
+  // Round 11 New Icons
+  LogIn
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useTheme } from 'next-themes'
@@ -6685,8 +6687,8 @@ export default function Home() {
 
             <div className="grid lg:grid-cols-2 gap-8 items-center">
               {/* Referral Info Card */}
-              <Card className="border-0 shadow-xl overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-green-500 to-emerald-600"></div>
+              <Card className="border-0 shadow-xl overflow-hidden relative">
+                <div className="absolute inset-0 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg"></div>
                 <CardContent className="relative p-8 text-white">
                   <div className="flex items-center gap-3 mb-6">
                     <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
@@ -7240,8 +7242,103 @@ export default function Home() {
 
       {/* Quick Start Wizard - NEW FEATURE (Floating Widget) */}
       <QuickStartWizard />
+
+      {/* Round 11: Scroll Progress Bar - Already at top of page */}
+      
+      {/* Round 11: Floating Action Button (FAB) */}
+      <FloatingActionButton 
+        onSignUp={() => setIsSignUpOpen(true)}
+        onSignIn={() => setIsSignInOpen(true)}
+        onScrollToServices={() => document.getElementById('services')?.scrollIntoView({ behavior: 'smooth' })}
+        onScrollToPricing={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
+      />
     </div>
   )
 }
 
 // Helper components moved above Home function for proper hoisting - see above
+
+// ============================================
+// ROUND 11: NEW COMPONENTS & FEATURES
+// ============================================
+
+// Floating Action Button Component
+interface FloatingActionButtonProps {
+  onSignUp: () => void
+  onSignIn: () => void
+  onScrollToServices: () => void
+  onScrollToPricing: () => void
+}
+
+function FloatingActionButton({ 
+  onSignUp, 
+  onSignIn, 
+  onScrollToServices, 
+  onScrollToPricing 
+}: FloatingActionButtonProps) {
+  const [isOpen, setIsOpen] = useState(false)
+  const [isVisible, setIsVisible] = useState(false)
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsVisible(window.scrollY > 300)
+    }
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement
+      if (!target.closest('.fab-container')) {
+        setIsOpen(false)
+      }
+    }
+    if (isOpen) {
+      document.addEventListener('click', handleClickOutside)
+    }
+    return () => document.removeEventListener('click', handleClickOutside)
+  }, [isOpen])
+
+  if (!isVisible) return null
+
+  const fabItems = [
+    { icon: <Rocket className="w-5 h-5" />, label: 'Get Started', onClick: onSignUp },
+    { icon: <LogIn className="w-5 h-5" />, label: 'Sign In', onClick: onSignIn },
+    { icon: <Play className="w-5 h-5" />, label: 'Services', onClick: onScrollToServices },
+    { icon: <Crown className="w-5 h-5" />, label: 'Pricing', onClick: onScrollToPricing },
+  ]
+
+  return (
+    <div className="fab-container">
+      <div className={`fab-menu ${isOpen ? 'open' : ''}`}>
+        {fabItems.map((item, index) => (
+          <button
+            key={index}
+            className="fab-item tooltip-enhanced"
+            data-tooltip={item.label}
+            onClick={() => {
+              item.onClick()
+              setIsOpen(false)
+            }}
+            aria-label={item.label}
+          >
+            {item.icon}
+          </button>
+        ))}
+      </div>
+      
+      <button
+        className={`fab-main ${isOpen ? 'active' : ''}`}
+        onClick={(e) => {
+          e.stopPropagation()
+          setIsOpen(!isOpen)
+        }}
+        aria-label="Quick actions menu"
+        aria-expanded={isOpen}
+      >
+        <Plus className={`w-7 h-7 transition-transform duration-300 ${isOpen ? 'rotate-45' : ''}`} />
+      </button>
+    </div>
+  )
+}
