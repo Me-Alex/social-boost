@@ -136,7 +136,9 @@ import {
   Power,
   CircleDot,
   // Accessibility & Keyboard
-  Keyboard
+  Keyboard,
+  // Round 11 New Icons
+  LogIn
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useTheme } from 'next-themes'
@@ -7154,20 +7156,15 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Testimonials/Social Proof */}
-      <section className="py-20 lg:py-28 bg-muted/50">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <Badge variant="secondary" className="mb-4 bg-warm-100 text-warm-800">
-              <Award className="w-3 h-3 mr-1" />
-              Trusted by Creators
-            </Badge>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
-              What Our <span className="gradient-text">Users Say</span>
-            </h2>
-          </div>
+      {/* Testimonials/Social Proof - Enhanced with Round 11 Carousel */}
+      <EnhancedTestimonialCarousel />
 
-          <TestimonialsCarousel />
+      {/* Live Activity Feed - NEW Round 11 Feature */}
+      <section className="py-16 bg-muted/30">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-md mx-auto">
+            <LiveActivityFeed />
+          </div>
         </div>
       </section>
 
@@ -7954,6 +7951,17 @@ export default function Home() {
 
       {/* Quick Start Wizard - NEW FEATURE (Floating Widget) */}
       <QuickStartWizard />
+
+      {/* Round 11: Scroll Progress Bar */}
+      <ScrollProgress />
+
+      {/* Round 11: Floating Action Button (FAB) */}
+      <FloatingActionButton 
+        onSignUp={() => setIsSignUpOpen(true)}
+        onSignIn={() => setIsSignInOpen(true)}
+        onScrollToServices={() => document.getElementById('services')?.scrollIntoView({ behavior: 'smooth' })}
+        onScrollToPricing={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
+      />
     </div>
   )
 }
@@ -8121,3 +8129,506 @@ function LiveAnnouncer({ message, priority = 'polite' }: { message: string; prio
 }
 
 // Helper components moved above Home function for proper hoisting - see above
+
+// ============================================
+// ROUND 11: NEW COMPONENTS & FEATURES
+// ============================================
+
+// Scroll Progress Bar Component
+function ScrollProgress() {
+  const [progress, setProgress] = useState(0)
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.scrollY
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight
+      const scrollPercent = (scrollTop / docHeight) * 100
+      setProgress(Math.min(scrollPercent, 100))
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  return (
+    <div 
+      className="scroll-progress-bar" 
+      style={{ width: `${progress}%` }}
+      role="progressbar"
+      aria-valuenow={Math.round(progress)}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-label="Page scroll progress"
+    />
+  )
+}
+
+// Floating Action Button Component
+interface FloatingActionButtonProps {
+  onSignUp: () => void
+  onSignIn: () => void
+  onScrollToServices: () => void
+  onScrollToPricing: () => void
+}
+
+function FloatingActionButton({ 
+  onSignUp, 
+  onSignIn, 
+  onScrollToServices, 
+  onScrollToPricing 
+}: FloatingActionButtonProps) {
+  const [isOpen, setIsOpen] = useState(false)
+  const [isVisible, setIsVisible] = useState(false)
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsVisible(window.scrollY > 300)
+    }
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement
+      if (!target.closest('.fab-container')) {
+        setIsOpen(false)
+      }
+    }
+    if (isOpen) {
+      document.addEventListener('click', handleClickOutside)
+    }
+    return () => document.removeEventListener('click', handleClickOutside)
+  }, [isOpen])
+
+  if (!isVisible) return null
+
+  const fabItems = [
+    { icon: <Rocket className="w-5 h-5" />, label: 'Get Started', onClick: onSignUp, color: 'bg-gradient-to-br from-emerald-500 to-green-600' },
+    { icon: <LogIn className="w-5 h-5" />, label: 'Sign In', onClick: onSignIn, color: 'bg-gradient-to-br from-blue-500 to-indigo-600' },
+    { icon: <Play className="w-5 h-5" />, label: 'Services', onClick: onScrollToServices, color: 'bg-gradient-to-br from-red-500 to-pink-600' },
+    { icon: <Crown className="w-5 h-5" />, label: 'Pricing', onClick: onScrollToPricing, color: 'bg-gradient-to-br from-warm-500 to-orange-600' },
+  ]
+
+  return (
+    <div className="fab-container">
+      <div className={`fab-menu ${isOpen ? 'open' : ''}`}>
+        {fabItems.map((item, index) => (
+          <button
+            key={index}
+            className="fab-item tooltip-enhanced"
+            data-tooltip={item.label}
+            onClick={() => {
+              item.onClick()
+              setIsOpen(false)
+            }}
+            aria-label={item.label}
+          >
+            {item.icon}
+          </button>
+        ))}
+      </div>
+      
+      <button
+        className={`fab-main ${isOpen ? 'active' : ''}`}
+        onClick={(e) => {
+          e.stopPropagation()
+          setIsOpen(!isOpen)
+        }}
+        aria-label="Quick actions menu"
+        aria-expanded={isOpen}
+      >
+        <Plus className={`w-7 h-7 transition-transform duration-300 ${isOpen ? 'rotate-45' : ''}`} />
+      </button>
+    </div>
+  )
+}
+
+// Live Activity Feed Component
+interface ActivityItem {
+  id: string
+  type: 'view' | 'like' | 'follow' | 'comment' | 'subscribe'
+  user: string
+  target: string
+  platform: 'youtube' | 'instagram'
+  timeAgo: string
+  avatar?: string
+}
+
+const mockActivities: ActivityItem[] = [
+  { id: '1', type: 'subscribe', user: 'Alex M.', target: '@techchannel', platform: 'youtube', timeAgo: 'Just now' },
+  { id: '2', type: 'like', user: 'Sarah K.', target: 'Amazing post! 🎉', platform: 'instagram', timeAgo: '1 min ago' },
+  { id: '3', type: 'view', user: 'Mike R.', target: 'Tutorial video', platform: 'youtube', timeAgo: '2 mins ago' },
+  { id: '4', type: 'follow', user: 'Emma L.', target: '@lifestyleblog', platform: 'instagram', timeAgo: '3 mins ago' },
+  { id: '5', type: 'comment', user: 'John D.', target: 'Great content!', platform: 'youtube', timeAgo: '5 mins ago' },
+  { id: '6', type: 'subscribe', user: 'Lisa W.', target: '@musicvibes', platform: 'youtube', timeAgo: '6 mins ago' },
+]
+
+function LiveActivityFeed() {
+  const [activities, setActivities] = useState<ActivityItem[]>(mockActivities.slice(0, 4))
+
+  // Simulate live updates
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const newActivity: ActivityItem = {
+        id: Date.now().toString(),
+        type: ['view', 'like', 'follow', 'comment', 'subscribe'][Math.floor(Math.random() * 5)] as ActivityItem['type'],
+        user: ['You', 'Alex', 'Sarah', 'Mike', 'Emma'][Math.floor(Math.random() * 5)],
+        target: ['Great content!', 'New video', 'Amazing post!', 'Tutorial', 'Review'][Math.floor(Math.random() * 5)],
+        platform: Math.random() > 0.5 ? 'youtube' : 'instagram',
+        timeAgo: 'Just now',
+      }
+      
+      setActivities(prev => [newActivity, ...prev.slice(0, 4)])
+    }, 8000)
+
+    return () => clearInterval(interval)
+  }, [])
+
+  const getActivityIcon = (type: ActivityItem['type'], platform: ActivityItem['platform']) => {
+    const iconClass = 'w-5 h-5'
+    switch (type) {
+      case 'view':
+        return <Eye className={iconClass} />
+      case 'like':
+        return <Heart className={iconClass} />
+      case 'follow':
+      case 'subscribe':
+        return <UserPlus className={iconClass} />
+      case 'comment':
+        return <MessageCircle className={iconClass} />
+      default:
+        return <Activity className={iconClass} />
+    }
+  }
+
+  const getActivityColor = (type: ActivityItem['type']) => {
+    switch (type) {
+      case 'view': return 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'
+      case 'like': return 'bg-red-100 text-red-500 dark:bg-red-900/30 dark:text-red-400'
+      case 'follow':
+      case 'subscribe': return 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400'
+      case 'comment': return 'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400'
+      default: return 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
+    }
+  }
+
+  const getPlatformIcon = (platform: 'youtube' | 'instagram') => {
+    return platform === 'youtube' 
+      ? <Youtube className="w-3 h-3" /> 
+      : <Instagram className="w-3 h-3" />
+  }
+
+  return (
+    <div className="live-activity-feed">
+      {/* Header */}
+      <div className="px-5 py-4 border-b border-warm-200/50 dark:border-gray-700/50 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <Radio className="w-5 h-5 text-warm-500" />
+            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+          </div>
+          <h3 className="font-bold text-foreground">Live Activity</h3>
+        </div>
+        <Badge variant="secondary" className="text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+          LIVE
+        </Badge>
+      </div>
+
+      {/* Activity List */}
+      <div className="max-h-[360px] overflow-y-auto">
+        {activities.map((activity, index) => (
+          <div 
+            key={activity.id} 
+            className="activity-item"
+            style={{ animationDelay: `${index * 0.1}s` }}
+          >
+            <div className={`activity-icon-wrapper ${getActivityColor(activity.type)}`}>
+              {getActivityIcon(activity.type, activity.platform)}
+            </div>
+            
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-foreground truncate">
+                <span className="font-semibold">{activity.user}</span>
+                {' '}
+                <span className="text-muted-foreground capitalize">{activity.type}d</span>
+              </p>
+              <p className="text-xs text-muted-foreground truncate">{activity.target}</p>
+            </div>
+
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <span className="flex items-center gap-1 px-2 py-1 rounded-md bg-muted/50 text-muted-foreground">
+                {getPlatformIcon(activity.platform)}
+              </span>
+              <span className="text-xs text-muted-foreground whitespace-nowrap">{activity.timeAgo}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Footer */}
+      <div className="px-5 py-3 border-t border-warm-200/50 dark:border-gray-700/50 bg-muted/30">
+        <button className="w-full text-sm font-medium text-warm-600 hover:text-warm-700 dark:text-warm-400 dark:hover:text-warm-300 transition-colors flex items-center justify-center gap-2">
+          View All Activity
+          <ArrowRight className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// Enhanced Testimonial Carousel Component
+interface Testimonial {
+  id: number
+  name: string
+  role: string
+  avatar: string
+  content: string
+  rating: number
+  platform: string
+  followers: string
+}
+
+const enhancedTestimonials: Testimonial[] = [
+  {
+    id: 1,
+    name: 'Alex Thompson',
+    role: 'YouTube Creator',
+    avatar: 'AT',
+    content: 'SocialBoost completely transformed my channel! I went from 1K to 50K subscribers in just 6 months. The engagement is real and the support team is incredible.',
+    rating: 5,
+    platform: 'YouTube',
+    followers: '50K+'
+  },
+  {
+    id: 2,
+    name: 'Sarah Chen',
+    role: 'Instagram Influencer',
+    avatar: 'SC',
+    content: 'As a lifestyle influencer, authentic growth is everything. SocialBoost helped me connect with real people who genuinely love my content. My engagement rate tripled!',
+    rating: 5,
+    platform: 'Instagram',
+    followers: '120K+'
+  },
+  {
+    id: 3,
+    name: 'Marcus Johnson',
+    role: 'Music Producer',
+    avatar: 'MJ',
+    content: 'I was skeptical at first, but the results speak for themselves. My music videos are getting the attention they deserve. Best investment for any aspiring artist!',
+    rating: 5,
+    platform: 'YouTube',
+    followers: '85K+'
+  },
+  {
+    id: 4,
+    name: 'Emily Rodriguez',
+    role: 'Fashion Blogger',
+    avatar: 'ER',
+    content: 'The Instagram growth features are phenomenal! I\'ve gained thousands of genuine followers who actively engage with my posts. Highly recommended!',
+    rating: 5,
+    platform: 'Instagram',
+    followers: '200K+'
+  },
+  {
+    id: 5,
+    name: 'David Kim',
+    role: 'Tech Reviewer',
+    avatar: 'DK',
+    content: 'From 500 views to 100K+ views per video - SocialBoost made it possible. The YouTube view service is incredibly effective and delivers fast results.',
+    rating: 5,
+    platform: 'YouTube',
+    followers: '75K+'
+  },
+]
+
+function EnhancedTestimonialCarousel() {
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [isAutoPlaying, setIsAutoPlaying] = useState(true)
+  
+  const itemsPerPage = typeof window !== 'undefined' && window.innerWidth >= 1024 ? 3 : typeof window !== 'undefined' && window.innerWidth >= 640 ? 2 : 1
+  const maxIndex = Math.ceil(enhancedTestimonials.length / itemsPerPage) - 1
+
+  // Auto-play functionality
+  useEffect(() => {
+    if (!isAutoPlaying) return
+    
+    const interval = setInterval(() => {
+      setCurrentIndex(prev => prev >= maxIndex ? 0 : prev + 1)
+    }, 5000)
+
+    return () => clearInterval(interval)
+  }, [isAutoPlaying, maxIndex])
+
+  const goToSlide = (index: number) => {
+    setCurrentIndex(index)
+    setIsAutoPlaying(false)
+    setTimeout(() => setIsAutoPlaying(true), 10000)
+  }
+
+  const goToPrev = () => {
+    setCurrentIndex(prev => prev <= 0 ? maxIndex : prev - 1)
+    setIsAutoPlaying(false)
+    setTimeout(() => setIsAutoPlaying(true), 10000)
+  }
+
+  const goToNext = () => {
+    setCurrentIndex(prev => prev >= maxIndex ? 0 : prev + 1)
+    setIsAutoPlaying(false)
+    setTimeout(() => setIsAutoPlaying(true), 10000)
+  }
+
+  const visibleTestimonials = enhancedTestimonials.slice(
+    currentIndex * itemsPerPage,
+    (currentIndex + 1) * itemsPerPage
+  )
+
+  return (
+    <section className="py-20 lg:py-28 relative overflow-hidden" id="testimonials">
+      {/* Background */}
+      <div className="morphing-bg">
+        <div className="morphing-blob"></div>
+        <div className="morphing-blob"></div>
+        <div className="morphing-blob"></div>
+      </div>
+
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        {/* Section Header */}
+        <div className="text-center max-w-3xl mx-auto mb-16">
+          <Badge variant="secondary" className="mb-4 bg-warm-100 text-warm-700 dark:bg-warm-900/30 dark:text-warm-400">
+            <Star className="w-3 h-3 mr-1" />
+            Testimonials
+          </Badge>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 glow-text-warm">
+            Loved by{' '}
+            <span className="text-animated-gradient">100,000+</span>{' '}
+            Creators
+          </h2>
+          <p className="text-lg text-muted-foreground">
+            See what our community has to say about their growth journey with SocialBoost
+          </p>
+        </div>
+
+        {/* Carousel */}
+        <div className="relative">
+          {/* Navigation Buttons */}
+          <div className="flex items-center justify-between absolute -top-14 right-0 left-0">
+            <div></div> {/* Spacer */}
+            <div className="flex gap-3">
+              <button 
+                className="carousel-nav-btn"
+                onClick={goToPrev}
+                disabled={currentIndex === 0}
+                aria-label="Previous testimonial"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <button 
+                className="carousel-nav-btn"
+                onClick={goToNext}
+                disabled={currentIndex === maxIndex}
+                aria-label="Next testimonial"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+            {visibleTestimonials.map((testimonial, index) => (
+              <div 
+                key={testimonial.id} 
+                className="testimonial-card-enhanced"
+                style={{ animationDelay: `${index * 0.15}s` }}
+              >
+                {/* Quote Icon */}
+                <span className="testimonial-quote-icon">"</span>
+
+                {/* Star Rating */}
+                <div className="star-rating mb-4">
+                  {[...Array(testimonial.rating)].map((_, i) => (
+                    <Star key={i} className="w-5 h-5 star fill-current" />
+                  ))}
+                </div>
+
+                {/* Content */}
+                <p className="text-foreground/90 leading-relaxed mb-6 text-sm">
+                  "{testimonial.content}"
+                </p>
+
+                {/* Author Info */}
+                <div className="flex items-center gap-3 pt-4 border-t border-border/50">
+                  <div className="relative">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-warm-400 to-orange-500 flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                      {testimonial.avatar}
+                    </div>
+                    <span className="activity-dot online"></span>
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-bold text-foreground">{testimonial.name}</p>
+                    <p className="text-sm text-muted-foreground">{testimonial.role}</p>
+                  </div>
+                  <div className="text-right">
+                    <Badge variant="secondary" className="text-xs">
+                      {testimonial.platform === 'youtube' ? <Youtube className="w-3 h-3 mr-1" /> : <Instagram className="w-3 h-3 mr-1" />}
+                      {testimonial.followers}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Dots Navigation */}
+          <div className="carousel-dots">
+            {Array.from({ length: maxIndex + 1 }).map((_, index) => (
+              <button
+                key={index}
+                className={`carousel-dot ${index === currentIndex ? 'active' : ''}`}
+                onClick={() => goToSlide(index)}
+                aria-label={`Go to slide ${index + 1}`}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// Section Reveal Wrapper Component
+function SectionReveal({ children, className = '', delay = 0 }: { 
+  children: React.ReactNode; 
+  className?: string;
+  delay?: number;
+}) {
+  const [isRevealed, setIsRevealed] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setTimeout(() => setIsRevealed(true), delay)
+        }
+      },
+      { threshold: 0.1 }
+    )
+
+    if (ref.current) {
+      observer.observe(ref.current)
+    }
+
+    return () => observer.disconnect()
+  }, [delay])
+
+  return (
+    <div 
+      ref={ref}
+      className={`section-reveal ${isRevealed ? 'revealed' : ''} ${className}`}
+    >
+      {children}
+    </div>
+  )
+}
