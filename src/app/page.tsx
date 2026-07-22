@@ -5912,85 +5912,96 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Hero Section - ROUND 12: ULTRA ANIMATED VERSION */}
+      {/* Hero Section - ROUND 13: PREMIUM VISUAL ENHANCEMENT */}
       <section 
         className="relative overflow-hidden py-24 lg:py-40 min-h-screen flex items-center" 
-        style={{ background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 30%, #fef9ec 60%, #fff7ed 100%)' }}
+        style={{ background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 20%, #fef9ec 50%, #fff7ed 80%, #fffbf5 100%)' }}
       >
-        {/* Animated Background Orbs */}
+        {/* Premium Animated Background - Mesh Gradient + Enhanced Blobs */}
         <div className="absolute inset-0 -z-10 overflow-hidden">
-          <div className="morphing-bg">
-            <div className="morphing-blob"></div>
-            <div className="morphing-blob"></div>
-            <div className="morphing-blob"></div>
-          </div>
+          {/* Mesh gradient base layer */}
+          <div className="mesh-gradient"></div>
+          
+          {/* Enhanced morphing blobs */}
+          <div className="morphing-blob-enhanced"></div>
+          <div className="morphing-blob-enhanced"></div>
+          <div className="morphing-blob-enhanced"></div>
           
           {/* Grid pattern overlay */}
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#f59e0b08_1px,transparent_1px),linear-gradient(to_bottom,#f59e0b08_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#f59e0b08_1px,transparent_1px),linear-gradient(to_bottom,#f59e0b08_1px,transparent_1px)] bg-[size:4rem_4rem] opacity-60"></div>
           
-          {/* Floating particles with more variety */}
-          {[...Array(12)].map((_, i) => (
+          {/* Premium floating particles with varied animations */}
+          {[...Array(16)].map((_, i) => (
             <div
               key={i}
-              className={`absolute rounded-full ${i % 3 === 0 ? 'bg-warm-400/40 w-3 h-3' : i % 3 === 1 ? 'bg-orange-400/30 w-2 h-2' : 'bg-yellow-400/35 w-2.5 h-2.5'}`}
+              className={`particle-float ${
+                i % 4 === 0 ? 'bg-warm-400/50 w-3 h-3' : 
+                i % 4 === 1 ? 'bg-orange-400/40 w-2 h-2' : 
+                i % 4 === 2 ? 'bg-yellow-400/45 w-2.5 h-2.5' :
+                'bg-amber-300/35 w-1.5 h-1.5'
+              }`}
               style={{
-                top: `${15 + Math.random() * 70}%`,
+                top: `${10 + Math.random() * 80}%`,
                 left: `${5 + Math.random() * 90}%`,
-                animation: `float ${3 + Math.random() * 4}s ease-in-out infinite`,
-                animationDelay: `${Math.random() * 2}s`
+                animationDelay: `${Math.random() * 8}s`,
+                animationDuration: `${6 + Math.random() * 6}s`
               }}
             />
           ))}
 
           {/* Radial gradient overlay for depth */}
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,transparent_0%,rgba(255,251,235,0.5)_100%)]"></div>
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,transparent_0%,rgba(255,251,235,0.6)_100%)]"></div>
+          
+          {/* Animated gradient border glow at edges */}
+          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-warm-400 to-transparent opacity-50"></div>
+          <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-warm-400 to-transparent opacity-50"></div>
         </div>
 
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="max-w-5xl mx-auto text-center">
             
-            {/* Badge with epic animations */}
+            {/* Premium Badge with epic animations */}
             <FloatingAnimation delay={0} className="mb-8">
               <ShineEffect>
-                <Badge 
-                  variant="secondary" 
-                  className="mb-4 px-6 py-3 text-sm font-semibold bg-gradient-to-r from-warm-100 via-amber-100 to-orange-100 text-warm-800 hover:from-warm-200 hover:to-orange-200 border border-warm-300/50 transition-all duration-500 shadow-xl shadow-warm-200/50 group cursor-default pulse-border-text scale-100 hover:scale-105"
-                >
-                  <Flame className="w-4 h-4 mr-2 text-orange-500 animate-pulse" />
-                  <RainbowText className="font-bold">#1 Growth Platform</RainbowText>
-                  <Sparkles className="w-4 h-4 ml-2 text-yellow-500 group-hover:rotate-12 transition-transform duration-300" />
-                </Badge>
+                <div className="premium-border inline-block rounded-full p-[2px]">
+                  <Badge 
+                    variant="secondary" 
+                    className="mb-0 px-6 py-3 text-sm font-semibold bg-gradient-to-r from-warm-50 via-amber-50 to-orange-50 text-warm-800 hover:from-warm-100 hover:to-orange-100 border-0 transition-all duration-500 shadow-xl shadow-warm-200/50 group cursor-default rounded-full"
+                  >
+                    <Flame className="w-4 h-4 mr-2 text-orange-500 animate-pulse" />
+                    <RainbowText className="font-bold">#1 Growth Platform</RainbowText>
+                    <Sparkles className="w-4 h-4 ml-2 text-yellow-500 group-hover:rotate-12 transition-transform duration-300 icon-bounce-hover" />
+                  </Badge>
+                </div>
               </ShineEffect>
             </FloatingAnimation>
 
-            {/* Main Heading - ULTRA ANIMATED WITH TYPEWRITER */}
+            {/* Main Heading - Premium Animated */}
             <h1 className="text-4xl sm:text-5xl lg:text-7xl xl:text-8xl font-black tracking-tight mb-8 leading-[1.08]">
               
               {/* Line 1 - With gradient and rotating words */}
               <div className="scale-up-text" style={{ animationDelay: '0.15s' }}>
                 <span className="text-foreground">Get Free</span>{' '}
-                <ShineEffect>
-                  <span className="gradient-text-cycle relative inline-block font-black">
-                    YouTube & Instagram
-                    <svg className="absolute -bottom-1 left-0 w-full h-3" viewBox="0 0 200 12" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
-                      <path d="M2 8C50 2 150 2 198 8" stroke="#F59E0B" strokeWidth="3" strokeLinecap="round" className="animate-pulse" style={{ animationDuration: '2.5s' }}/>
-                    </svg>
-                  </span>
-                </ShineEffect>
+                <span className="gradient-text-cycle relative inline-block font-black neon-text-glow">
+                  YouTube & Instagram
+                  <svg className="absolute -bottom-1 left-0 w-full h-3" viewBox="0 0 200 12" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+                    <path d="M2 8C50 2 150 2 198 8" stroke="#F59E0B" strokeWidth="3" strokeLinecap="round" className="animate-pulse" style={{ animationDuration: '2.5s' }}/>
+                  </svg>
+                </span>
               </div>
               
-              {/* Line 2 - Bounce in with typewriter effect */}
+              {/* Line 2 - Bounce in with glitch effect */}
               <br className="hidden sm:block" />
               <div className="bounce-in-text mt-2" style={{ animationDelay: '0.35s' }}>
                 <span className="text-foreground">Growth from</span>{' '}
-                <GlitchText text="Real Users" className="neon-text-glow font-black text-4xl sm:text-5xl lg:text-6xl xl:text-7xl" />
+                <GlitchText text="Real Users" className="neon-text-glow font-black text-4xl sm:text-5xl lg:text-6xl xl:text-7xl text-glow-hover" />
               </div>
             </h1>
 
-            {/* Subheading - Enhanced with rotating words */}
+            {/* Subheading - Enhanced with premium effects */}
             <p className="text-lg sm:text-xl lg:text-2xl text-muted-foreground max-w-3xl mx-auto mb-10 leading-relaxed scale-up-text" style={{ animationDelay: '0.55s' }}>
               Boost your social media presence with{' '}
-              <UnderlineReveal active className="font-bold text-foreground magnetic-text">
+              <UnderlineReveal active className="font-bold text-foreground magnetic-text gradient-text-bg">
                 authentic
               </UnderlineReveal>{' '}
               views, followers, likes, and comments.<br className="hidden sm:block" />
@@ -6003,34 +6014,32 @@ export default function Home() {
               who actively engage.
             </p>
 
-            {/* CTA Buttons - Ultra enhanced effects */}
+            {/* CTA Buttons - Premium Enhanced */}
             <div className="flex flex-col sm:flex-row gap-5 justify-center items-center mb-14 stagger-fade-up" style={{ animationDelay: '0.75s' }}>
               <Button 
                 size="lg" 
-                className="cta-button-enhanced gradient-bg text-white border-0 text-lg px-12 py-8 h-auto font-bold group relative overflow-hidden btn-shine shadow-2xl shadow-warm-400/30 hover:shadow-warm-400/50 hover:scale-105 transition-all duration-300"
+                className="btn-shine ripple-effect gradient-bg text-white border-0 text-lg px-12 py-8 h-auto font-bold group relative overflow-hidden shadow-2xl shadow-warm-400/30 hover:shadow-warm-400/50 hover:scale-105 transition-all duration-300 pulse-glow focus-ring"
                 onClick={() => setIsSignUpOpen(true)}
               >
                 <span className="relative z-10 flex items-center">
-                  <Rocket className="w-6 h-6 mr-3 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform duration-300" />
+                  <Rocket className="w-6 h-6 mr-3 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform duration-300 icon-bounce-hover" />
                   Start Growing Free
                   <ArrowRight className="w-6 h-6 ml-3 group-hover:translate-x-2 transition-transform duration-300" />
                 </span>
-                {/* Shine overlay */}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
               </Button>
               <Button 
                 size="lg" 
                 variant="outline" 
-                className="text-lg px-12 py-8 h-auto border-2 border-warm-300 hover:border-warm-500 hover:bg-warm-50/80 hover:shadow-xl hover:shadow-warm-100/50 transition-all duration-300 font-semibold group glass-card-enhanced hover:scale-105"
+                className="text-lg px-12 py-8 h-auto border-2 border-warm-300 hover:border-warm-500 hover:bg-warm-50/80 hover:shadow-xl hover:shadow-warm-100/50 transition-all duration-300 font-semibold group glass-premium hover:scale-105 btn-shine focus-ring"
                 onClick={() => document.getElementById('services')?.scrollIntoView({ behavior: 'smooth' })}
               >
-                <PlayCircle className="w-5 h-5 mr-2" />
+                <PlayCircle className="w-5 h-5 mr-2 icon-bounce-hover" />
                 View Services
                 <ChevronRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform duration-300" />
               </Button>
             </div>
 
-            {/* Trust indicators - Epic glassmorphism with bounce stagger */}
+            {/* Trust indicators - Premium glassmorphism with bounce stagger */}
             <div className="bounce-stagger flex flex-wrap justify-center items-center gap-4 sm:gap-6 text-sm text-muted-foreground">
               {[
                 { icon: <CheckCircle2 className="w-5 h-5 text-emerald-500 pulse-ring" />, text: 'No credit card required' },
@@ -6040,7 +6049,7 @@ export default function Home() {
               ].map((item, i) => (
                 <div 
                   key={i} 
-                  className="flex items-center gap-2 px-5 py-2.5 bg-white/80 backdrop-blur-lg rounded-full border border-white/60 shadow-md hover:bg-white hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group cursor-default"
+                  className="flex items-center gap-2 px-5 py-2.5 glass-premium rounded-full shadow-md hover:bg-white hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group cursor-default smooth-scale"
                 >
                   <span className="group-hover:scale-125 group-hover:rotate-12 transition-transform duration-300">{item.icon}</span>
                   <span className="font-semibold text-foreground/90">{item.text}</span>
@@ -6052,8 +6061,8 @@ export default function Home() {
             <div className="mt-16 flex flex-col items-center animate-fadeIn" style={{ animationDelay: '1.5s' }}>
               <span className="text-xs text-muted-foreground mb-3 font-bold uppercase tracking-widest floating-label">Scroll to explore</span>
               <div className="relative">
-                <div className="w-6 h-10 rounded-full border-2 border-warm-400/50 flex items-start justify-center p-1.5">
-                  <div className="w-1.5 h-3 rounded-full bg-warm-500 animate-bounce"></div>
+                <div className="w-6 h-10 rounded-full border-2 border-warm-400/50 flex items-start justify-center p-1.5 pulse-glow">
+                  <div className="w-1.5 h-3 rounded-full bg-gradient-to-b from-warm-500 to-orange-500 animate-bounce"></div>
                 </div>
               </div>
             </div>
@@ -6153,6 +6162,83 @@ export default function Home() {
       {/* Live Activity Ticker */}
       <LiveActivityTicker />
 
+      {/* ROUND 13: Premium Trusted By Section with Marquee */}
+      <section className="py-16 bg-gradient-to-b from-muted/30 to-background overflow-hidden relative">
+        {/* Subtle background pattern */}
+        <div className="absolute inset-0 opacity-30" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(217,119,6,0.1) 1px, transparent 0)', backgroundSize: '32px 32px' }}></div>
+        
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          {/* Section Header */}
+          <div className="text-center mb-12">
+            <Badge variant="secondary" className="mb-4 badge-premium">
+              <TrendingUp className="w-3 h-3 mr-1" />
+              Trusted Worldwide
+            </Badge>
+            <h2 className="text-3xl sm:text-4xl font-bold mb-3">
+              Loved by <MorphGradientText>100,000+ Creators</MorphGradientText>
+            </h2>
+            <p className="text-muted-foreground max-w-xl mx-auto">
+              Join thousands of content creators who trust SocialBoost for their growth
+            </p>
+          </div>
+
+          {/* Marquee - Scrolling Testimonials/Brands */}
+          <div className="marquee-container py-4">
+            <div className="marquee-content gap-8">
+              {[...Array(10)].map((_, i) => (
+                <div key={i} className="flex items-center gap-3 glass-premium rounded-2xl px-6 py-4 shadow-md hover-lift-glow flex-shrink-0">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-warm-400 to-orange-500 flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                    {['A', 'S', 'M', 'J', 'K', 'R', 'L', 'D', 'C', 'P'][i]}
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm">{['Alex Studio', 'Sarah M.', 'Mike Tech', 'Jessica K.', 'Kevin R.', 'Rachel L.', 'David C.', 'Lisa P.', 'Chris W.', 'Emma S.'][i]}</p>
+                    <p className="text-xs text-muted-foreground">{['YouTube Creator', 'Instagram Star', 'Content Pro', 'Vlogger', 'Influencer', 'Brand Owner', 'Filmmaker', 'Lifestyle Guru', 'Tech Reviewer', 'Fashion Icon'][i]}</p>
+                  </div>
+                  <div className="flex gap-0.5 ml-2">
+                    {[...Array(5)].map((_, s) => (
+                      <Star key={s} className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                    ))}
+                  </div>
+                </div>
+              ))}
+              {/* Duplicate for seamless loop */}
+              {[...Array(10)].map((_, i) => (
+                <div key={`dup-${i}`} className="flex items-center gap-3 glass-premium rounded-2xl px-6 py-4 shadow-md hover-lift-glow flex-shrink-0">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-warm-400 to-orange-500 flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                    {['A', 'S', 'M', 'J', 'K', 'R', 'L', 'D', 'C', 'P'][i]}
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm">{['Alex Studio', 'Sarah M.', 'Mike Tech', 'Jessica K.', 'Kevin R.', 'Rachel L.', 'David C.', 'Lisa P.', 'Chris W.', 'Emma S.'][i]}</p>
+                    <p className="text-xs text-muted-foreground">{['YouTube Creator', 'Instagram Star', 'Content Pro', 'Vlogger', 'Influencer', 'Brand Owner', 'Filmmaker', 'Lifestyle Guru', 'Tech Reviewer', 'Fashion Icon'][i]}</p>
+                  </div>
+                  <div className="flex gap-0.5 ml-2">
+                    {[...Array(5)].map((_, s) => (
+                      <Star key={s} className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Stats Row */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-14 max-w-4xl mx-auto">
+            {[
+              { value: '50M+', label: 'Views Delivered', icon: Eye },
+              { value: '250K+', label: 'Active Users', icon: Users },
+              { value: '99.9%', label: 'Uptime', icon: Activity },
+              { value: '4.9★', label: 'Average Rating', icon: Star }
+            ].map((stat, i) => (
+              <div key={i} className="text-center glass-premium rounded-2xl p-6 hover-lift-glow smooth-scale">
+                <stat.icon className="w-8 h-8 mx-auto mb-3 text-warm-500 icon-bounce-hover" />
+                <div className="text-2xl font-black gradient-text number-pop">{stat.value}</div>
+                <div className="text-sm text-muted-foreground mt-1 font-medium">{stat.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Platform Statistics Widget - NEW FEATURE */}
       <section className="py-20 lg:py-28 bg-muted/30 relative overflow-hidden">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -6183,9 +6269,12 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Services Section */}
-      <section id="services" className="py-20 lg:py-28 bg-gradient-to-b from-background to-muted/30">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+      {/* Services Section - Premium Enhanced */}
+      <section id="services" className="py-20 lg:py-28 bg-gradient-to-b from-background to-muted/30 relative overflow-hidden">
+        {/* Subtle background decoration */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_50%,rgba(245,158,11,0.03)_0%,transparent_50%),radial-gradient(circle_at_80%_50%,rgba(217,119,6,0.03)_0%,transparent_50%)]"></div>
+        
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           {/* Section header with animations */}
           <AnimatedSectionHeader
             badge="Our Services"
@@ -6197,17 +6286,17 @@ export default function Home() {
 
           {/* Platform Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="max-w-6xl mx-auto">
-            <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-12 p-1 bg-muted rounded-xl">
+            <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-12 p-1.5 glass-premium rounded-2xl shadow-lg">
               <TabsTrigger 
                 value="youtube" 
-                className="gap-2 data-[state=active]:bg-red-500 data-[state=active]:text-white rounded-lg transition-all duration-300"
+                className="gap-2 data-[state=active]:bg-red-500 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl transition-all duration-300 font-semibold"
               >
                 <Youtube className="w-5 h-5" />
                 YouTube
               </TabsTrigger>
               <TabsTrigger 
                 value="instagram" 
-                className="gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-500 data-[state=active]:text-white rounded-lg transition-all duration-300"
+                className="gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-500 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl transition-all duration-300 font-semibold"
               >
                 <Instagram className="w-5 h-5" />
                 Instagram
@@ -6220,37 +6309,37 @@ export default function Home() {
                 {youtubeServices.map((service, idx) => (
                   <Card 
                     key={service.id} 
-                    className={`relative cursor-pointer transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl ${service.popular ? 'ring-2 ring-red-500 ring-offset-2' : ''} group`}
+                    className={`relative cursor-pointer card-lift gradient-overlay-card ${service.popular ? 'ring-2 ring-red-500/50' : ''} group`}
                     onClick={() => setSelectedService(service.id)}
                     style={{ animationDelay: `${idx * 100}ms` }}
                   >
                     {service.popular && (
                       <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10">
-                        <Badge className="bg-red-500 text-white px-3 py-1 shadow-lg animate-bounce">
+                        <Badge className="bg-gradient-to-r from-red-500 to-orange-500 text-white px-4 py-1.5 shadow-lg animate-bounce font-semibold">
                           <Star className="w-3 h-3 mr-1" /> Popular
                         </Badge>
                       </div>
                     )}
                     <CardHeader className="text-center pb-2 pt-8">
-                      <div className={`mx-auto w-16 h-16 rounded-2xl ${service.popular ? 'bg-gradient-to-br from-red-500 to-orange-500' : 'bg-red-100'} flex items-center justify-center ${service.popular ? 'text-white shadow-lg shadow-red-200' : 'text-red-600'} mb-3 group-hover:scale-110 transition-transform`}>
+                      <div className={`mx-auto w-16 h-16 rounded-2xl ${service.popular ? 'bg-gradient-to-br from-red-500 to-orange-500 shadow-lg shadow-red-200' : 'bg-red-100'} flex items-center justify-center ${service.popular ? 'text-white' : 'text-red-600'} mb-3 icon-bounce-hover group-hover:scale-110 transition-transform duration-300`}>
                         {React.cloneElement(service.icon as React.ReactElement, { className: "w-7 h-7" })}
                       </div>
-                      <CardTitle className="text-lg">{service.name}</CardTitle>
+                      <CardTitle className="text-lg group-hover:text-red-600 transition-colors">{service.name}</CardTitle>
                     </CardHeader>
                     <CardContent className="pt-0 pb-6">
                       <CardDescription className="text-center mb-4 text-sm leading-relaxed">
                         {service.description}
                       </CardDescription>
                       <div className="text-center mb-4">
-                        <span className={`text-3xl font-black ${service.popular ? 'text-red-600' : 'text-red-500'}`}>Free</span>
+                        <span className={`text-3xl font-black number-pop ${service.popular ? 'text-red-600' : 'text-red-500'}`}>Free</span>
                         <p className="text-xs text-muted-foreground mt-1">with credits</p>
                       </div>
                       <Button 
-                        className={`w-full ${service.popular ? 'bg-red-500 hover:bg-red-600 text-white' : 'border-2 border-red-500 text-red-600 hover:bg-red-50'}`}
+                        className={`w-full btn-shine ripple-effect ${service.popular ? 'bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white shadow-lg shadow-red-200' : 'border-2 border-red-500 text-red-600 hover:bg-red-50'}`}
                         onClick={() => setIsSignUpOpen(true)}
                       >
                         Get Started
-                        <ArrowRight className="w-4 h-4 ml-2" />
+                        <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                       </Button>
                     </CardContent>
                   </Card>
@@ -6264,37 +6353,37 @@ export default function Home() {
                 {instagramServices.map((service, idx) => (
                   <Card 
                     key={service.id} 
-                    className={`relative cursor-pointer transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl ${service.popular ? 'ring-2 ring-pink-500 ring-offset-2' : ''} group`}
+                    className={`relative cursor-pointer card-lift gradient-overlay-card ${service.popular ? 'ring-2 ring-pink-500/50' : ''} group`}
                     onClick={() => setSelectedService(service.id)}
                     style={{ animationDelay: `${idx * 100}ms` }}
                   >
                     {service.popular && (
                       <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10">
-                        <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-3 py-1 shadow-lg">
+                        <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-1.5 shadow-lg font-semibold">
                           <Star className="w-3 h-3 mr-1" /> Popular
                         </Badge>
                       </div>
                     )}
                     <CardHeader className="text-center pb-2 pt-8">
-                      <div className={`mx-auto w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 flex items-center justify-center text-white shadow-lg shadow-pink-200 mb-3 group-hover:scale-110 transition-transform`}>
+                      <div className="mx-auto w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 flex items-center justify-center text-white shadow-lg shadow-pink-200 mb-3 icon-bounce-hover group-hover:scale-110 transition-transform duration-300">
                         {React.cloneElement(service.icon as React.ReactElement, { className: "w-7 h-7" })}
                       </div>
-                      <CardTitle className="text-lg">{service.name}</CardTitle>
+                      <CardTitle className="text-lg group-hover:text-purple-600 transition-colors">{service.name}</CardTitle>
                     </CardHeader>
                     <CardContent className="pt-0 pb-6">
                       <CardDescription className="text-center mb-4 text-sm leading-relaxed">
                         {service.description}
                       </CardDescription>
                       <div className="text-center mb-4">
-                        <span className="text-3xl font-black bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">Free</span>
+                        <span className="text-3xl font-black number-pop bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">Free</span>
                         <p className="text-xs text-muted-foreground mt-1">with credits</p>
                       </div>
                       <Button 
-                        className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 shadow-lg shadow-pink-200"
+                        className="w-full btn-shine ripple-effect bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 shadow-lg shadow-pink-200"
                         onClick={() => setIsSignUpOpen(true)}
                       >
                         Get Started
-                        <ArrowRight className="w-4 h-4 ml-2" />
+                        <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                       </Button>
                     </CardContent>
                   </Card>
@@ -6483,9 +6572,12 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Pricing Section */}
-      <section id="pricing" className="py-20 lg:py-28">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+      {/* Pricing Section - Premium Enhanced */}
+      <section id="pricing" className="py-20 lg:py-28 relative overflow-hidden">
+        {/* Background decoration */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(245,158,11,0.05)_0%,transparent_50%)]"></div>
+        
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           {/* Section header with animations */}
           <AnimatedSectionHeader
             badge="Flexible Plans"
@@ -6495,41 +6587,39 @@ export default function Home() {
             description="Start free, upgrade when you're ready. No hidden fees."
           />
 
-          {/* Pricing Cards */}
+          {/* Premium Pricing Cards */}
           <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {pricingPlans.map((plan, idx) => (
               <Card 
                 key={plan.name}
-                className={`relative overflow-hidden transition-all duration-500 hover:-translate-y-2 ${
+                className={`relative overflow-hidden card-lift gradient-overlay-card ${
                   plan.popular 
-                    ? 'ring-2 ring-warm-500 ring-offset-4 scale-105 shadow-2xl' 
-                    : 'hover:shadow-xl'
+                    ? 'ring-2 ring-warm-500/50 scale-105 shadow-2xl shadow-warm-200/20' 
+                    : ''
                 }`}
               >
                 {plan.popular && (
-                  <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-warm-500 to-orange-500"></div>
-                )}
-                {plan.popular && (
-                  <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 gradient-bg text-white border-0 shadow-lg z-10">
-                    <Star className="w-3 h-3 mr-1" /> Most Popular
-                  </Badge>
+                  <>
+                    <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-warm-500 via-orange-400 to-warm-500 animated-line"></div>
+                    <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 gradient-bg text-white border-0 shadow-lg z-10 px-4 py-1 font-semibold">
+                      <Star className="w-3 h-3 mr-1" /> Most Popular
+                    </Badge>
+                  </>
                 )}
                 
-                <CardContent className="pt-8 pb-8">
+                <CardContent className="pt-10 pb-8">
                   <div className="text-center mb-6">
-                    <div className={`inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-4 ${plan.popular ? 'gradient-bg text-white' : 'bg-muted'} ${!plan.popular && 'text-muted-foreground'}`}>
+                    <div className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4 icon-bounce-hover ${plan.popular ? 'bg-gradient-to-br from-warm-500 to-orange-500 text-white shadow-lg shadow-warm-200' : 'bg-muted text-muted-foreground'}`}>
                       {plan.icon}
                     </div>
                     <h3 className="text-2xl font-bold mb-1">{plan.name}</h3>
                     <p className="text-sm text-muted-foreground mb-4">{plan.description}</p>
                     <div className="flex items-end justify-center gap-1">
                       {plan.price === 0 ? (
-                        <>
-                          <span className="text-5xl font-black gradient-text">Free</span>
-                        </>
+                        <span className="text-5xl font-black gradient-text neon-text-glow">Free</span>
                       ) : (
                         <>
-                          <span className="text-5xl font-black">${plan.price}</span>
+                          <span className="text-5xl font-black number-pop">${plan.price}</span>
                           <span className="text-muted-foreground mb-2">/{plan.period}</span>
                         </>
                       )}
@@ -6538,21 +6628,21 @@ export default function Home() {
 
                   <ul className="space-y-3 mb-8">
                     {plan.features.map((feature, i) => (
-                      <li key={i} className="flex items-start gap-3">
-                        <Check className={`w-5 h-5 flex-shrink-0 mt-0.5 ${plan.popular ? 'text-warm-500' : 'text-green-500'}`} />
-                        <span className="text-sm">{feature}</span>
+                      <li key={i} className="flex items-start gap-3 group">
+                        <Check className={`w-5 h-5 flex-shrink-0 mt-0.5 ${plan.popular ? 'text-warm-500' : 'text-green-500'} group-hover:scale-110 transition-transform`} />
+                        <span className="text-sm group-hover:text-foreground transition-colors">{feature}</span>
                       </li>
                     ))}
                   </ul>
 
                   <Button 
-                    className={`w-full ${
+                    className={`w-full btn-shine ripple-effect ${
                       plan.popular 
-                        ? 'gradient-bg text-white border-0 hover:opacity-90 shadow-lg' 
+                        ? 'gradient-bg text-white border-0 hover:opacity-90 shadow-lg pulse-glow' 
                         : plan.price === 0 
                           ? 'border-2 border-warm-500 text-warm-600 hover:bg-warm-50'
                           : ''
-                    }`}
+                    } focus-ring`}
                     onClick={() => plan.price === 0 ? setIsSignUpOpen(true) : toast.info(`${plan.name} plan coming soon!`)}
                   >
                     {plan.cta}

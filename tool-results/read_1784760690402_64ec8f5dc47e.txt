@@ -1,0 +1,502 @@
+  6310→        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+  6311→          {/* Section header with animations */}
+  6312→          <AnimatedSectionHeader
+  6313→            badge="Simple Process"
+  6314→            badgeIcon={<Zap className="w-3 h-3 mr-1" />}
+  6315→            title="How It Works"
+  6316→            titleHighlight="Works"
+  6317→            description="Start growing your social media in just 3 simple steps"
+  6318→          />
+  6319→
+  6320→          <div className="max-w-5xl mx-auto">
+  6321→            {/* Watch Demo Button - Centered above steps */}
+  6322→            <div className="text-center mb-10">
+  6323→              <Dialog>
+  6324→                <DialogTrigger asChild>
+  6325→                <Button 
+  6326→                  variant="outline" 
+  6327→                  size="sm"
+  6328→                  className="gap-2 border-warm-300 text-warm-700 hover:bg-warm-50 hover:border-warm-400"
+  6329→                >
+  6330→                  <PlayCircle className="w-4 h-4" />
+  6331→                  Watch Demo Video
+  6332→                </Button>
+  6333→              </DialogTrigger>
+  6334→              <DialogContent className="max-w-4xl p-0 overflow-hidden border-0 bg-transparent">
+  6335→                <div className="video-overlay aspect-video flex items-center justify-center rounded-xl relative">
+  6336→                  <div className="absolute inset-0 bg-gradient-to-br from-slate-900/95 to-slate-800/95"></div>
+  6337→                  <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(217, 119, 6, 0.3) 0%, transparent 70%)' }}></div>
+  6338→                  
+  6339→                  {/* Play Button */}
+  6340→                  <div className="relative z-10 text-center">
+  6341→                    <button className="group cursor-pointer focus:outline-none">
+  6342→                      <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center group-hover:bg-warm-500 transition-all duration-300 group-hover:scale-110 shadow-2xl">
+  6343→                        <Play className="w-10 h-10 text-white ml-1 group-hover:scale-110 transition-transform" />
+  6344→                      </div>
+  6345→                      <p className="text-white font-medium text-lg">Click to Play Demo</p>
+  6346→                      <p className="text-white/60 text-sm mt-2">See SocialBoost in action</p>
+  6347→                    </button>
+  6348→                  </div>
+  6349→
+  6350→                  {/* Close Button */}
+  6351→                  <button className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/20 transition-colors z-20">
+  6352→                    <X className="w-5 h-5" />
+  6353→                  </button>
+  6354→                </div>
+  6355→              </DialogContent>
+  6356→            </Dialog>
+  6357→            </div>
+  6358→
+  6359→          {/* Steps */}
+  6360→          <div className="grid md:grid-cols-3 gap-8 md:gap-12 relative">
+  6361→              {/* Animated dashed connection line (desktop only) */}
+  6362→              <div className="hidden md:block absolute top-[72px] left-[16%] right-[16%] h-0.5 dashed-line-animate"></div>
+  6363→
+  6364→              {/* Step 1 */}
+  6365→              <div className="text-center relative group card-3d">
+  6366→                {/* Pulse ring container */}
+  6367→                <div className="w-32 h-32 mx-auto mb-6 relative">
+  6368→                  <div className="absolute inset-0 rounded-full gradient-bg pulse-ring text-warm-500"></div>
+  6369→                  <div className="relative z-10 w-32 h-32 rounded-full gradient-bg flex items-center justify-center text-white shadow-xl shadow-warm-200 group-hover:scale-110 transition-transform duration-300">
+  6370→                    <div className="text-center float-slow">
+  6371→                      <div className="text-4xl font-black">01</div>
+  6372→                      <UserIcon className="w-8 h-8 mx-auto mt-1 animate-float" style={{ animationDelay: '0.2s' }} />
+  6373→                    </div>
+  6374→                  </div>
+  6375→                </div>
+  6376→                
+  6377→                <div className="absolute top-10 left-1/2 -translate-x-1/2 w-40 h-40 rounded-full bg-warm-200 opacity-15 group-hover:opacity-30 transition-opacity"></div>
+  6378→                
+  6379→                <h3 className="text-xl font-semibold mb-3">Create Account</h3>
+  6380→                <p className="text-muted-foreground text-sm leading-relaxed">
+  6381→                  Sign up for free and receive <span className="text-warm-600 font-semibold">500 bonus credits</span> to start your first campaign instantly.
+  6382→                </p>
+  6383→                <a href="#" className="inline-flex items-center gap-1 mt-4 text-sm text-warm-600 hover:text-warm-700 font-medium group/link transition-colors">
+  6384→                  Learn more 
+  6385→                  <ArrowRight className="w-4 h-4 group-hover/link:translate-x-1 transition-transform" />
+  6386→                </a>
+  6387→              </div>
+  6388→
+  6389→              {/* Step 2 */}
+  6390→              <div className="text-center relative group card-3d">
+  6391→                {/* Pulse ring container */}
+  6392→                <div className="w-32 h-32 mx-auto mb-6 relative">
+  6393→                  <div className="absolute inset-0 rounded-full gradient-bg pulse-ring text-warm-500" style={{ animationDelay: '0.7s' }}></div>
+  6394→                  <div className="relative z-10 w-32 h-32 rounded-full gradient-bg flex items-center justify-center text-white shadow-xl shadow-warm-200 group-hover:scale-110 transition-transform duration-300">
+  6395→                    <div className="text-center float-slow" style={{ animationDelay: '0.3s' }}>
+  6396→                      <div className="text-4xl font-black">02</div>
+  6397→                      <Target className="w-8 h-8 mx-auto mt-1 animate-float" style={{ animationDelay: '0.4s' }} />
+  6398→                    </div>
+  6399→                  </div>
+  6400→                </div>
+  6401→                
+  6402→                <div className="absolute top-10 left-1/2 -translate-x-1/2 w-40 h-40 rounded-full bg-warm-200 opacity-15 group-hover:opacity-30 transition-opacity"></div>
+  6403→                
+  6404→                <h3 className="text-xl font-semibold mb-3">Create Campaign</h3>
+  6405→                <p className="text-muted-foreground text-sm leading-relaxed">
+  6406→                  Add your video or profile URL, choose your target audience, and configure delivery settings.
+  6407→                </p>
+  6408→                <a href="#" className="inline-flex items-center gap-1 mt-4 text-sm text-warm-600 hover:text-warm-700 font-medium group/link transition-colors">
+  6409→                  Learn more 
+  6410→                  <ArrowRight className="w-4 h-4 group-hover/link:translate-x-1 transition-transform" />
+  6411→                </a>
+  6412→              </div>
+  6413→
+  6414→              {/* Step 3 */}
+  6415→              <div className="text-center relative group card-3d">
+  6416→                {/* Pulse ring container */}
+  6417→                <div className="w-32 h-32 mx-auto mb-6 relative">
+  6418→                  <div className="absolute inset-0 rounded-full gradient-bg pulse-ring text-warm-500" style={{ animationDelay: '1.4s' }}></div>
+  6419→                  <div className="relative z-10 w-32 h-32 rounded-full gradient-bg flex items-center justify-center text-white shadow-xl shadow-warm-200 group-hover:scale-110 transition-transform duration-300">
+  6420→                    <div className="text-center float-slow" style={{ animationDelay: '0.6s' }}>
+  6421→                      <div className="text-4xl font-black">03</div>
+  6422→                      <TrendingUp className="w-8 h-8 mx-auto mt-1 animate-float" style={{ animationDelay: '0.6s' }} />
+  6423→                    </div>
+  6424→                  </div>
+  6425→                </div>
+  6426→                
+  6427→                <div className="absolute top-10 left-1/2 -translate-x-1/2 w-40 h-40 rounded-full bg-warm-200 opacity-15 group-hover:opacity-30 transition-opacity"></div>
+  6428→                
+  6429→                <h3 className="text-xl font-semibold mb-3">Watch Growth</h3>
+  6430→                <p className="text-muted-foreground text-sm leading-relaxed">
+  6431→                  Sit back as real users engage with your content. Watch your metrics soar!
+  6432→                </p>
+  6433→                <a href="#" className="inline-flex items-center gap-1 mt-4 text-sm text-warm-600 hover:text-warm-700 font-medium group/link transition-colors">
+  6434→                  Learn more 
+  6435→                  <ArrowRight className="w-4 h-4 group-hover/link:translate-x-1 transition-transform" />
+  6436→                </a>
+  6437→              </div>
+  6438→            </div>
+  6439→
+  6440→            {/* CTA Buttons Row */}
+  6441→            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-14">
+  6442→              <Button 
+  6443→                size="lg" 
+  6444→                className="gradient-bg text-white border-0 hover:opacity-90 px-8 shadow-lg shadow-warm-200 hover:shadow-warm-300 transition-shadow"
+  6445→                onClick={() => setIsSignUpOpen(true)}
+  6446→              >
+  6447→                <Rocket className="w-5 h-5 mr-2" />
+  6448→                Start Now - It's Free
+  6449→              </Button>
+  6450→              <Dialog>
+  6451→                <DialogTrigger asChild>
+  6452→                  <Button 
+  6453→                    variant="outline"
+  6454→                    size="lg"
+  6455→                    className="gap-2 border-2 border-dashed border-warm-300 text-warm-700 hover:border-solid hover:bg-warm-50"
+  6456→                  >
+  6457→                    <Video className="w-5 h-5" />
+  6458→                    See Demo
+  6459→                  </Button>
+  6460→                </DialogTrigger>
+  6461→                <DialogContent className="max-w-4xl p-0 overflow-hidden border-0 bg-transparent">
+  6462→                  <div className="video-overlay aspect-video flex items-center justify-center rounded-xl relative">
+  6463→                    <div className="absolute inset-0 bg-gradient-to-br from-slate-900/95 to-slate-800/95"></div>
+  6464→                    
+  6465→                    <div className="relative z-10 text-center">
+  6466→                      <button className="group cursor-pointer focus:outline-none">
+  6467→                        <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center group-hover:bg-warm-500 transition-all duration-300 group-hover:scale-110 shadow-2xl">
+  6468→                          <Play className="w-10 h-10 text-white ml-1 group-hover:scale-110 transition-transform" />
+  6469→                        </div>
+  6470→                        <p className="text-white font-medium text-lg">Click to Play Demo</p>
+  6471→                        <p className="text-white/60 text-sm mt-2">See SocialBoost in action</p>
+  6472→                      </button>
+  6473→                    </div>
+  6474→
+  6475→                    <button className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/20 transition-colors z-20">
+  6476→                      <X className="w-5 h-5" />
+  6477→                    </button>
+  6478→                  </div>
+  6479→                </DialogContent>
+  6480→              </Dialog>
+  6481→            </div>
+  6482→          </div>  {/* Close max-w-5xl wrapper */}
+  6483→        </div>
+  6484→      </section>
+  6485→
+  6486→      {/* Pricing Section */}
+  6487→      <section id="pricing" className="py-20 lg:py-28">
+  6488→        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+  6489→          {/* Section header with animations */}
+  6490→          <AnimatedSectionHeader
+  6491→            badge="Flexible Plans"
+  6492→            badgeIcon={<Crown className="w-3 h-3 mr-1" />}
+  6493→            title="Choose Your Perfect Plan"
+  6494→            titleHighlight="Perfect Plan"
+  6495→            description="Start free, upgrade when you're ready. No hidden fees."
+  6496→          />
+  6497→
+  6498→          {/* Pricing Cards */}
+  6499→          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+  6500→            {pricingPlans.map((plan, idx) => (
+  6501→              <Card 
+  6502→                key={plan.name}
+  6503→                className={`relative overflow-hidden transition-all duration-500 hover:-translate-y-2 ${
+  6504→                  plan.popular 
+  6505→                    ? 'ring-2 ring-warm-500 ring-offset-4 scale-105 shadow-2xl' 
+  6506→                    : 'hover:shadow-xl'
+  6507→                }`}
+  6508→              >
+  6509→                {plan.popular && (
+  6510→                  <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-warm-500 to-orange-500"></div>
+  6511→                )}
+  6512→                {plan.popular && (
+  6513→                  <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 gradient-bg text-white border-0 shadow-lg z-10">
+  6514→                    <Star className="w-3 h-3 mr-1" /> Most Popular
+  6515→                  </Badge>
+  6516→                )}
+  6517→                
+  6518→                <CardContent className="pt-8 pb-8">
+  6519→                  <div className="text-center mb-6">
+  6520→                    <div className={`inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-4 ${plan.popular ? 'gradient-bg text-white' : 'bg-muted'} ${!plan.popular && 'text-muted-foreground'}`}>
+  6521→                      {plan.icon}
+  6522→                    </div>
+  6523→                    <h3 className="text-2xl font-bold mb-1">{plan.name}</h3>
+  6524→                    <p className="text-sm text-muted-foreground mb-4">{plan.description}</p>
+  6525→                    <div className="flex items-end justify-center gap-1">
+  6526→                      {plan.price === 0 ? (
+  6527→                        <>
+  6528→                          <span className="text-5xl font-black gradient-text">Free</span>
+  6529→                        </>
+  6530→                      ) : (
+  6531→                        <>
+  6532→                          <span className="text-5xl font-black">${plan.price}</span>
+  6533→                          <span className="text-muted-foreground mb-2">/{plan.period}</span>
+  6534→                        </>
+  6535→                      )}
+  6536→                    </div>
+  6537→                  </div>
+  6538→
+  6539→                  <ul className="space-y-3 mb-8">
+  6540→                    {plan.features.map((feature, i) => (
+  6541→                      <li key={i} className="flex items-start gap-3">
+  6542→                        <Check className={`w-5 h-5 flex-shrink-0 mt-0.5 ${plan.popular ? 'text-warm-500' : 'text-green-500'}`} />
+  6543→                        <span className="text-sm">{feature}</span>
+  6544→                      </li>
+  6545→                    ))}
+  6546→                  </ul>
+  6547→
+  6548→                  <Button 
+  6549→                    className={`w-full ${
+  6550→                      plan.popular 
+  6551→                        ? 'gradient-bg text-white border-0 hover:opacity-90 shadow-lg' 
+  6552→                        : plan.price === 0 
+  6553→                          ? 'border-2 border-warm-500 text-warm-600 hover:bg-warm-50'
+  6554→                          : ''
+  6555→                    }`}
+  6556→                    onClick={() => plan.price === 0 ? setIsSignUpOpen(true) : toast.info(`${plan.name} plan coming soon!`)}
+  6557→                  >
+  6558→                    {plan.cta}
+  6559→                    {!plan.popular && <ArrowRight className="w-4 h-4 ml-2" />}
+  6560→                  </Button>
+  6561→                </CardContent>
+  6562→              </Card>
+  6563→            ))}
+  6564→          </div>
+  6565→        </div>
+  6566→      </section>
+  6567→
+  6568→      {/* ============================================
+  6569→          ROUND 8: INTERACTIVE PRICING CALCULATOR
+  6570→          ============================================ */}
+  6571→      <PricingCalculator onSignUp={() => setIsSignUpOpen(true)} />
+  6572→
+  6573→      {/* Features + Live Demo Section */}
+  6574→      <section id="features" className="py-20 lg:py-28 bg-muted/50">
+  6575→        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+  6576→          {/* Section header */}
+  6577→          <div className="text-center max-w-3xl mx-auto mb-16">
+  6578→            <Badge variant="secondary" className="mb-4 bg-warm-100 text-warm-800">
+  6579→              Why Choose Us
+  6580→            </Badge>
+  6581→            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
+  6582→              Features That <span className="gradient-text">Set Us Apart</span>
+  6583→            </h2>
+  6584→            <p className="text-lg text-muted-foreground">
+  6585→              Advanced tools and security measures for optimal growth
+  6586→            </p>
+  6587→          </div>
+  6588→
+  6589→          <div className="grid lg:grid-cols-5 gap-8 max-w-7xl mx-auto">
+  6590→            {/* Features Grid - 3 columns */}
+  6591→            <div className="lg:col-span-3 grid md:grid-cols-2 gap-6">
+  6592→              {features.map((feature, index) => (
+  6593→                <Card 
+  6594→                  key={index} 
+  6595→                  className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group bg-card overflow-hidden"
+  6596→                >
+  6597→                  <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${feature.gradient}`}></div>
+  6598→                  <CardContent className="pt-8">
+  6599→                    <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${feature.gradient} bg-opacity-10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+  6600→                      <div className={`bg-gradient-to-br ${feature.gradient} bg-clip-text text-transparent`}>
+  6601→                        {feature.icon}
+  6602→                      </div>
+  6603→                    </div>
+  6604→                    <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
+  6605→                    <p className="text-muted-foreground">{feature.description}</p>
+  6606→                  </CardContent>
+  6607→                </Card>
+  6608→              ))}
+  6609→            </div>
+  6610→
+  6611→            {/* Live Activity Panel - 2 columns */}
+  6612→            <div className="lg:col-span-2">
+  6613→              <Card className="border-0 shadow-xl bg-gradient-to-br from-warm-500 to-orange-500 text-white overflow-hidden h-full">
+  6614→                <CardContent className="p-8 h-full flex flex-col">
+  6615→                  <div className="mb-6">
+  6616→                    <div className="flex items-center gap-2 mb-2">
+  6617→                      <Activity className="w-5 h-5 animate-pulse" />
+  6618→                      <span className="text-sm font-medium opacity-90">Live Activity Feed</span>
+  6619→                    </div>
+  6620→                    <p className="text-sm opacity-75">Real-time growth happening now</p>
+  6621→                  </div>
+  6622→                  
+  6623→                  <LiveActivity />
+  6624→
+  6625→                  <div className="mt-auto pt-6 border-t border-white/20">
+  6626→                    <div className="flex items-center justify-between text-sm">
+  6627→                      <span className="opacity-75">Online users:</span>
+  6628→                      <span className="font-bold text-lg">12,847</span>
+  6629→                    </div>
+  6630→                  </div>
+  6631→                </CardContent>
+  6632→              </Card>
+  6633→            </div>
+  6634→          </div>
+  6635→
+  6636→          {/* Additional Features Banner */}
+  6637→          <div className="mt-16 max-w-4xl mx-auto">
+  6638→            <Card className="border-0 bg-gradient-to-r from-slate-900 to-slate-800 text-white overflow-hidden">
+  6639→              <CardContent className="p-8 md:p-12">
+  6640→                <div className="grid md:grid-cols-2 gap-8 items-center">
+  6641→                  <div>
+  6642→                    <h3 className="text-2xl md:text-3xl font-bold mb-4 flex items-center gap-2">
+  6643→                      <BarChart3 className="w-7 h-7 text-warm-400" />
+  6644→                      Advanced Campaign Controls
+  6645→                    </h3>
+  6646→                    <ul className="space-y-3">
+  6647→                      {[
+  6648→                        'Variable watch duration for natural patterns',
+  6649→                        'Delivery speed control (slow/normal/fast)',
+  6650→                        'Traffic quality filtering',
+  6651→                        'Daily limit management',
+  6652→                        'Geo-targeting by country'
+  6653→                      ].map((item, i) => (
+  6654→                        <li key={i} className="flex items-center gap-3 group">
+  6655→                          <div className="w-6 h-6 rounded-full bg-warm-500/20 flex items-center justify-center group-hover:bg-warm-500/40 transition-colors">
+  6656→                            <Check className="w-4 h-4 text-warm-400" />
+  6657→                          </div>
+  6658→                          <span className="group-hover:translate-x-1 transition-transform inline-block">{item}</span>
+  6659→                        </li>
+  6660→                      ))}
+  6661→                    </ul>
+  6662→                  </div>
+  6663→                  <div className="hidden md:flex justify-center">
+  6664→                    <div className="relative">
+  6665→                      <div className="w-56 h-56 rounded-3xl bg-gradient-to-br from-warm-500/20 to-orange-500/20 flex items-center justify-center">
+  6666→                        <BarChart3 className="w-28 h-28 text-warm-400/50" />
+  6667→                      </div>
+  6668→                      {/* Floating elements */}
+  6669→                      <div className="absolute -top-4 -right-4 w-16 h-16 rounded-xl bg-warm-500 flex items-center justify-center animate-float shadow-lg">
+  6670→                        <TrendingUp className="w-8 h-8 text-white" />
+  6671→                      </div>
+  6672→                      <div className="absolute -bottom-4 -left-4 w-12 h-12 rounded-lg bg-green-500 flex items-center justify-center animate-float shadow-lg" style={{ animationDelay: '1s' }}>
+  6673→                        <Check className="w-6 h-6 text-white" />
+  6674→                      </div>
+  6675→                    </div>
+  6676→                  </div>
+  6677→                </div>
+  6678→              </CardContent>
+  6679→            </Card>
+  6680→          </div>
+  6681→        </div>
+  6682→      </section>
+  6683→
+  6684→      {/* Security Section */}
+  6685→      <section className="py-20 lg:py-28">
+  6686→        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+  6687→          <div className="max-w-6xl mx-auto">
+  6688→            <div className="grid lg:grid-cols-2 gap-12 items-center">
+  6689→              <div>
+  6690→                <Badge variant="secondary" className="mb-4 bg-green-100 text-green-800">
+  6691→                  <Lock className="w-3 h-3 mr-1" />
+  6692→                  Security First
+  6693→                </Badge>
+  6694→                <h2 className="text-3xl sm:text-4xl font-bold mb-6">
+  6695→                  Traffic Quality &{' '}
+  6696→                  <span className="gradient-text">Security</span>
+  6697→                </h2>
+  6698→                <p className="text-lg text-muted-foreground mb-8">
+  6699→                  Multiple verification systems ensure interactions come from real users 
+  6700→                  and maintain authentic engagement signals.
+  6701→                </p>
+  6702→
+  6703→                <div className="space-y-4">
+  6704→                  {[
+  6705→                    { icon: <Shield />, title: 'Anti-Bot Detection', desc: 'Blocks automated and non-human traffic', color: 'red' },
+  6706→                    { icon: <Globe />, title: 'Connection Filtering', desc: 'Restricts suspicious or low-quality sources', color: 'blue' },
+  6707→                    { icon: <Eye />, title: 'Traffic Validation', desc: 'Ensures realistic viewing behavior patterns', color: 'green' },
+  6708→                    { icon: <Lock />, title: 'Device Verification', desc: 'Confirms unique user sessions', color: 'purple' }
+  6709→                  ].map((item, i) => (
+  6710→                    <div key={i} className="flex gap-4 p-4 rounded-xl bg-card shadow-sm hover:shadow-md transition-shadow group cursor-pointer">
+  6711→                      <div className={`w-12 h-12 rounded-xl bg-${item.color}-100 flex items-center justify-center text-${item.color}-600 flex-shrink-0 group-hover:scale-110 transition-transform`}>
+  6712→                        {item.icon}
+  6713→                      </div>
+  6714→                      <div>
+  6715→                        <h4 className="font-semibold">{item.title}</h4>
+  6716→                        <p className="text-sm text-muted-foreground">{item.desc}</p>
+  6717→                      </div>
+  6718→                    </div>
+  6719→                  ))}
+  6720→                </div>
+  6721→              </div>
+  6722→
+  6723→              <div className="relative">
+  6724→                <div className="aspect-square max-w-md mx-auto">
+  6725→                  <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-warm-200 to-warm-300 opacity-20 blur-3xl"></div>
+  6726→                  <div className="relative h-full rounded-3xl bg-gradient-to-br from-warm-50 to-warm-100 border border-warm-200 p-8 flex flex-col justify-center shadow-xl">
+  6727→                    <div className="space-y-4">
+  6728→                      {[
+  6729→                        { label: 'Active Users Online', value: '12,847', change: '+23%', color: 'text-green-600' },
+  6730→                        { label: 'Campaigns Running', value: '3,291', change: '+156', color: 'text-blue-600' },
+  6731→                        { label: 'Success Rate', value: '99.9%', change: '↑ 0.1%', color: 'text-warm-600' },
+  6732→                        { label: 'Avg. Response Time', value: '< 2s', change: '-0.3s', color: 'text-purple-600' }
+  6733→                      ].map((stat, i) => (
+  6734→                        <div key={i} className="flex justify-between items-center p-4 rounded-xl bg-white shadow-sm hover:shadow-md transition-all group">
+  6735→                          <div>
+  6736→                            <span className="text-muted-foreground text-sm">{stat.label}</span>
+  6737→                            <div className="flex items-center gap-2 mt-1">
+  6738→                              <span className={`text-2xl font-bold ${stat.color}`}>{stat.value}</span>
+  6739→                              <span className="text-xs px-1.5 py-0.5 rounded bg-green-100 text-green-600 font-medium">{stat.change}</span>
+  6740→                            </div>
+  6741→                          </div>
+  6742→                          <Activity className={`w-8 h-8 ${stat.color} opacity-30 group-hover:opacity-60 transition-opacity`} />
+  6743→                        </div>
+  6744→                      ))}
+  6745→                    </div>
+  6746→                  </div>
+  6747→                </div>
+  6748→              </div>
+  6749→            </div>
+  6750→          </div>
+  6751→        </div>
+  6752→      </section>
+  6753→
+  6754→      {/* Competitor Comparison Table Section */}
+  6755→      <section id="comparison" className="py-20 lg:py-28 bg-gradient-to-b from-background to-muted/30">
+  6756→        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+  6757→          <div className="text-center max-w-3xl mx-auto mb-16">
+  6758→            <Badge variant="secondary" className="mb-4 bg-warm-100 text-warm-800">
+  6759→              <BarChart3 className="w-3 h-3 mr-1" />
+  6760→              Compare & Decide
+  6761→            </Badge>
+  6762→            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
+  6763→              Why Choose SocialBoost{' '}
+  6764→              <span className="gradient-text">Over Others?</span>
+  6765→            </h2>
+  6766→            <p className="text-lg text-muted-foreground">
+  6767→              See how we stack up against the competition. The choice is clear!
+  6768→            </p>
+  6769→          </div>
+  6770→
+  6771→          <div className="max-w-6xl mx-auto overflow-x-auto">
+  6772→            <table className="w-full border-collapse rounded-2xl overflow-hidden shadow-xl">
+  6773→              <thead>
+  6774→                <tr className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white">
+  6775→                  <th className="p-4 md:p-6 text-left font-semibold min-w-[180px]">Feature</th>
+  6776→                  <th className="p-4 md:p-6 text-center relative bg-gradient-to-br from-warm-500 to-orange-600">
+  6777→                    <div className="flex flex-col items-center gap-1">
+  6778→                      <span className="font-bold text-lg">SocialBoost</span>
+  6779→                      <Badge className="bg-yellow-400 text-yellow-900 border-0 text-xs font-bold animate-pulse-glow">
+  6780→                        ★ Best Value
+  6781→                      </Badge>
+  6782→                    </div>
+  6783→                  </th>
+  6784→                  <th className="p-4 md:p-6 text-center font-semibold text-gray-300">ViewGrip</th>
+  6785→                  <th className="p-4 md:p-6 text-center font-semibold text-gray-300">SMMPanel</th>
+  6786→                  <th className="p-4 md:p-6 text-center font-semibold text-gray-300">BoostHill</th>
+  6787→                </tr>
+  6788→              </thead>
+  6789→              <tbody>
+  6790→                {[
+  6791→                  { feature: 'Real Users (Not Bots)', socialboost: true, viewgrip: false, smmpanel: false, boosthill: true },
+  6792→                  { feature: 'Free Credits to Start', socialboost: true, viewgrip: true, smmpanel: false, boosthill: false },
+  6793→                  { feature: 'YouTube + Instagram', socialboost: true, viewgrip: true, smmpanel: true, boosthill: false },
+  6794→                  { feature: 'Geo-Targeting', socialboost: true, viewgrip: false, smmpanel: false, boosthill: true },
+  6795→                  { feature: '24/7 Support', socialboost: true, viewgrip: false, smmpanel: true, boosthill: false },
+  6796→                  { feature: 'Referral Program', socialboost: true, viewgrip: false, smmpanel: false, boosthill: false },
+  6797→                  { feature: 'Dashboard Analytics', socialboost: true, viewgrip: false, smmpanel: true, boosthill: false },
+  6798→                  { feature: 'API Access', socialboost: true, viewgrip: false, smmpanel: true, boosthill: false }
+  6799→                ].map((row, index) => (
+  6800→                  <tr 
+  6801→                    key={index} 
+  6802→                    className={`comparison-row border-b border-border/50 ${
+  6803→                      index % 2 === 0 ? 'bg-card' : 'bg-background'
+  6804→                    }`}
+  6805→                  >
+  6806→                    <td className="p-4 md:p-5 font-medium">{row.feature}</td>
+  6807→                    <td className="p-4 md:p-5 text-center bg-warm-50/50 dark:bg-warm-900/10">
+  6808→                      {row.socialboost && (
+  6809→                        <Check className="w-6 h-6 mx-auto text-green-500" />
+
+[showing lines 6310-6809 of 7758; use offset=6810 with limit to continue reading]

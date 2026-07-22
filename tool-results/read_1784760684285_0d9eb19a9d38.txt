@@ -1,0 +1,502 @@
+  2000→                        <p className="text-3xl font-bold mt-1">{mockUserStats.activeCampaigns}</p>
+  2001→                        <p className="text-xs text-green-600 flex items-center gap-1 mt-1">
+  2002→                          <ArrowUpRight className="w-3 h-3" /> +2 this week
+  2003→                        </p>
+  2004→                      </div>
+  2005→                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-400 to-cyan-500 flex items-center justify-center">
+  2006→                        <Target className="w-6 h-6 text-white" />
+  2007→                      </div>
+  2008→                    </div>
+  2009→                  </CardContent>
+  2010→                </Card>
+  2011→
+  2012→                <Card className="border-0 shadow-sm">
+  2013→                  <CardContent className="p-6">
+  2014→                    <div className="flex items-start justify-between">
+  2015→                      <div>
+  2016→                        <p className="text-sm text-muted-foreground">Total Views</p>
+  2017→                        <p className="text-3xl font-bold mt-1">{(mockUserStats.totalViews / 1000).toFixed(1)}K</p>
+  2018→                        <p className="text-xs text-green-600 flex items-center gap-1 mt-1">
+  2019→                          <ArrowUpRight className="w-3 h-3" /> +18% vs last week
+  2020→                        </p>
+  2021→                      </div>
+  2022→                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-400 to-violet-500 flex items-center justify-center">
+  2023→                        <Eye className="w-6 h-6 text-white" />
+  2024→                      </div>
+  2025→                    </div>
+  2026→                  </CardContent>
+  2027→                </Card>
+  2028→
+  2029→                <Card className="border-0 shadow-sm">
+  2030→                  <CardContent className="p-6">
+  2031→                    <div className="flex items-start justify-between">
+  2032→                      <div>
+  2033→                        <p className="text-sm text-muted-foreground">Engagement Rate</p>
+  2034→                        <p className="text-3xl font-bold mt-1">{mockUserStats.engagementRate}%</p>
+  2035→                        <p className="text-xs text-green-600 flex items-center gap-1 mt-1">
+  2036→                          <ArrowUpRight className="w-3 h-3" /> +2.3% improvement
+  2037→                        </p>
+  2038→                      </div>
+  2039→                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center">
+  2040→                        <TrendingUp className="w-6 h-6 text-white" />
+  2041→                      </div>
+  2042→                    </div>
+  2043→                  </CardContent>
+  2044→                </Card>
+  2045→              </div>
+  2046→
+  2047→              {/* Charts Row */}
+  2048→              <div className="grid lg:grid-cols-3 gap-6">
+  2049→                {/* Views Chart */}
+  2050→                <Card className="lg:col-span-2 border-0 shadow-sm">
+  2051→                  <CardHeader className="pb-2">
+  2052→                    <div className="flex items-center justify-between">
+  2053→                      <CardTitle className="text-base">Views & Followers Trend</CardTitle>
+  2054→                      <Select defaultValue="7d">
+  2055→                        <SelectTrigger className="w-28 h-8 text-xs" />
+  2056→                        <SelectContent>
+  2057→                          <SelectItem value="7d">Last 7 days</SelectItem>
+  2058→                          <SelectItem value="30d">Last 30 days</SelectItem>
+  2059→                          <SelectItem value="90d">Last 90 days</SelectItem>
+  2060→                        </SelectContent>
+  2061→                      </Select>
+  2062→                    </div>
+  2063→                  </CardHeader>
+  2064→                  <CardContent>
+  2065→                    <ResponsiveContainer width="100%" height={280}>
+  2066→                      <AreaChart data={chartDataViews}>
+  2067→                        <defs>
+  2068→                          <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
+  2069→                            <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3}/>
+  2070→                            <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/>
+  2071→                          </linearGradient>
+  2072→                          <linearGradient id="colorFollowers" x1="0" y1="0" x2="0" y2="1">
+  2073→                            <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3}/>
+  2074→                            <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
+  2075→                          </linearGradient>
+  2076→                        </defs>
+  2077→                        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+  2078→                        <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
+  2079→                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
+  2080→                        <Tooltip 
+  2081→                          contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+  2082→                        />
+  2083→                        <Area type="monotone" dataKey="views" stroke="#f59e0b" strokeWidth={2} fillOpacity={1} fill="url(#colorViews)" />
+  2084→                        <Area type="monotone" dataKey="followers" stroke="#8b5cf6" strokeWidth={2} fillOpacity={1} fill="url(#colorFollowers)" />
+  2085→                      </AreaChart>
+  2086→                    </ResponsiveContainer>
+  2087→                  </CardContent>
+  2088→                </Card>
+  2089→
+  2090→                {/* Engagement Pie Chart */}
+  2091→                <Card className="border-0 shadow-sm">
+  2092→                  <CardHeader className="pb-2">
+  2093→                    <CardTitle className="text-base">Engagement Breakdown</CardTitle>
+  2094→                  </CardHeader>
+  2095→                  <CardContent>
+  2096→                    <ResponsiveContainer width="100%" height={200}>
+  2097→                      <PieChart>
+  2098→                        <Pie
+  2099→                          data={chartDataEngagement}
+  2100→                          cx="50%"
+  2101→                          cy="50%"
+  2102→                          innerRadius={50}
+  2103→                          outerRadius={80}
+  2104→                          paddingAngle={5}
+  2105→                          dataKey="value"
+  2106→                        >
+  2107→                          {chartDataEngagement.map((entry, index) => (
+  2108→                            <Cell key={`cell-${index}`} fill={entry.color} />
+  2109→                          ))}
+  2110→                        </Pie>
+  2111→                        <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
+  2112→                      </PieChart>
+  2113→                    </ResponsiveContainer>
+  2114→                    <div className="space-y-2 mt-4">
+  2115→                      {chartDataEngagement.map((item, i) => (
+  2116→                        <div key={i} className="flex items-center justify-between text-sm">
+  2117→                          <div className="flex items-center gap-2">
+  2118→                            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }}></div>
+  2119→                            <span>{item.name}</span>
+  2120→                          </div>
+  2121→                          <span className="font-medium">{item.value.toLocaleString()}</span>
+  2122→                        </div>
+  2123→                      ))}
+  2124→                    </div>
+  2125→                  </CardContent>
+  2126→                </Card>
+  2127→              </div>
+  2128→
+  2129→              {/* Recent Activity */}
+  2130→              <Card className="border-0 shadow-sm">
+  2131→                <CardHeader>
+  2132→                  <div className="flex items-center justify-between">
+  2133→                    <CardTitle className="text-base">Recent Campaign Activity</CardTitle>
+  2134→                    <Button variant="ghost" size="sm" className="text-warm-600">
+  2135→                      View All <ArrowRight className="w-4 h-4 ml-1" />
+  2136→                    </Button>
+  2137→                  </div>
+  2138→                </CardHeader>
+  2139→                <CardContent>
+  2140→                  <div className="overflow-x-auto">
+  2141→                    <table className="w-full">
+  2142→                      <thead>
+  2143→                        <tr className="text-left text-sm text-muted-foreground border-b">
+  2144→                          <th className="pb-3 font-medium">Campaign</th>
+  2145→                          <th className="pb-3 font-medium">Platform</th>
+  2146→                          <th className="pb-3 font-medium">Progress</th>
+  2147→                          <th className="pb-3 font-medium">Status</th>
+  2148→                          <th className="pb-3 font-medium">Actions</th>
+  2149→                        </tr>
+  2150→                      </thead>
+  2151→                      <tbody>
+  2152→                        {campaigns.slice(0, 5).map((campaign) => (
+  2153→                          <tr key={campaign.id} className="border-b last:border-0">
+  2154→                            <td className="py-3">
+  2155→                              <div>
+  2156→                                <p className="font-medium text-sm">{campaign.name}</p>
+  2157→                                <p className="text-xs text-muted-foreground">{campaign.createdAt}</p>
+  2158→                              </div>
+  2159→                            </td>
+  2160→                            <td className="py-3">
+  2161→                              <div className="flex items-center gap-1">
+  2162→                                {getPlatformIcon(campaign.platform)}
+  2163→                                <span className="text-sm capitalize">{campaign.serviceType}</span>
+  2164→                              </div>
+  2165→                            </td>
+  2166→                            <td className="py-3">
+  2167→                              <div className="flex items-center gap-2">
+  2168→                                <div className="w-20 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+  2169→                                  <div 
+  2170→                                    className="h-full gradient-bg rounded-full" 
+  2171→                                    style={{ width: `${campaign.progress}%` }}
+  2172→                                  ></div>
+  2173→                                </div>
+  2174→                                <span className="text-xs text-muted-foreground">{campaign.progress}%</span>
+  2175→                              </div>
+  2176→                            </td>
+  2177→                            <td className="py-3">
+  2178→                              <Badge variant="outline" className={getStatusBadge(campaign.status)}>
+  2179→                                {campaign.status}
+  2180→                              </Badge>
+  2181→                            </td>
+  2182→                            <td className="py-3">
+  2183→                              <div className="flex items-center gap-1">
+  2184→                                <button 
+  2185→                                  onClick={() => handleToggleCampaignStatus(campaign.id)}
+  2186→                                  className="p-1.5 hover:bg-gray-100 rounded-lg"
+  2187→                                >
+  2188→                                  {campaign.status === 'active' ? <Pause className="w-4 h-4" /> : <PlayCircle className="w-4 h-4" />}
+  2189→                                </button>
+  2190→                                <button className="p-1.5 hover:bg-gray-100 rounded-lg">
+  2191→                                  <MoreHorizontal className="w-4 h-4" />
+  2192→                                </button>
+  2193→                              </div>
+  2194→                            </td>
+  2195→                          </tr>
+  2196→                        ))}
+  2197→                      </tbody>
+  2198→                    </table>
+  2199→                  </div>
+  2200→                </CardContent>
+  2201→              </Card>
+  2202→            </div>
+  2203→          )}
+  2204→
+  2205→          {/* CAMPAIGNS TAB */}
+  2206→          {activeDashboardTab === 'campaigns' && (
+  2207→            <div className="space-y-6">
+  2208→              {/* Filters Bar */}
+  2209→              <Card className="border-0 shadow-sm">
+  2210→                <CardContent className="p-4">
+  2211→                  <div className="flex flex-wrap items-center gap-4">
+  2212→                    <div className="relative flex-1 min-w-[200px]">
+  2213→                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+  2214→                      <Input placeholder="Search campaigns..." className="pl-9" />
+  2215→                    </div>
+  2216→                    <Select defaultValue="all-platforms">
+  2217→                      <SelectTrigger className="w-40" />
+  2218→                      <SelectContent>
+  2219→                        <SelectItem value="all-platforms">All Platforms</SelectItem>
+  2220→                        <SelectItem value="youtube">YouTube</SelectItem>
+  2221→                        <SelectItem value="instagram">Instagram</SelectItem>
+  2222→                      </SelectContent>
+  2223→                    </Select>
+  2224→                    <Select defaultValue="all-statuses">
+  2225→                      <SelectTrigger className="w-36" />
+  2226→                      <SelectContent>
+  2227→                        <SelectItem value="all-statuses">All Status</SelectItem>
+  2228→                        <SelectItem value="active">Active</SelectItem>
+  2229→                        <SelectItem value="paused">Paused</SelectItem>
+  2230→                        <SelectItem value="completed">Completed</SelectItem>
+  2231→                        <SelectItem value="pending">Pending</SelectItem>
+  2232→                      </SelectContent>
+  2233→                    </Select>
+  2234→                    <Button variant="outline" size="sm" className="gap-2">
+  2235→                      <Filter className="w-4 h-4" /> More Filters
+  2236→                    </Button>
+  2237→                  </div>
+  2238→                </CardContent>
+  2239→              </Card>
+  2240→
+  2241→              {/* Campaigns Table */}
+  2242→              <Card className="border-0 shadow-sm">
+  2243→                <CardHeader>
+  2244→                  <div className="flex items-center justify-between">
+  2245→                    <div className="flex items-center gap-2">
+  2246→                      <CardTitle className="text-base">All Campaigns</CardTitle>
+  2247→                      <Badge variant="secondary">{campaigns.length} total</Badge>
+  2248→                    </div>
+  2249→                    <div className="flex items-center gap-2">
+  2250→                      <Button variant="outline" size="sm" className="gap-2">
+  2251→                        <Download className="w-4 h-4" /> Export
+  2252→                      </Button>
+  2253→                      <Button variant="outline" size="sm" className="gap-2">
+  2254→                        <RefreshCw className="w-4 h-4" /> Refresh
+  2255→                      </Button>
+  2256→                    </div>
+  2257→                  </div>
+  2258→                </CardHeader>
+  2259→                <CardContent>
+  2260→                  <div className="overflow-x-auto">
+  2261→                    <table className="w-full">
+  2262→                      <thead>
+  2263→                        <tr className="text-left text-sm text-muted-foreground border-b bg-gray-50">
+  2264→                          <th className="p-3 font-medium w-10">
+  2265→                            <input type="checkbox" className="rounded" />
+  2266→                          </th>
+  2267→                          <th className="p-3 font-medium">Campaign Name</th>
+  2268→                          <th className="p-3 font-medium">Platform</th>
+  2269→                          <th className="p-3 font-medium">Service Type</th>
+  2270→                          <th className="p-3 font-medium">Target URL</th>
+  2271→                          <th className="p-3 font-medium">Progress</th>
+  2272→                          <th className="p-3 font-medium">Credits</th>
+  2273→                          <th className="p-3 font-medium">Status</th>
+  2274→                          <th className="p-3 font-medium">Created</th>
+  2275→                          <th className="p-3 font-medium">Actions</th>
+  2276→                        </tr>
+  2277→                      </thead>
+  2278→                      <tbody>
+  2279→                        {campaigns.map((campaign) => (
+  2280→                          <tr key={campaign.id} className="border-b hover:bg-gray-50/50 transition-colors group">
+  2281→                            <td className="p-3">
+  2282→                              <input 
+  2283→                                type="checkbox" 
+  2284→                                checked={selectedCampaigns.includes(campaign.id)}
+  2285→                                onChange={(e) => {
+  2286→                                  if (e.target.checked) {
+  2287→                                    setSelectedCampaigns([...selectedCampaigns, campaign.id])
+  2288→                                  } else {
+  2289→                                    setSelectedCampaigns(selectedCampaigns.filter(id => id !== campaign.id))
+  2290→                                  }
+  2291→                                }}
+  2292→                                className="rounded"
+  2293→                              />
+  2294→                            </td>
+  2295→                            <td className="p-3">
+  2296→                              <p className="font-medium text-sm">{campaign.name}</p>
+  2297→                            </td>
+  2298→                            <td className="p-3">
+  2299→                              <div className="flex items-center gap-1.5">
+  2300→                                {getPlatformIcon(campaign.platform)}
+  2301→                                <span className="text-sm capitalize">{campaign.platform}</span>
+  2302→                              </div>
+  2303→                            </td>
+  2304→                            <td className="p-3">
+  2305→                              <span className="text-sm bg-gray-100 px-2 py-1 rounded capitalize">{campaign.serviceType.replace('_', ' ')}</span>
+  2306→                            </td>
+  2307→                            <td className="p-3 max-w-[200px]">
+  2308→                              <a href={campaign.targetUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-warm-600 hover:text-warm-700 flex items-center gap-1 truncate" title={campaign.targetUrl}>
+  2309→                                <span className="truncate">{campaign.targetUrl.replace(/^https?:\/\/(www\.)?/, '')}</span>
+  2310→                                <ExternalLink className="w-3 h-3 flex-shrink-0" />
+  2311→                              </a>
+  2312→                            </td>
+  2313→                            <td className="p-3">
+  2314→                              <div className="space-y-1">
+  2315→                                <div className="flex justify-between text-xs">
+  2316→                                  <span>{campaign.completedCount.toLocaleString()} / {campaign.quantity.toLocaleString()}</span>
+  2317→                                  <span>{campaign.progress}%</span>
+  2318→                                </div>
+  2319→                                <div className="w-24 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+  2320→                                  <div 
+  2321→                                    className={`h-full rounded-full ${
+  2322→                                      campaign.progress === 100 ? 'bg-green-500' : 'gradient-bg'
+  2323→                                    }`}
+  2324→                                    style={{ width: `${campaign.progress}%` }}
+  2325→                                  ></div>
+  2326→                                </div>
+  2327→                              </div>
+  2328→                            </td>
+  2329→                            <td className="p-3">
+  2330→                              <span className="text-sm font-medium">{campaign.creditsSpent}</span>
+  2331→                              <Coins className="w-3 h-3 inline ml-1 text-warm-500" />
+  2332→                            </td>
+  2333→                            <td className="p-3">
+  2334→                              <Badge variant="outline" className={getStatusBadge(campaign.status)}>
+  2335→                                {campaign.status}
+  2336→                              </Badge>
+  2337→                            </td>
+  2338→                            <td className="p-3 text-sm text-muted-foreground">
+  2339→                              {campaign.createdAt}
+  2340→                            </td>
+  2341→                            <td className="p-3">
+  2342→                              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+  2343→                                <button 
+  2344→                                  onClick={() => handleToggleCampaignStatus(campaign.id)}
+  2345→                                  className="p-1.5 hover:bg-gray-100 rounded-lg"
+  2346→                                  title={campaign.status === 'active' ? 'Pause' : 'Resume'}
+  2347→                                >
+  2348→                                  {campaign.status === 'active' ? <Pause className="w-4 h-4" /> : campaign.status === 'paused' ? <PlayCircle className="w-4 h-4" /> : null}
+  2349→                                </button>
+  2350→                                <button className="p-1.5 hover:bg-gray-100 rounded-lg" title="Edit">
+  2351→                                  <Edit3 className="w-4 h-4" />
+  2352→                                </button>
+  2353→                                <button 
+  2354→                                  onClick={() => handleDeleteCampaign(campaign.id)}
+  2355→                                  className="p-1.5 hover:bg-red-100 text-red-500 rounded-lg"
+  2356→                                  title="Delete"
+  2357→                                >
+  2358→                                  <Trash2 className="w-4 h-4" />
+  2359→                                </button>
+  2360→                              </div>
+  2361→                            </td>
+  2362→                          </tr>
+  2363→                        ))}
+  2364→                      </tbody>
+  2365→                    </table>
+  2366→                  </div>
+  2367→                  
+  2368→                  {campaigns.length === 0 && (
+  2369→                    <div className="text-center py-12">
+  2370→                      <Target className="w-12 h-12 mx-auto text-gray-300 mb-4" />
+  2371→                      <p className="text-muted-foreground mb-4">No campaigns yet</p>
+  2372→                      <Button onClick={() => setIsNewCampaignOpen(true)} className="gradient-bg text-white border-0">
+  2373→                        Create Your First Campaign
+  2374→                      </Button>
+  2375→                    </div>
+  2376→                  )}
+  2377→                </CardContent>
+  2378→              </Card>
+  2379→            </div>
+  2380→          )}
+  2381→
+  2382→          {/* ANALYTICS TAB */}
+  2383→          {activeDashboardTab === 'analytics' && (
+  2384→            <div className="space-y-6">
+  2385→              <div className="grid lg:grid-cols-2 gap-6">
+  2386→                {/* Weekly Performance Chart */}
+  2387→                <Card className="border-0 shadow-sm">
+  2388→                  <CardHeader>
+  2389→                    <CardTitle className="text-base">Weekly Performance by Platform</CardTitle>
+  2390→                    <CardDescription>Compare YouTube and Instagram growth</CardDescription>
+  2391→                  </CardHeader>
+  2392→                  <CardContent>
+  2393→                    <ResponsiveContainer width="100%" height={300}>
+  2394→                      <BarChart data={chartDataWeekly}>
+  2395→                        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+  2396→                        <XAxis dataKey="name" axisLine={false} tickLine={false} />
+  2397→                        <YAxis axisLine={false} tickLine={false} />
+  2398→                        <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
+  2399→                        <Legend />
+  2400→                        <Bar dataKey="youtube" name="YouTube" fill="#ef4444" radius={[4, 4, 0, 0]} />
+  2401→                        <Bar dataKey="instagram" name="Instagram" fill="#ec4899" radius={[4, 4, 0, 0]} />
+  2402→                      </BarChart>
+  2403→                    </ResponsiveContainer>
+  2404→                  </CardContent>
+  2405→                </Card>
+  2406→
+  2407→                {/* Growth Metrics */}
+  2408→                <Card className="border-0 shadow-sm">
+  2409→                  <CardHeader>
+  2410→                    <CardTitle className="text-base">Growth Metrics</CardTitle>
+  2411→                    <CardDescription>Your account performance overview</CardDescription>
+  2412→                  </CardHeader>
+  2413→                  <CardContent className="space-y-4">
+  2414→                    {[
+  2415→                      { label: 'Total Views Delivered', value: '45,230', change: '+23%', positive: true },
+  2416→                      { label: 'Followers Gained', value: '3,280', change: '+15%', positive: true },
+  2417→                      { label: 'Avg. Engagement Rate', value: '8.7%', change: '+2.3%', positive: true },
+  2418→                      { label: 'Credits Used', value: '425 / 1250', change: '-34%', positive: false },
+  2419→                    ].map((metric, i) => (
+  2420→                      <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
+  2421→                        <div>
+  2422→                          <p className="text-sm text-muted-foreground">{metric.label}</p>
+  2423→                          <p className="text-lg font-semibold">{metric.value}</p>
+  2424→                        </div>
+  2425→                        <div className={`flex items-center gap-1 text-sm ${metric.positive ? 'text-green-600' : 'text-red-500'}`}>
+  2426→                          {metric.positive ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
+  2427→                          {metric.change}
+  2428→                        </div>
+  2429→                      </div>
+  2430→                    ))}
+  2431→                  </CardContent>
+  2432→                </Card>
+  2433→              </div>
+  2434→
+  2435→              {/* Engagement Timeline */}
+  2436→              <Card className="border-0 shadow-sm">
+  2437→                <CardHeader>
+  2438→                  <CardTitle className="text-base">Engagement Over Time</CardTitle>
+  2439→                </CardHeader>
+  2440→                <CardContent>
+  2441→                  <ResponsiveContainer width="100%" height={250}>
+  2442→                    <LineChart data={chartDataViews}>
+  2443→                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+  2444→                      <XAxis dataKey="date" axisLine={false} tickLine={false} />
+  2445→                      <YAxis axisLine={false} tickLine={false} />
+  2446→                      <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
+  2447→                      <Line type="monotone" dataKey="followers" stroke="#8b5cf6" strokeWidth={3} dot={{ fill: '#8b5cf6', r: 4 }} />
+  2448→                    </LineChart>
+  2449→                  </ResponsiveContainer>
+  2450→                </CardContent>
+  2451→              </Card>
+  2452→            </div>
+  2453→          )}
+  2454→
+  2455→          {/* CREDITS TAB */}
+  2456→          {activeDashboardTab === 'credits' && (
+  2457→            <div className="space-y-6">
+  2458→              <div className="grid md:grid-cols-2 gap-6">
+  2459→                <Card className="border-0 shadow-sm">
+  2460→                  <CardHeader>
+  2461→                    <CardTitle className="text-base">Credit Balance</CardTitle>
+  2462→                  </CardHeader>
+  2463→                  <CardContent className="space-y-6">
+  2464→                    <div className="text-center py-6">
+  2465→                      <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-br from-warm-100 to-orange-100 mb-4">
+  2466→                        <Coins className="w-12 h-12 text-warm-600" />
+  2467→                      </div>
+  2468→                      <p className="text-5xl font-black gradient-text">{availableCredits.toLocaleString()}</p>
+  2469→                      <p className="text-muted-foreground mt-2">credits available</p>
+  2470→                    </div>
+  2471→
+  2472→                    <Separator />
+  2473→
+  2474→                    <div className="space-y-3">
+  2475→                      <div className="flex justify-between text-sm">
+  2476→                        <span className="text-muted-foreground">Starting Balance</span>
+  2477→                        <span className="font-medium">{mockUserStats.totalCredits.toLocaleString()}</span>
+  2478→                      </div>
+  2479→                      <div className="flex justify-between text-sm">
+  2480→                        <span className="text-muted-foreground">Used</span>
+  2481→                        <span className="font-medium text-red-500">-{mockUserStats.usedCredits.toLocaleString()}</span>
+  2482→                      </div>
+  2483→                      <div className="flex justify-between text-sm font-semibold pt-2 border-t">
+  2484→                        <span>Remaining</span>
+  2485→                        <span className="text-warm-600">{availableCredits.toLocaleString()}</span>
+  2486→                      </div>
+  2487→                    </div>
+  2488→                  </CardContent>
+  2489→                </Card>
+  2490→
+  2491→                <Card className="border-0 shadow-sm">
+  2492→                  <CardHeader>
+  2493→                    <CardTitle className="text-base">Get More Credits</CardTitle>
+  2494→                    <CardDescription>Choose a package to continue growing</CardDescription>
+  2495→                  </CardHeader>
+  2496→                  <CardContent className="space-y-3">
+  2497→                    {[
+  2498→                      { credits: 1000, price: '$9.99', popular: false, savings: '' },
+  2499→                      { credits: 5000, price: '$39.99', popular: true, savings: 'Save 20%' },
+
+[showing lines 2000-2499 of 7758; use offset=2500 with limit to continue reading]
