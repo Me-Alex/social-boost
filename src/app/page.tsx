@@ -132,7 +132,9 @@ import {
   Power,
   CircleDot,
   // Round 11 New Icons
-  LogIn
+  LogIn,
+  // Round 12 New Icons
+  HelpCircle
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useTheme } from 'next-themes'
@@ -588,6 +590,357 @@ function AnimatedCounter({ value, suffix, duration = 2000 }: { value: number; su
   return (
     <div ref={ref} className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white tabular-nums">
       {Number.isInteger(value) ? Math.floor(count) : count.toFixed(1)}{suffix}
+    </div>
+  )
+}
+
+// ============================================
+// ROUND 12: EPIC TEXT ANIMATION COMPONENTS
+// ============================================
+
+// Typewriter Text Component
+function TypewriterText({ 
+  texts, 
+  className = '',
+  speed = 100,
+  deleteSpeed = 50,
+  pauseTime = 2000 
+}: { 
+  texts: string[]; 
+  className?: string;
+  speed?: number;
+  deleteSpeed?: number;
+  pauseTime?: number;
+}) {
+  const [currentTextIndex, setCurrentTextIndex] = useState(0)
+  const [currentText, setCurrentText] = useState('')
+  
+  // Use a ref to track the phase without causing re-renders
+  const phaseRef = useRef<'typing' | 'pausing' | 'deleting'>('typing')
+  const timeoutRef = useRef<ReturnType<typeof setTimeout>>()
+
+  useEffect(() => {
+    const text = texts[currentTextIndex]
+    
+    const tick = () => {
+      const phase = phaseRef.current
+      
+      if (phase === 'typing') {
+        if (currentText.length < text.length) {
+          setCurrentText(prev => text.slice(0, prev.length + 1))
+        } else {
+          phaseRef.current = 'pausing'
+        }
+      } else if (phase === 'pausing') {
+        phaseRef.current = 'deleting'
+      } else if (phase === 'deleting') {
+        if (currentText.length > 0) {
+          setCurrentText(prev => prev.slice(0, -1))
+        } else {
+          setCurrentTextIndex((prev) => (prev + 1) % texts.length)
+          phaseRef.current = 'typing'
+        }
+      }
+    }
+
+    tick()
+    
+    // Calculate delay based on current state
+    const phase = phaseRef.current
+    let delay: number
+    if (phase === 'typing') {
+      delay = speed
+    } else if (phase === 'pausing') {
+      delay = pauseTime
+    } else {
+      delay = deleteSpeed
+    }
+
+    timeoutRef.current = setTimeout(tick, delay)
+    
+    return () => clearTimeout(timeoutRef.current)
+  }, [currentText, currentTextIndex, texts, speed, deleteSpeed, pauseTime])
+
+  return (
+    <span className={`${className} typewriter-static`}>
+      {currentText}
+    </span>
+  )
+}
+
+// Rotating Words Component
+function RotatingWords({ 
+  words, 
+  className = '',
+  interval = 3000 
+}: { 
+  words: string[]; 
+  className?: string;
+  interval?: number;
+}) {
+  const [currentIndex, setCurrentIndex] = useState(0)
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % words.length)
+    }, interval)
+    return () => clearInterval(timer)
+  }, [words.length, interval])
+
+  return (
+    <span className={`rotate-words ${className}`} style={{ width: words[currentIndex]?.length + 'ch' }}>
+      {words.map((word, i) => (
+        <span key={i} style={{ opacity: i === currentIndex ? 1 : 0, visibility: i === currentIndex ? 'visible' : 'hidden' }}>
+          {word}
+        </span>
+      ))}
+    </span>
+  )
+}
+
+// Animated Text Reveal on Scroll Component
+function AnimatedText({ 
+  children, 
+  className = '',
+  delay = 0,
+  as: Tag = 'div'
+}: { 
+  children: React.ReactNode; 
+  className?: string;
+  delay?: number;
+  as?: React.ElementType;
+}) {
+  const [isVisible, setIsVisible] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !isVisible) {
+          setTimeout(() => setIsVisible(true), delay)
+        }
+      },
+      { threshold: 0.2 }
+    )
+
+    if (ref.current) {
+      observer.observe(ref.current)
+    }
+
+    return () => observer.disconnect()
+  }, [isVisible, delay])
+
+  return (
+    <div 
+      ref={ref} 
+      className={`scroll-fade-up ${isVisible ? 'is-visible' : ''} ${className}`}
+    >
+      <Tag>{children}</Tag>
+    </div>
+  )
+}
+
+// Character Stagger Animation Component
+function CharStagger({ 
+  text, 
+  className = '', 
+  staggerDelay = 30,
+  tag: Tag = 'span'
+}: { 
+  text: string; 
+  className?: string;
+  staggerDelay?: number;
+  tag?: 'span' | 'h1' | 'h2' | 'h3' | 'p';
+}) {
+  const [isVisible, setIsVisible] = useState(false)
+  const ref = useRef<HTMLElement>(null)
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) setIsVisible(true)
+      },
+      { threshold: 0.3 }
+    )
+
+    if (ref.current) observer.observe(ref.current)
+    return () => observer.disconnect()
+  }, [])
+
+  return (
+    <Tag ref={ref} className={`char-stagger inline-block ${className}`}>
+      {text.split('').map((char, i) => (
+        <span 
+          key={i} 
+          style={{ 
+            animationDelay: isVisible ? `${i * staggerDelay}ms` : '0ms',
+            opacity: isVisible ? undefined : 0
+          }}
+        >
+          {char === ' ' ? '\u00A0' : char}
+        </span>
+      ))}
+    </Tag>
+  )
+}
+
+// Glitch Text Component
+function GlitchText({ 
+  text, 
+  className = '' 
+}: { 
+  text: string; 
+  className?: string;
+}) {
+  return (
+    <span 
+      className={`glitch-text ${className}`} 
+      data-text={text}
+    >
+      {text}
+    </span>
+  )
+}
+
+// Morphing Gradient Text Component  
+function MorphGradientText({ 
+  children, 
+  className = '' 
+}: { 
+  children: React.ReactNode; 
+  className?: string;
+}) {
+  return (
+    <span className={`morph-text ${className}`}>
+      {children}
+    </span>
+  )
+}
+
+// Rainbow Text Component for Special Emphasis
+function RainbowText({ 
+  children, 
+  className = '' 
+}: { 
+  children: React.ReactNode; 
+  className?: string;
+}) {
+  return (
+    <span className={`rainbow-text ${className}`}>
+      {children}
+    </span>
+  )
+}
+
+// Underline Reveal Text Component
+function UnderlineReveal({ 
+  children, 
+  className = '',
+  active = false
+}: { 
+  children: React.ReactNode; 
+  className?: string;
+  active?: boolean;
+}) {
+  return (
+    <span className={`underline-reveal ${active ? 'active' : ''} ${className}`}>
+      {children}
+    </span>
+  )
+}
+
+// Floating Animation Wrapper
+function FloatingAnimation({ 
+  children, 
+  className = '',
+  delay = 0
+}: { 
+  children: React.ReactNode; 
+  className?: string;
+  delay?: number;
+}) {
+  return (
+    <div 
+      className={`floating-label ${className}`}
+      style={{ animationDelay: `${delay}s` }}
+    >
+      {children}
+    </div>
+  )
+}
+
+// Shine Effect Wrapper
+function ShineEffect({ 
+  children, 
+  className = '' 
+}: { 
+  children: React.ReactNode; 
+  className?: string;
+}) {
+  return (
+    <div className={`shine-through ${className}`}>
+      {children}
+    </div>
+  )
+}
+
+// Section Header with Animations
+function AnimatedSectionHeader({
+  badge,
+  badgeIcon,
+  title,
+  titleHighlight,
+  description,
+  className = ''
+}: {
+  badge?: string;
+  badgeIcon?: React.ReactNode;
+  title: string;
+  titleHighlight?: string;
+  description?: string;
+  className?: string;
+}) {
+  const [isVisible, setIsVisible] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) setIsVisible(true)
+      },
+      { threshold: 0.3 }
+    )
+
+    if (ref.current) observer.observe(ref.current)
+    return () => observer.disconnect()
+  }, [])
+
+  return (
+    <div ref={ref} className={`text-center max-w-3xl mx-auto mb-16 ${className}`}>
+      {badge && (
+        <div className={`mb-4 transition-all duration-700 transform ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`} style={{ transitionDelay: '0ms' }}>
+          <Badge variant="secondary" className="px-4 py-2 bg-gradient-to-r from-warm-100 via-amber-100 to-orange-100 text-warm-800 border-warm-200/50 shadow-md">
+            {badgeIcon}
+            {badge}
+          </Badge>
+        </div>
+      )}
+      
+      <h2 className={`text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 transition-all duration-700 transform ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ transitionDelay: '150ms' }}>
+        {titleHighlight ? (
+          <>
+            {title.split(titleHighlight)[0]}
+            <MorphGradientText>{titleHighlight}</MorphGradientText>
+            {title.split(titleHighlight)[1]}
+          </>
+        ) : title}
+      </h2>
+      
+      {description && (
+        <p className={`text-lg text-muted-foreground max-w-2xl mx-auto transition-all duration-700 transform ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`} style={{ transitionDelay: '300ms' }}>
+          {description}
+        </p>
+      )}
     </div>
   )
 }
@@ -5559,10 +5912,10 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Hero Section - EPIC VERSION with Text Animations */}
+      {/* Hero Section - ROUND 12: ULTRA ANIMATED VERSION */}
       <section 
-        className="relative overflow-hidden py-24 lg:py-40" 
-        style={{ background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 50%, #fff7ed 100%)' }}
+        className="relative overflow-hidden py-24 lg:py-40 min-h-screen flex items-center" 
+        style={{ background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 30%, #fef9ec 60%, #fff7ed 100%)' }}
       >
         {/* Animated Background Orbs */}
         <div className="absolute inset-0 -z-10 overflow-hidden">
@@ -5575,81 +5928,86 @@ export default function Home() {
           {/* Grid pattern overlay */}
           <div className="absolute inset-0 bg-[linear-gradient(to_right,#f59e0b08_1px,transparent_1px),linear-gradient(to_bottom,#f59e0b08_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
           
-          {/* Floating particles */}
-          {[...Array(8)].map((_, i) => (
+          {/* Floating particles with more variety */}
+          {[...Array(12)].map((_, i) => (
             <div
               key={i}
-              className="absolute w-2 h-2 rounded-full bg-warm-400/40"
+              className={`absolute rounded-full ${i % 3 === 0 ? 'bg-warm-400/40 w-3 h-3' : i % 3 === 1 ? 'bg-orange-400/30 w-2 h-2' : 'bg-yellow-400/35 w-2.5 h-2.5'}`}
               style={{
-                top: `${20 + Math.random() * 60}%`,
-                left: `${10 + Math.random() * 80}%`,
+                top: `${15 + Math.random() * 70}%`,
+                left: `${5 + Math.random() * 90}%`,
                 animation: `float ${3 + Math.random() * 4}s ease-in-out infinite`,
                 animationDelay: `${Math.random() * 2}s`
               }}
             />
           ))}
+
+          {/* Radial gradient overlay for depth */}
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,transparent_0%,rgba(255,251,235,0.5)_100%)]"></div>
         </div>
 
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="max-w-5xl mx-auto text-center">
             
-            {/* Badge with bounce animation */}
-            <div className="bounce-in-text mb-8" style={{ animationDelay: '0s' }}>
-              <Badge 
-                variant="secondary" 
-                className="mb-4 px-5 py-2.5 text-sm font-semibold bg-gradient-to-r from-warm-100 via-amber-100 to-orange-100 text-warm-800 hover:from-warm-200 hover:to-orange-200 border border-warm-300/50 transition-all duration-500 shadow-lg shadow-warm-200/50 group cursor-default pulse-border-text"
-              >
-                <Flame className="w-4 h-4 mr-2 text-orange-500 animate-pulse icon-pulse-ring" />
-                <span className="shimmer-text">#1 Social Media Growth Platform</span>
-                <Sparkles className="w-4 h-4 ml-2 text-yellow-500 group-hover:rotate-12 transition-transform duration-300" />
-              </Badge>
-            </div>
+            {/* Badge with epic animations */}
+            <FloatingAnimation delay={0} className="mb-8">
+              <ShineEffect>
+                <Badge 
+                  variant="secondary" 
+                  className="mb-4 px-6 py-3 text-sm font-semibold bg-gradient-to-r from-warm-100 via-amber-100 to-orange-100 text-warm-800 hover:from-warm-200 hover:to-orange-200 border border-warm-300/50 transition-all duration-500 shadow-xl shadow-warm-200/50 group cursor-default pulse-border-text scale-100 hover:scale-105"
+                >
+                  <Flame className="w-4 h-4 mr-2 text-orange-500 animate-pulse" />
+                  <RainbowText className="font-bold">#1 Growth Platform</RainbowText>
+                  <Sparkles className="w-4 h-4 ml-2 text-yellow-500 group-hover:rotate-12 transition-transform duration-300" />
+                </Badge>
+              </ShineEffect>
+            </FloatingAnimation>
 
-            {/* Main Heading - EPIC ANIMATED */}
-            <h1 className="text-4xl sm:text-5xl lg:text-7xl xl:text-8xl font-black tracking-tight mb-8 leading-[1.1]">
+            {/* Main Heading - ULTRA ANIMATED WITH TYPEWRITER */}
+            <h1 className="text-4xl sm:text-5xl lg:text-7xl xl:text-8xl font-black tracking-tight mb-8 leading-[1.08]">
               
-              {/* Line 1 - Scale up animation */}
-              <div className="scale-up-text" style={{ animationDelay: '0.2s' }}>
-                Get Free{' '}
-                <span className="gradient-text-animated relative inline-block highlight-sweep">
-                  YouTube & Instagram
-                  <svg className="absolute -bottom-1 left-0 w-full h-3" viewBox="0 0 200 12" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
-                    <path d="M2 8C50 2 150 2 198 8" stroke="#F59E0B" strokeWidth="3" strokeLinecap="round" className="animate-pulse" style={{ animationDuration: '3s' }}/>
-                  </svg>
-                </span>
+              {/* Line 1 - With gradient and rotating words */}
+              <div className="scale-up-text" style={{ animationDelay: '0.15s' }}>
+                <span className="text-foreground">Get Free</span>{' '}
+                <ShineEffect>
+                  <span className="gradient-text-cycle relative inline-block font-black">
+                    YouTube & Instagram
+                    <svg className="absolute -bottom-1 left-0 w-full h-3" viewBox="0 0 200 12" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+                      <path d="M2 8C50 2 150 2 198 8" stroke="#F59E0B" strokeWidth="3" strokeLinecap="round" className="animate-pulse" style={{ animationDuration: '2.5s' }}/>
+                    </svg>
+                  </span>
+                </ShineEffect>
               </div>
               
-              {/* Line 2 - Bounce in animation */}
+              {/* Line 2 - Bounce in with typewriter effect */}
               <br className="hidden sm:block" />
-              <div className="bounce-in-text" style={{ animationDelay: '0.4s' }}>
+              <div className="bounce-in-text mt-2" style={{ animationDelay: '0.35s' }}>
                 <span className="text-foreground">Growth from</span>{' '}
-                <span className="neon-text-glow font-black">Real Users</span>
+                <GlitchText text="Real Users" className="neon-text-glow font-black text-4xl sm:text-5xl lg:text-6xl xl:text-7xl" />
               </div>
             </h1>
 
-            {/* Subheading - Wave text effect for key words */}
-            <p className="text-lg sm:text-xl lg:text-2xl text-muted-foreground max-w-3xl mx-auto mb-10 leading-relaxed scale-up-text" style={{ animationDelay: '0.6s' }}>
+            {/* Subheading - Enhanced with rotating words */}
+            <p className="text-lg sm:text-xl lg:text-2xl text-muted-foreground max-w-3xl mx-auto mb-10 leading-relaxed scale-up-text" style={{ animationDelay: '0.55s' }}>
               Boost your social media presence with{' '}
-              <span className="wave-text font-bold text-foreground">
-                {'authentic'.split('').map((char, i) => (
-                  <span key={i} className="inline-block">{char}</span>
-                ))}
-              </span>{' '}
-              views, followers, likes, and comments. 
+              <UnderlineReveal active className="font-bold text-foreground magnetic-text">
+                authentic
+              </UnderlineReveal>{' '}
+              views, followers, likes, and comments.<br className="hidden sm:block" />
               Our platform connects your content with{' '}
-              <span className="floating-letters font-bold gradient-text-animated">
-                {'real users'.split('').map((char, i) => (
-                  <span key={i}>{char}</span>
-                ))}
-              </span>{' '}
+              <RotatingWords 
+                words={['real users', 'active creators', 'engaged audiences', 'growing communities']} 
+                className="font-bold gradient-text-cycle text-xl sm:text-2xl lg:text-3xl"
+                interval={2500}
+              />{' '}
               who actively engage.
             </p>
 
-            {/* CTA Buttons - With enhanced effects */}
-            <div className="flex flex-col sm:flex-row gap-5 justify-center items-center mb-14 stagger-fade-up" style={{ animationDelay: '0.8s' }}>
+            {/* CTA Buttons - Ultra enhanced effects */}
+            <div className="flex flex-col sm:flex-row gap-5 justify-center items-center mb-14 stagger-fade-up" style={{ animationDelay: '0.75s' }}>
               <Button 
                 size="lg" 
-                className="cta-button-enhanced gradient-bg text-white border-0 text-lg px-10 py-7 h-auto font-bold group relative overflow-hidden btn-shine"
+                className="cta-button-enhanced gradient-bg text-white border-0 text-lg px-12 py-8 h-auto font-bold group relative overflow-hidden btn-shine shadow-2xl shadow-warm-400/30 hover:shadow-warm-400/50 hover:scale-105 transition-all duration-300"
                 onClick={() => setIsSignUpOpen(true)}
               >
                 <span className="relative z-10 flex items-center">
@@ -5657,41 +6015,47 @@ export default function Home() {
                   Start Growing Free
                   <ArrowRight className="w-6 h-6 ml-3 group-hover:translate-x-2 transition-transform duration-300" />
                 </span>
+                {/* Shine overlay */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
               </Button>
               <Button 
                 size="lg" 
                 variant="outline" 
-                className="text-lg px-10 py-7 h-auto border-2 border-warm-300 hover:border-warm-400 hover:bg-warm-50/80 hover:shadow-lg hover:shadow-warm-100/50 transition-all duration-300 font-semibold group glass-card-enhanced"
+                className="text-lg px-12 py-8 h-auto border-2 border-warm-300 hover:border-warm-500 hover:bg-warm-50/80 hover:shadow-xl hover:shadow-warm-100/50 transition-all duration-300 font-semibold group glass-card-enhanced hover:scale-105"
                 onClick={() => document.getElementById('services')?.scrollIntoView({ behavior: 'smooth' })}
               >
+                <PlayCircle className="w-5 h-5 mr-2" />
                 View Services
                 <ChevronRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform duration-300" />
               </Button>
             </div>
 
-            {/* Trust indicators - Enhanced glassmorphism */}
-            <div className="flex flex-wrap justify-center items-center gap-4 sm:gap-6 text-sm text-muted-foreground stagger-fade-up" style={{ animationDelay: '1s' }}>
+            {/* Trust indicators - Epic glassmorphism with bounce stagger */}
+            <div className="bounce-stagger flex flex-wrap justify-center items-center gap-4 sm:gap-6 text-sm text-muted-foreground">
               {[
-                { icon: <CheckCircle2 className="w-5 h-5 text-emerald-500" />, text: 'No credit card required' },
-                { icon: <Shield className="w-5 h-5 text-emerald-500" />, text: '100% safe & secure' },
-                { icon: <Users className="w-5 h-5 text-emerald-500" />, text: '100K+ happy creators' },
-                { icon: <Timer className="w-5 h-5 text-emerald-500" />, text: 'Instant delivery' }
+                { icon: <CheckCircle2 className="w-5 h-5 text-emerald-500 pulse-ring" />, text: 'No credit card required' },
+                { icon: <Shield className="w-5 h-5 text-blue-500 pulse-ring" />, text: '100% safe & secure' },
+                { icon: <Users className="w-5 h-5 text-purple-500 pulse-ring" />, text: '100K+ happy creators' },
+                { icon: <Timer className="w-5 h-5 text-orange-500 pulse-ring" />, text: 'Instant delivery' }
               ].map((item, i) => (
                 <div 
                   key={i} 
-                  className="flex items-center gap-2 px-4 py-2 bg-white/70 backdrop-blur-md rounded-full border border-white/50 shadow-sm hover:bg-white/90 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 group"
-                  style={{ animationDelay: `${1.1 + i * 0.1}s` }}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-white/80 backdrop-blur-lg rounded-full border border-white/60 shadow-md hover:bg-white hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group cursor-default"
                 >
-                  <span className="group-hover:scale-110 transition-transform duration-300">{item.icon}</span>
-                  <span className="font-medium text-foreground/80">{item.text}</span>
+                  <span className="group-hover:scale-125 group-hover:rotate-12 transition-transform duration-300">{item.icon}</span>
+                  <span className="font-semibold text-foreground/90">{item.text}</span>
                 </div>
               ))}
             </div>
             
-            {/* Scroll hint indicator */}
+            {/* Scroll hint indicator with enhanced animation */}
             <div className="mt-16 flex flex-col items-center animate-fadeIn" style={{ animationDelay: '1.5s' }}>
-              <span className="text-xs text-muted-foreground mb-2 font-medium uppercase tracking-wider">Scroll to explore</span>
-              <ChevronDown className="w-5 h-5 text-warm-500 animate-bounce" />
+              <span className="text-xs text-muted-foreground mb-3 font-bold uppercase tracking-widest floating-label">Scroll to explore</span>
+              <div className="relative">
+                <div className="w-6 h-10 rounded-full border-2 border-warm-400/50 flex items-start justify-center p-1.5">
+                  <div className="w-1.5 h-3 rounded-full bg-warm-500 animate-bounce"></div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -5822,19 +6186,14 @@ export default function Home() {
       {/* Services Section */}
       <section id="services" className="py-20 lg:py-28 bg-gradient-to-b from-background to-muted/30">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Section header */}
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <Badge variant="secondary" className="mb-4 bg-gradient-to-r from-red-100 to-pink-100 text-red-700">
-              Our Services
-            </Badge>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
-              Choose Your{' '}
-              <span className="gradient-text">Growth Platform</span>
-            </h2>
-            <p className="text-lg text-muted-foreground">
-              Select from our comprehensive range of services designed to boost your social media presence
-            </p>
-          </div>
+          {/* Section header with animations */}
+          <AnimatedSectionHeader
+            badge="Our Services"
+            badgeIcon={<Star className="w-3 h-3 mr-1" />}
+            title="Choose Your Growth Platform"
+            titleHighlight="Growth Platform"
+            description="Select from our comprehensive range of services designed to boost your social media presence"
+          />
 
           {/* Platform Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="max-w-6xl mx-auto">
@@ -5949,22 +6308,20 @@ export default function Home() {
       {/* How It Works Section - Enhanced */}
       <section id="how-it-works" className="py-20 lg:py-28 bg-muted/50 relative overflow-hidden">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Section header */}
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <Badge variant="secondary" className="mb-4 bg-warm-100 text-warm-800">
-              <Zap className="w-3 h-3 mr-1" />
-              Simple Process
-            </Badge>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
-              How It <span className="gradient-text">Works</span>
-            </h2>
-            <p className="text-lg text-muted-foreground mb-6">
-              Start growing your social media in just 3 simple steps
-            </p>
+          {/* Section header with animations */}
+          <AnimatedSectionHeader
+            badge="Simple Process"
+            badgeIcon={<Zap className="w-3 h-3 mr-1" />}
+            title="How It Works"
+            titleHighlight="Works"
+            description="Start growing your social media in just 3 simple steps"
+          />
 
-            {/* Watch Demo Button */}
-            <Dialog>
-              <DialogTrigger asChild>
+          <div className="max-w-5xl mx-auto">
+            {/* Watch Demo Button - Centered above steps */}
+            <div className="text-center mb-10">
+              <Dialog>
+                <DialogTrigger asChild>
                 <Button 
                   variant="outline" 
                   size="sm"
@@ -5997,11 +6354,10 @@ export default function Home() {
                 </div>
               </DialogContent>
             </Dialog>
-          </div>
+            </div>
 
           {/* Steps */}
-          <div className="max-w-5xl mx-auto">
-            <div className="grid md:grid-cols-3 gap-8 md:gap-12 relative">
+          <div className="grid md:grid-cols-3 gap-8 md:gap-12 relative">
               {/* Animated dashed connection line (desktop only) */}
               <div className="hidden md:block absolute top-[72px] left-[16%] right-[16%] h-0.5 dashed-line-animate"></div>
 
@@ -6123,26 +6479,21 @@ export default function Home() {
                 </DialogContent>
               </Dialog>
             </div>
-          </div>
+          </div>  {/* Close max-w-5xl wrapper */}
         </div>
       </section>
 
       {/* Pricing Section */}
       <section id="pricing" className="py-20 lg:py-28">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Section header */}
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <Badge variant="secondary" className="mb-4 bg-gradient-to-r from-green-100 to-emerald-100 text-emerald-800">
-              <Crown className="w-3 h-3 mr-1" />
-              Flexible Plans
-            </Badge>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
-              Choose Your <span className="gradient-text">Perfect Plan</span>
-            </h2>
-            <p className="text-lg text-muted-foreground">
-              Start free, upgrade when you're ready. No hidden fees.
-            </p>
-          </div>
+          {/* Section header with animations */}
+          <AnimatedSectionHeader
+            badge="Flexible Plans"
+            badgeIcon={<Crown className="w-3 h-3 mr-1" />}
+            title="Choose Your Perfect Plan"
+            titleHighlight="Perfect Plan"
+            description="Start free, upgrade when you're ready. No hidden fees."
+          />
 
           {/* Pricing Cards */}
           <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
@@ -6592,18 +6943,14 @@ export default function Home() {
       <section id="faq" className="py-20 lg:py-28">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl mx-auto">
-            {/* Section header */}
-            <div className="text-center mb-10">
-              <Badge variant="secondary" className="mb-4 bg-warm-100 text-warm-800">
-                Got Questions?
-              </Badge>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
-                Frequently Asked <span className="gradient-text">Questions</span>
-              </h2>
-              <p className="text-lg text-muted-foreground">
-                Everything you need to know about our platform
-              </p>
-            </div>
+            {/* Section header with animations */}
+            <AnimatedSectionHeader
+              badge="Got Questions?"
+              badgeIcon={<HelpCircle className="w-3 h-3 mr-1" />}
+              title="Frequently Asked Questions"
+              titleHighlight="Questions"
+              description="Everything you need to know about our platform"
+            />
 
             {/* Search Box */}
             <EnhancedFAQ />
@@ -6614,17 +6961,24 @@ export default function Home() {
       {/* Newsletter Section */}
       <section className="py-20 lg:py-28 bg-muted/50">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <Card className="border-0 overflow-hidden max-w-4xl mx-auto shadow-xl">
+          <Card className="border-0 overflow-hidden max-w-4xl mx-auto shadow-xl relative">
             <div className="absolute inset-0 bg-gradient-to-r from-warm-500 via-orange-400 to-warm-500"></div>
             <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=%2260%22 height=%2260%22 viewBox=%220 0 60 60%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cg fill=%22none%22 fill-rule=%22evenodd%22%3E%3Cg fill=%22%23ffffff%22 fill-opacity=%220.1%22%3E%3Cpath d=%22M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-50"></div>
             
             <CardContent className="relative p-8 md:p-12 text-center text-white">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm mb-6">
-                <Mail className="w-8 h-8" />
-              </div>
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                Stay Updated with Tips
-              </h2>
+              <FloatingAnimation delay={0}>
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm mb-6 shadow-lg pulse-ring">
+                  <Mail className="w-8 h-8" />
+                </div>
+              </FloatingAnimation>
+              
+              <ShineEffect>
+                <h2 className="text-3xl md:text-4xl font-bold mb-4">
+                  Stay Updated with{' '}
+                  <MorphGradientText>Growth Tips</MorphGradientText>
+                </h2>
+              </ShineEffect>
+              
               <p className="text-lg opacity-90 max-w-xl mx-auto mb-8">
                 Join our newsletter and get exclusive growth tips, feature updates, and special offers delivered straight to your inbox.
               </p>
@@ -6641,11 +6995,11 @@ export default function Home() {
                 <Button 
                   type="submit"
                   disabled={isLoading}
-                  className="bg-foreground text-white hover:bg-foreground/90 border-0 h-14 px-8 font-semibold whitespace-nowrap"
+                  className="bg-foreground text-white hover:bg-foreground/90 border-0 h-14 px-8 font-semibold whitespace-nowrap group shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
                 >
                   {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : (
                     <>
-                      Subscribe <Send className="w-4 h-4 ml-2" />
+                      Subscribe <Send className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                     </>
                   )}
                 </Button>
@@ -6663,22 +7017,27 @@ export default function Home() {
       {/* CTA Section */}
       <section className="py-20 lg:py-28">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <Card className="border-0 overflow-hidden">
+          <Card className="border-0 overflow-hidden relative">
             <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900"></div>
             <div className="absolute inset-0">
-              <div className="absolute top-0 left-1/4 w-96 h-96 bg-warm-500 rounded-full blur-3xl opacity-10"></div>
-              <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-orange-500 rounded-full blur-3xl opacity-10"></div>
+              <div className="absolute top-0 left-1/4 w-96 h-96 bg-warm-500 rounded-full blur-3xl opacity-10 animate-pulse"></div>
+              <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-orange-500 rounded-full blur-3xl opacity-10 animate-pulse" style={{ animationDelay: '1s' }}></div>
             </div>
             
             <CardContent className="relative p-8 md:p-16 text-center text-white">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm mb-6">
-                <Rocket className="w-4 h-4 text-warm-400" />
-                <span className="text-sm font-medium">Join 100,000+ Creators</span>
-              </div>
+              <FloatingAnimation delay={0}>
+                <ShineEffect>
+                  <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/10 backdrop-blur-sm mb-8 border border-white/10 shadow-lg">
+                    <Rocket className="w-4 h-4 text-warm-400" />
+                    <span className="text-sm font-bold">Join 100,000+ Creators</span>
+                    <Sparkles className="w-4 h-4 text-yellow-400" />
+                  </div>
+                </ShineEffect>
+              </FloatingAnimation>
               
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6 leading-tight">
-                Ready to Grow Your{' '}
-                <span className="gradient-text">Social Media?</span>
+                Ready to{' '}
+                <RainbowText className="font-black">Grow Your Social Media?</RainbowText>
               </h2>
               <p className="text-lg opacity-80 max-w-2xl mx-auto mb-10">
                 Join thousands of creators who are already using SocialBoost to accelerate their growth. 
@@ -6688,36 +7047,34 @@ export default function Home() {
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button 
                   size="lg" 
-                  className="bg-white text-slate-900 hover:bg-gray-100 border-0 text-lg px-10 py-7 h-auto font-bold shadow-2xl shadow-white/20 group"
+                  className="bg-white text-slate-900 hover:bg-gray-100 border-0 text-lg px-12 py-8 h-auto font-bold shadow-2xl shadow-white/20 group hover:scale-105 transition-all duration-300"
                   onClick={() => setIsSignUpOpen(true)}
                 >
-                  <Rocket className="w-6 h-6 mr-2 group-hover:translate-x-1 transition-transform" />
+                  <Rocket className="w-6 h-6 mr-2 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
                   Get Started Free
-                  <ArrowRight className="w-6 h-6 ml-2 group-hover:translate-x-1 transition-transform" />
+                  <ArrowRight className="w-6 h-6 ml-2 group-hover:translate-x-2 transition-transform" />
                 </Button>
                 <Button 
                   size="lg" 
                   variant="outline" 
-                  className="border-2 border-white/30 text-white hover:bg-white/10 text-lg px-10 py-7 h-auto"
+                  className="border-2 border-white/30 text-white hover:bg-white/10 hover:border-white/50 text-lg px-12 py-8 h-auto hover:scale-105 transition-all duration-300"
                 >
                   <Headphones className="w-5 h-5 mr-2" />
                   Contact Sales
                 </Button>
               </div>
               
-              <div className="mt-10 flex flex-wrap justify-center gap-6 text-sm opacity-70">
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-green-400" />
-                  <span>No credit card required</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Gift className="w-4 h-4 text-warm-400" />
-                  <span>500 free credits</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-blue-400" />
-                  <span>Cancel anytime</span>
-                </div>
+              <div className="mt-10 flex flex-wrap justify-center gap-6 text-sm opacity-70 bounce-stagger">
+                {[
+                  { icon: <CheckCircle2 className="w-4 h-4 text-green-400" />, text: 'No credit card required' },
+                  { icon: <Gift className="w-4 h-4 text-warm-400" />, text: '500 free credits' },
+                  { icon: <Clock className="w-4 h-4 text-blue-400" />, text: 'Cancel anytime' }
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center gap-2 group cursor-default">
+                    <span className="group-hover:scale-125 transition-transform">{item.icon}</span>
+                    <span>{item.text}</span>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>
