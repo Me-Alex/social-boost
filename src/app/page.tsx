@@ -138,7 +138,10 @@ import {
   // Accessibility & Keyboard
   Keyboard,
   // Round 11 New Icons
-  LogIn
+  LogIn,
+  // Round 15 New Icons
+  HelpCircle,
+  UserPlus
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useTheme } from 'next-themes'
@@ -8630,5 +8633,627 @@ function SectionReveal({ children, className = '', delay = 0 }: {
     >
       {children}
     </div>
+  )
+}
+
+// ============================================
+// ROUND 15: NEW COMPONENTS & FEATURES
+// ============================================
+
+// Live Growth Preview Component - Shows real-time growth simulation
+function LiveGrowthPreview() {
+  const [currentView, setCurrentView] = useState(124780)
+  const [currentFollower, setCurrentFollower] = useState(8432)
+  const [activeUsers, setActiveUsers] = useState(1284)
+  
+  useEffect(() => {
+    const viewInterval = setInterval(() => {
+      setCurrentView(prev => prev + Math.floor(Math.random() * 10) + 1)
+    }, 3000)
+    
+    const followerInterval = setInterval(() => {
+      setCurrentFollower(prev => prev + Math.floor(Math.random() * 3))
+    }, 5000)
+    
+    const userInterval = setInterval(() => {
+      setActiveUsers(prev => {
+        const change = Math.floor(Math.random() * 5) - 2
+        return Math.max(1200, prev + change)
+      })
+    }, 2000)
+    
+    return () => {
+      clearInterval(viewInterval)
+      clearInterval(followerInterval)
+      clearInterval(userInterval)
+    }
+  }, [])
+
+  return (
+    <section className="py-20 lg:py-28 aurora-bg relative overflow-hidden">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 pattern-grid opacity-30"></div>
+      
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        {/* Header */}
+        <div className="text-center max-w-3xl mx-auto mb-16">
+          <Badge variant="secondary" className="mb-4 bg-gradient-to-r from-warm-100 to-orange-100 text-warm-800 border-0 btn-shimmer">
+            <Activity className="w-3 h-3 mr-1" />
+            Live Statistics
+          </Badge>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
+            Watch Your <span className="gradient-text-premium">Growth</span> in Real-Time
+          </h2>
+          <p className="text-lg text-muted-foreground">
+            See the power of SocialBoost with our live platform statistics
+          </p>
+        </div>
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto stagger-container">
+          {/* Views Card */}
+          <Card className="glass-ultra morph-border p-8 text-center spotlight-card group cursor-default">
+            <CardContent className="p-0">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center icon-bounce-interactive group-hover:scale-110 transition-transform">
+                <Eye className="w-8 h-8 text-white" />
+              </div>
+              <div className="text-4xl lg:text-5xl font-black tabular-nums text-foreground mb-2 number-count-up">
+                {currentView.toLocaleString()}
+              </div>
+              <p className="text-muted-foreground font-medium">Views Delivered Today</p>
+              <div className="mt-4 flex items-center justify-center gap-1 text-green-600 text-sm font-medium">
+                <ArrowUpRight className="w-4 h-4" />
+                +12.5% from yesterday
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Followers Card */}
+          <Card className="glass-ultra morph-border p-8 text-center spotlight-card group cursor-default">
+            <CardContent className="p-0">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-pink-500 to-purple-500 flex items-center justify-center icon-bounce-interactive group-hover:scale-110 transition-transform">
+                <Users className="w-8 h-8 text-white" />
+              </div>
+              <div className="text-4xl lg:text-5xl font-black tabular-nums text-foreground mb-2 number-count-up">
+                {currentFollower.toLocaleString()}
+              </div>
+              <p className="text-muted-foreground font-medium">Followers Gained</p>
+              <div className="mt-4 flex items-center justify-center gap-1 text-green-600 text-sm font-medium">
+                <ArrowUpRight className="w-4 h-4" />
+                +8.3% from last week
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Active Users Card */}
+          <Card className="glass-ultra morph-border p-8 text-center spotlight-card group cursor-default pulse-ring">
+            <CardContent className="p-0">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-warm-500 to-yellow-500 flex items-center justify-center icon-bounce-interactive group-hover:scale-110 transition-transform heartbeat">
+                <Zap className="w-8 h-8 text-white" />
+              </div>
+              <div className="text-4xl lg:text-5xl font-black tabular-nums text-foreground mb-2 number-count-up">
+                {activeUsers.toLocaleString()}
+              </div>
+              <p className="text-muted-foreground font-medium">Active Users Now</p>
+              <div className="mt-4 flex items-center justify-center gap-1 text-warm-600 text-sm font-medium">
+                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                Live right now
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Animated Divider */}
+        <div className="divider-animated max-w-md mx-auto my-12"></div>
+
+        {/* Platform Trust Indicators */}
+        <div className="flex flex-wrap justify-center gap-6 lg:gap-12">
+          {[
+            { icon: ShieldCheck, label: 'SSL Secured', sublabel: '256-bit encryption' },
+            { icon: Globe, label: 'Global Network', sublabel: '150+ countries' },
+            { icon: Clock, label: '24/7 Uptime', sublabel: '99.9% guaranteed' },
+            { icon: Headphones, label: 'Live Support', sublabel: '< 2 min response' },
+          ].map((item, idx) => (
+            <div 
+              key={item.label} 
+              className="flex items-center gap-3 px-6 py-4 rounded-xl bg-card/50 backdrop-blur border border-border/50 hover:border-warm-500/50 hover:bg-warm-50/50 dark:hover:bg-warm-950/20 transition-all duration-300 group"
+              style={{ animationDelay: `${idx * 100}ms` }}
+            >
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-warm-500/20 to-orange-500/20 flex items-center justify-center group-hover:from-warm-500 group-hover:to-orange-500 transition-all duration-300">
+                <item.icon className="w-5 h-5 text-warm-600 group-hover:text-white transition-colors" />
+              </div>
+              <div>
+                <p className="font-semibold text-sm">{item.label}</p>
+                <p className="text-xs text-muted-foreground">{item.sublabel}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// Platform Showcase Component - Interactive platform cards
+function PlatformShowcase({ onSignUp }: { onSignUp: () => void }) {
+  const [activePlatform, setActivePlatform] = useState<'youtube' | 'instagram'>('youtube')
+  
+  const platforms = {
+    youtube: {
+      name: 'YouTube',
+      icon: Youtube,
+      color: 'from-red-500 to-red-600',
+      services: [
+        { name: 'Video Views', desc: 'Boost your watch count', icon: Eye, stat: '50M+' },
+        { name: 'Subscribers', desc: 'Grow your channel', icon: Users, stat: '2M+' },
+        { name: 'Video Likes', desc: 'Increase engagement', icon: Heart, stat: '15M+' },
+        { name: 'Comments', desc: 'Spark conversations', icon: MessageCircle, stat: '5M+' },
+      ],
+      cta: 'Grow on YouTube'
+    },
+    instagram: {
+      name: 'Instagram',
+      icon: Instagram,
+      color: 'from-pink-500 to-purple-600',
+      services: [
+        { name: 'Followers', desc: 'Expand your reach', icon: Users, stat: '3M+' },
+        { name: 'Post Likes', desc: 'Boost engagement', icon: Heart, stat: '25M+' },
+        { name: 'Reels Views', desc: 'Go viral', icon: Play, stat: '40M+' },
+        { name: 'Story Views', desc: 'More eyes on you', icon: Eye, stat: '18M+' },
+      ],
+      cta: 'Grow on Instagram'
+    }
+  }
+
+  const current = platforms[activePlatform]
+
+  return (
+    <section id="platform-showcase" className="py-20 lg:py-28 relative overflow-hidden bg-muted/20">
+      {/* Decorative Elements */}
+      <div className="absolute top-20 left-10 w-72 h-72 bg-warm-500/10 rounded-full blur-3xl"></div>
+      <div className="absolute bottom-20 right-10 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl"></div>
+      
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        {/* Header */}
+        <div className="text-center max-w-3xl mx-auto mb-12">
+          <Badge variant="secondary" className="mb-4 glass-ultra">
+            <TrendingUp className="w-3 h-3 mr-1" />
+            Platform Power
+          </Badge>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
+            Choose Your <span className="gradient-text-premium">Platform</span>
+          </h2>
+          <p className="text-lg text-muted-foreground">
+            Specialized tools for maximum growth on each platform
+          </p>
+        </div>
+
+        {/* Platform Toggle */}
+        <div className="flex justify-center mb-12">
+          <div className="glass-ultra rounded-full p-1.5 inline-flex gap-1">
+            {(['youtube', 'instagram'] as const).map((platform) => (
+              <button
+                key={platform}
+                onClick={() => setActivePlatform(platform)}
+                className={`flex items-center gap-2 px-6 py-3 rounded-full font-medium transition-all duration-300 ${
+                  activePlatform === platform
+                    ? `bg-gradient-to-r ${platforms[platform].color} text-white shadow-lg`
+                    : 'hover:bg-background/50'
+                }`}
+              >
+                {(() => {
+                  const PlatformIcon = platforms[platform].icon
+                  return <PlatformIcon className="w-5 h-5" />
+                })()}
+                {platforms[platform].name}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Services Grid with Animation */}
+        <div className="max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 stagger-container">
+            {current.services.map((service, index) => (
+              <Card 
+                key={service.name} 
+                className={`group cursor-pointer rotate-hover-shadow border-0 shadow-lg hover:shadow-2xl transition-all duration-500 ${
+                  activePlatform === 'youtube' ? 'spotlight-card' : 'spotlight-card'
+                }`}
+                style={{ animationDelay: `${index * 100}ms` }}
+              >
+                <CardContent className="p-6 text-center">
+                  <div className={`w-14 h-14 mx-auto mb-4 rounded-2xl bg-gradient-to-br ${current.color} flex items-center justify-center group-hover:scale-110 group-hover:rotate-6 transition-all duration-300`}>
+                    <service.icon className="w-7 h-7 text-white" />
+                  </div>
+                  <h3 className="font-bold text-lg mb-1 nav-glow-underline inline-block">{service.name}</h3>
+                  <p className="text-sm text-muted-foreground mb-3">{service.desc}</p>
+                  <div className="text-2xl font-black gradient-text">{service.stat}</div>
+                  <p className="text-xs text-muted-foreground mt-1">delivered</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* CTA Button */}
+          <div className="text-center mt-12">
+            <Button 
+              size="lg" 
+              onClick={onSignUp}
+              className={`bg-gradient-to-r ${current.color} hover:opacity-90 text-white px-8 py-6 text-lg rounded-full shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300 btn-shimmer ripple-btn`}
+            >
+              <Rocket className="w-5 h-5 mr-2" />
+              {current.cta}
+              <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+            </Button>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// Growth Timeline Component - Shows user journey
+function GrowthTimeline() {
+  const steps = [
+    {
+      title: 'Sign Up Free',
+      description: 'Create your account in seconds and get 500 free credits',
+      icon: UserPlus,
+      time: 'Step 1',
+      color: 'from-blue-500 to-cyan-500'
+    },
+    {
+      title: 'Choose Service',
+      description: 'Select from views, followers, likes, and more',
+      icon: Target,
+      time: 'Step 2',
+      color: 'from-warm-500 to-orange-500'
+    },
+    {
+      title: 'Launch Campaign',
+      description: 'Set your target URL and watch the magic happen',
+      icon: Rocket,
+      time: 'Step 3',
+      color: 'from-purple-500 to-pink-500'
+    },
+    {
+      title: 'Watch Growth',
+      description: 'See real results within hours, not days',
+      icon: TrendingUp,
+      time: 'Step 4',
+      color: 'from-green-500 to-emerald-500'
+    },
+  ]
+
+  return (
+    <section className="py-20 lg:py-28 relative overflow-hidden">
+      {/* Background Gradient */}
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-warm-50/30 to-transparent dark:via-warm-950/20"></div>
+      
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        {/* Header */}
+        <div className="text-center max-w-3xl mx-auto mb-16">
+          <Badge variant="secondary" className="mb-4 bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border-0">
+            <Clock className="w-3 h-3 mr-1" />
+            Quick Start
+          </Badge>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
+            Start Growing in <span className="gradient-text-premium">4 Simple Steps</span>
+          </h2>
+          <p className="text-lg text-muted-foreground">
+            From signup to results in under 5 minutes
+          </p>
+        </div>
+
+        {/* Timeline */}
+        <div className="max-w-4xl mx-auto">
+          <div className="relative">
+            {/* Connection Line */}
+            <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-gradient-to-b from-blue-500 via-warm-500 via-purple-500 to-green-500 hidden md:block"></div>
+            
+            <div className="space-y-12">
+              {steps.map((step, index) => (
+                <div 
+                  key={step.title}
+                  className={`relative flex items-center gap-8 ${
+                    index % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'
+                  }`}
+                >
+                  {/* Content Card */}
+                  <div className={`flex-1 ${index % 2 === 0 ? 'md:text-right' : 'md:text-left'}`}>
+                    <Card className="glass-ultra morph-border inline-block text-left hover:scale-105 transition-transform duration-300">
+                      <CardContent className="p-6">
+                        <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold text-white bg-gradient-to-r ${step.color} mb-3`}>
+                          {step.time}
+                        </div>
+                        <h3 className="text-xl font-bold mb-2">{step.title}</h3>
+                        <p className="text-muted-foreground text-sm">{step.description}</p>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Center Icon */}
+                  <div className="hidden md:flex w-14 h-14 rounded-full bg-background border-4 border-warm-500 items-center justify-center z-10 shadow-lg elastic-bounce">
+                    <step.icon className="w-6 h-6 text-warm-600" />
+                  </div>
+
+                  {/* Spacer for alignment */}
+                  <div className="flex-1 hidden md:block"></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// Testimonial Video Cards Component
+function TestimonialVideoCards() {
+  const testimonials = [
+    {
+      name: 'Sarah Mitchell',
+      role: 'Lifestyle YouTuber',
+      avatar: 'SM',
+      subscribers: '250K',
+      quote: 'SocialBoost transformed my channel! I went from 10K to 250K subscribers in just 6 months.',
+      platform: 'youtube' as const,
+      growth: '+2,400%',
+      gradient: 'from-pink-500 to-rose-500'
+    },
+    {
+      name: 'Marcus Chen',
+      role: 'Fitness Influencer',
+      avatar: 'MC',
+      subscribers: '180K',
+      quote: 'The engagement quality is incredible. My posts now reach millions organically!',
+      platform: 'instagram' as const,
+      growth: '+1,850%',
+      gradient: 'from-blue-500 to-cyan-500'
+    },
+    {
+      name: 'Elena Rodriguez',
+      role: 'Music Artist',
+      avatar: 'ER',
+      subscribers: '500K',
+      quote: 'Best investment for my music career. The follower quality is unmatched.',
+      platform: 'instagram' as const,
+      growth: '+3,200%',
+      gradient: 'from-purple-500 to-violet-500'
+    },
+  ]
+
+  return (
+    <section className="py-20 lg:py-28 bg-muted/30 relative overflow-hidden">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="text-center max-w-3xl mx-auto mb-16">
+          <Badge variant="secondary" className="mb-4 bg-gradient-to-r from-purple-100 to-pink-100 text-purple-800 border-0">
+            <Star className="w-3 h-3 mr-1" />
+            Success Stories
+          </Badge>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
+            Loved by <span className="gradient-text-premium">100K+</span> Creators
+          </h2>
+          <p className="text-lg text-muted-foreground">
+            Join thousands of creators who've grown their audience with SocialBoost
+          </p>
+        </div>
+
+        {/* Testimonials Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          {testimonials.map((testimonial, index) => (
+            <Card 
+              key={testimonial.name}
+              className="group relative overflow-hidden border-0 shadow-xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 flip-in-y"
+              style={{ animationDelay: `${index * 150}ms` }}
+            >
+              {/* Gradient Border Effect */}
+              <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${testimonial.gradient}`}></div>
+              
+              <CardContent className="p-8">
+                {/* Avatar & Info */}
+                <div className="flex items-center gap-4 mb-6">
+                  <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${testimonial.gradient} flex items-center justify-center text-white font-bold text-lg shadow-lg group-hover:scale-110 group-hover:rotate-6 transition-all duration-300`}>
+                    {testimonial.avatar}
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-bold text-lg">{testimonial.name}</h3>
+                    <p className="text-sm text-muted-foreground">{testimonial.role}</p>
+                    <div className="flex items-center gap-1 mt-1">
+                      {testimonial.platform === 'youtube' ? (
+                        <Youtube className="w-3 h-3 text-red-500" />
+                      ) : (
+                        <Instagram className="w-3 h-3 text-pink-500" />
+                      )}
+                      <span className="text-xs text-muted-foreground">{testimonial.subscribers} followers</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Quote */}
+                <p className="text-foreground/80 leading-relaxed mb-6 italic">
+                  "{testimonial.quote}"
+                </p>
+
+                {/* Growth Badge */}
+                <div className="flex items-center justify-between pt-4 border-t border-border/50">
+                  <span className="text-sm text-muted-foreground">Growth achieved</span>
+                  <Badge className={`bg-gradient-to-r ${testimonial.gradient} text-white border-0 pulse-glow`}>
+                    {testimonial.growth}
+                  </Badge>
+                </div>
+              </CardContent>
+
+              {/* Hover Glow */}
+              <div className="absolute inset-0 bg-gradient-to-br from-warm-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+            </Card>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// FAQ Enhanced Component with Search
+function FAQEnhanced() {
+  const [searchQuery, setSearchQuery] = useState('')
+  const [filteredFAQs, setFilteredFAQs] = useState(faqs)
+  
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setFilteredFAQs(faqs)
+      return
+    }
+    
+    const filtered = faqs.filter(faq => 
+      faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      faq.answer.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    setFilteredFAQs(filtered)
+  }, [searchQuery])
+
+  return (
+    <section id="faq" className="py-20 lg:py-28 relative overflow-hidden">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 pattern-dots opacity-20"></div>
+      
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        {/* Header */}
+        <div className="text-center max-w-3xl mx-auto mb-12">
+          <Badge variant="secondary" className="mb-4 glass-ultra">
+            <HelpCircle className="w-3 h-3 mr-1" />
+            Support
+          </Badge>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
+            Frequently Asked <span className="gradient-text-premium">Questions</span>
+          </h2>
+          <p className="text-lg text-muted-foreground mb-8">
+            Everything you need to know about SocialBoost
+          </p>
+          
+          {/* Search Box */}
+          <div className="relative max-w-md mx-auto">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Search questions..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-12 pr-4 py-3 rounded-full glass-ultra border-border/50 focus:border-warm-500 transition-colors"
+            />
+          </div>
+          
+          {searchQuery && (
+            <p className="mt-4 text-sm text-muted-foreground">
+              Found {filteredFAQs.length} question{filteredFAQs.length !== 1 ? 's' : ''}
+            </p>
+          )}
+        </div>
+
+        {/* FAQ Accordion */}
+        <div className="max-w-3xl mx-auto">
+          <Accordion type="single" collapsible className="accordion-enhanced space-y-4">
+            {filteredFAQs.slice(0, 8).map((faq, index) => (
+              <AccordionItem 
+                key={index} 
+                value={`item-${index}`}
+                className="glass-ultra rounded-xl border-0 shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden"
+              >
+                <AccordionTrigger className="px-6 py-5 hover:no-underline group">
+                  <div className="flex items-center gap-3 text-left">
+                    <ChevronRight className="accordion-trigger-icon w-5 h-5 text-warm-500 flex-shrink-0 transition-transform duration-300" />
+                    <span className="font-medium group-hover:text-warm-600 transition-colors">{faq.question}</span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-6 pb-5 text-muted-foreground leading-relaxed">
+                  {faq.answer}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// Final CTA Ultra Component
+function FinalCTAUltra({ onSignUp }: { onSignUp: () => void }) {
+  return (
+    <section className="py-24 lg:py-32 relative overflow-hidden">
+      {/* Animated Background */}
+      <div className="absolute inset-0 aurora-bg">
+        <div className="absolute inset-0 bg-gradient-to-br from-warm-900/90 via-warm-800/80 to-orange-900/90"></div>
+      </div>
+      
+      {/* Floating Elements */}
+      <div className="absolute top-10 left-10 w-20 h-20 liquid-morph bg-warm-500/20 blur-xl"></div>
+      <div className="absolute bottom-10 right-10 w-32 h-32 liquid-morph bg-orange-500/20 blur-xl" style={{ animationDelay: '2s' }}></div>
+      <div className="absolute top-1/2 left-1/4 w-16 h-16 liquid-morph bg-yellow-500/20 blur-xl" style={{ animationDelay: '4s' }}></div>
+      
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div className="max-w-4xl mx-auto text-center">
+          {/* Badge */}
+          <Badge className="mb-6 px-4 py-2 holographic text-white border-0 text-sm font-bold">
+            <Sparkles className="w-4 h-4 mr-2" />
+            Limited Time Offer
+          </Badge>
+          
+          {/* Heading */}
+          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white mb-6 leading-tight">
+            Ready to{' '}
+            <span className="text-gradient-stroke">Supercharge</span>{' '}
+            Your Growth?
+          </h2>
+          
+          {/* Description */}
+          <p className="text-xl text-white/80 mb-10 max-w-2xl mx-auto leading-relaxed">
+            Join over 100,000 creators who trust SocialBoost for their social media growth. 
+            Start free today and see results within hours.
+          </p>
+          
+          {/* CTA Buttons */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <Button 
+              size="lg"
+              onClick={onSignUp}
+              className="bg-white text-warm-700 hover:bg-gray-100 px-10 py-7 text-lg font-bold rounded-full shadow-2xl hover:shadow-white/20 transform hover:-translate-y-1 transition-all duration-300 btn-shimmer ripple-btn"
+            >
+              <Rocket className="w-6 h-6 mr-2" />
+              Start Free Now
+              <ArrowRight className="w-5 h-5 ml-2" />
+            </Button>
+            
+            <Button 
+              size="lg"
+              variant="outline"
+              className="border-2 border-white/30 text-white hover:bg-white/10 px-8 py-7 text-lg font-bold rounded-full backdrop-blur transition-all duration-300"
+            >
+              <Play className="w-5 h-5 mr-2" />
+              Watch Demo
+            </Button>
+          </div>
+          
+          {/* Trust Badges */}
+          <div className="mt-12 flex flex-wrap justify-center gap-8 text-white/60 text-sm">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-5 h-5 text-green-400" />
+              No credit card required
+            </div>
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="w-5 h-5 text-green-400" />
+              SSL secured
+            </div>
+            <div className="flex items-center gap-2">
+              <Clock className="w-5 h-5 text-green-400" />
+              Cancel anytime
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
   )
 }
