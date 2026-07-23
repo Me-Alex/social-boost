@@ -3708,14 +3708,21 @@ function Gem(props: React.SVGProps<SVGSVGElement>) {
   )
 }
 
-// Back to Top Button Component
+// Back to Top Button Component - Round 14 Enhanced with Scroll Progress
 function BackToTopButton() {
   const [isVisible, setIsVisible] = useState(false)
   const [isAnimating, setIsAnimating] = useState<'enter' | 'exit' | null>(null)
+  const [scrollProgress, setScrollProgress] = useState(0)
 
   useEffect(() => {
     const handleScroll = () => {
-      const shouldShow = window.scrollY > 500
+      const scrollTop = window.scrollY
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight
+      const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0
+      
+      setScrollProgress(Math.min(100, Math.max(0, progress)))
+      
+      const shouldShow = scrollTop > 300
       if (shouldShow !== isVisible) {
         if (shouldShow) {
           setIsAnimating('enter')
@@ -3738,24 +3745,42 @@ function BackToTopButton() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
+  // SVG circle circumference
+  const radius = 20
+  const circumference = 2 * Math.PI * radius
+  const strokeDashoffset = circumference - (scrollProgress / 100) * circumference
+
   if (!isVisible && !isAnimating) return null
 
   return (
-    <button
-      onClick={scrollToTop}
-      className={`fixed bottom-24 left-6 z-50 w-12 h-12 rounded-full gradient-bg text-white shadow-lg shadow-warm-300/30 flex items-center justify-center hover:shadow-xl hover:shadow-warm-400/40 transition-all duration-300 group ${
-        isAnimating === 'enter' ? 'back-to-top-enter' : 
-        isAnimating === 'exit' ? 'back-to-top-exit' : ''
-      }`}
-      aria-label="Back to top"
-    >
-      <ArrowUp className="w-5 h-5 group-hover:-translate-y-1 transition-transform duration-200" />
-      
-      {/* Tooltip */}
-      <span className="absolute left-full ml-3 px-2 py-1 bg-slate-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-        Back to top
-      </span>
-    </button>
+    <div className={`scroll-progress-ring ${isAnimating === 'enter' ? 'animate-fadeIn' : ''}`}>
+      <svg width="52" height="52" viewBox="0 0 52 52">
+        <circle
+          className="bg-circle"
+          cx="26"
+          cy="26"
+          r={radius}
+        />
+        <circle
+          className="progress-circle"
+          cx="26"
+          cy="26"
+          r={radius}
+          style={{
+            strokeDasharray: circumference,
+            strokeDashoffset: strokeDashoffset
+          }}
+        />
+      </svg>
+      <button
+        onClick={scrollToTop}
+        className="magnetic-btn tooltip-premium"
+        data-tip="Back to top"
+        aria-label="Back to top"
+      >
+        <ArrowUp className="w-5 h-5" />
+      </button>
+    </div>
   )
 }
 
@@ -7025,6 +7050,93 @@ export default function Home() {
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ROUND 14: Why Choose SocialBoost - Comparison Section */}
+      <section className="py-20 lg:py-28 bg-gradient-to-b from-muted/30 to-background relative overflow-hidden section-border-gradient">
+        {/* Background pattern */}
+        <div className="absolute inset-0 pattern-dots opacity-50"></div>
+        
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          {/* Section Header */}
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <Badge variant="secondary" className="mb-4 badge-premium">
+              <Trophy className="w-3 h-3 mr-1" />
+              Why Choose Us
+            </Badge>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
+              The <span className="heading-gradient-animated">Smarter Choice</span> for Growth
+            </h2>
+            <p className="text-lg text-muted-foreground">
+              See how SocialBoost compares to other growth platforms
+            </p>
+          </div>
+
+          {/* Comparison Table */}
+          <div className="max-w-5xl mx-auto overflow-x-auto">
+            <table className="comparison-table glass-premium">
+              <thead>
+                <tr>
+                  <th>Features</th>
+                  <th>Others</th>
+                  <th className="highlight-col">
+                    SocialBoost
+                    <span className="feature-badge best ml-2">
+                      <Star className="w-3 h-3" /> Best Value
+                    </span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  { feature: 'Real User Engagement', others: false, us: true, icon: Users },
+                  { feature: 'Free Credits to Start', others: false, us: true, icon: Gift },
+                  { feature: 'YouTube & Instagram', others: false, us: true, icon: CheckCircle2 },
+                  { feature: 'Instant Delivery', others: false, us: true, icon: Zap },
+                  { feature: '24/7 Support', others: true, us: true, icon: Headphones },
+                  { feature: 'Geo-Targeting', others: false, us: true, icon: Globe },
+                  { feature: 'API Access', others: false, us: true, icon: Code },
+                  { feature: 'No Credit Card Required', others: false, us: true, icon: ShieldCheck },
+                  { feature: 'Dashboard Analytics', others: true, us: true, icon: BarChart3 },
+                  { feature: 'Referral Program', others: false, us: true, icon: UserPlus }
+                ].map((row, i) => (
+                  <tr key={i} className={i % 2 === 0 ? '' : 'bg-white/30'}>
+                    <td className="text-left font-medium flex items-center gap-3">
+                      <row.icon className="w-5 h-5 text-warm-500 flex-shrink-0" />
+                      {row.feature}
+                    </td>
+                    <td>
+                      {row.others ? (
+                        <Check className="check-icon inline" />
+                      ) : (
+                        <X className="cross-icon inline" />
+                      )}
+                    </td>
+                    <td className="highlight-col font-semibold text-warm-700">
+                      <Check className="check-icon inline mr-1" />
+                      Included
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Trust Badges */}
+          <div className="flex flex-wrap justify-center gap-8 mt-12 pt-8 border-t border-border/50">
+            {[
+              { icon: ShieldCheck, text: 'SSL Secured' },
+              { icon: Clock, text: '99.9% Uptime' },
+              { icon: CreditCard, text: 'Safe Payments' },
+              { icon: Lock, text: 'GDPR Compliant' }
+            ].map((item, i) => (
+              <div key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
+                <item.icon className="w-5 h-5 text-green-500" />
+                <span>{item.text}</span>
+              </div>
+            ))}
           </div>
         </div>
       </section>
